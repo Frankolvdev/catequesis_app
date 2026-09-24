@@ -1,0 +1,7 @@
+MegaZIP 23 — Acceso de usuarios y registro con API original
+
+Extrae en la raíz de app_2026 y reemplaza archivos. Aparece la opción Acceder/Cuenta en la barra inferior. El inicio de sesión llama al endpoint PHP user/loginApp con email y contraseña; el registro usa user/register_user con los mismos campos del cliente anterior. Después del registro inicia sesión con la cuenta recién creada. Se guarda la identidad devuelta por el servidor (id_user, api_key, nombre, foto y género) para el futuro Chat y sincronización; la contraseña no se conserva. Cerrar sesión borra esa identidad y deja el contenido abierto como invitado.
+
+Pruébalo con una cuenta real de prueba: inicio de sesión, cerrar y volver a abrir la aplicación (la sesión persiste), cierre de sesión, correo incorrecto y registro si dispones de una cuenta nueva. Requiere que https://www.catequesis.org/API/v1/user/loginApp responda correctamente y tenga un certificado válido. Los clientes OAuth antiguos de Google/Facebook están eliminados o deshabilitados y no se incluyen en este paquete: necesitan configuraciones nuevas del propietario. El siguiente paquete usará esta sesión para Chat y sincronización.
+
+Verificado: estructura y extracción del ZIP. No hay Android SDK en este entorno para compilar ni una cuenta de usuario de prueba para autenticar contra producción.

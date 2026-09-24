@@ -22,6 +22,9 @@ import com.chayzay.catequesisapp.game.ImageActivitiesScreen
 import com.chayzay.catequesisapp.game.GameHubScreen
 import com.chayzay.catequesisapp.game.QuizGameScreen
 import com.chayzay.catequesisapp.game.WhiteBoardScreen
+import com.chayzay.catequesisapp.auth.AccountScreen
+import com.chayzay.catequesisapp.auth.AuthRepository
+import com.chayzay.catequesisapp.auth.UserSessionStore
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -99,9 +102,12 @@ class MainActivity : ComponentActivity() {
         val repository = CourseRepository(getString(R.string.api_base_url), cacheDir)
         val imageRepository = CourseImageRepository(cacheDir)
         val progressStore = ClassProgressStore(this)
+        val sessionStore = UserSessionStore(this)
+        val authRepository = AuthRepository(getString(R.string.api_base_url))
         setContent {
             CatequesisTheme {
                 var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
+                var session by remember { mutableStateOf(sessionStore.load()) }
                 var showBrand by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
                     delay(900)
@@ -121,6 +127,13 @@ class MainActivity : ComponentActivity() {
                                 "courses" -> CatalogScreen(repository, imageRepository, progressStore, profile!!) { atCatalogRoot = it }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
                                 "news" -> NewsScreen(profile!!)
+                                "account" -> AccountScreen(session, authRepository, sessionStore) { signedIn ->
+                                    session = signedIn
+                                    if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
+                                        profile?.gender != signedIn.gender) {
+                                        profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
+                                    }
+                                }
                                 else -> PrayerScreen(profile!!)
                             }
                         }
@@ -150,6 +163,8 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.size(26.dp))
                                 Text("Oraciones", color = Color.White, modifier = Modifier.padding(start = 6.dp))
                             }
+                            Text(if (session == null) "Acceder" else "Cuenta", color = Color.White,
+                                modifier = Modifier.clickable { section = "account" }.padding(7.dp))
                         }
                     }
                 }
