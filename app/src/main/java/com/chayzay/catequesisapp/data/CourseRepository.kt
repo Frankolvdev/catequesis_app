@@ -4,12 +4,38 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Mismo contrato de la app antigua: GET /API/v1/course/all -> { data: [...] }. */
+/** Contratos originales: course/all, class_course/all y theme/all devuelven {status, data}. */
 data class Course(val id: Int, val name: String)
+data class CourseClass(val id: Int, val courseId: Int, val number: Int, val name: String)
+data class ClassTheme(val id: Int, val classId: Int, val number: Int, val name: String)
 
 class CourseRepository(private val baseUrl: String) {
-    fun getCourses(): List<Course> {
-        val connection = (URL(baseUrl + "course/all").openConnection() as HttpURLConnection).apply {
+    fun getCourses(): List<Course> = request("course/all").mapNotNull { item ->
+        val id = item.optInt("id_course", -1)
+        val name = item.optString("name_course").trim()
+        if (id < 0 || name.isEmpty()) null else Course(id, name)
+    }
+
+    fun getClasses(courseId: Int): List<CourseClass> = request("class_course/all")
+        .mapNotNull { item ->
+            val id = item.optInt("id_class_course", -1)
+            val parentId = item.optInt("id_course", -1)
+            val name = item.optString("name_class_course").trim()
+            if (parentId != courseId || id < 0 || name.isEmpty()) null
+            else CourseClass(id, parentId, item.optInt("number_class", 0), name)
+        }.sortedWith(compareBy<CourseClass> { it.number }.thenBy { it.id })
+
+    fun getThemes(classId: Int): List<ClassTheme> = request("theme/all")
+        .mapNotNull { item ->
+            val id = item.optInt("id_theme", -1)
+            val parentId = item.optInt("id_class_course", -1)
+            val name = item.optString("name_theme").trim()
+            if (parentId != classId || id < 0 || name.isEmpty()) null
+            else ClassTheme(id, parentId, item.optInt("number_theme", 0), name)
+        }.sortedWith(compareBy<ClassTheme> { it.number }.thenBy { it.id })
+
+    private fun request(path: String): List<JSONObject> {
+        val connection = (URL(baseUrl + path).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 10000
             readTimeout = 10000
@@ -22,16 +48,11 @@ class CourseRepository(private val baseUrl: String) {
             val body = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
             val response = JSONObject(body)
             if (response.optString("status") != "1") {
-                throw IllegalStateException(response.optString("message", "No se pudieron cargar los cursos"))
+                throw IllegalStateException(response.optString("message", "No se pudieron cargar los datos"))
             }
             val data = response.optJSONArray("data")
-                ?: throw IllegalStateException("La respuesta no contiene cursos")
-            return (0 until data.length()).mapNotNull { index ->
-                val item = data.optJSONObject(index) ?: return@mapNotNull null
-                val id = item.optInt("id_course", -1)
-                val name = item.optString("name_course").trim()
-                if (id < 0 || name.isEmpty()) null else Course(id, name)
-            }
+                ?: throw IllegalStateException("La respuesta no contiene la lista solicitada")
+            return (0 until data.length()).mapNotNull { data.optJSONObject(it) }
         } finally {
             connection.disconnect()
         }
