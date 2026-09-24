@@ -1,0 +1,9 @@
+Catequesis Android — MegaZIP 07. Extraer en la raíz de app_2026, sobre MegaZIP 06.
+
+Corrección: reemplaza el menú emergente del año inicial por un diálogo de altura definida, evitando medidas intrínsecas de LazyColumn que pueden cerrar la app. No se dispone de stacktrace del dispositivo, por lo que este diagnóstico se confirmará al probar allí.
+
+Sección Fe: cinco imágenes originales, calendario litúrgico cargado de /API/v1/liturgical_celebration/all/es/{año}, y enlaces originales a misa, san Josemaría, formación (correo del proyecto) y bendición papal. Estos destinos externos pueden cambiar o desaparecer.
+
+Pruebas: abrir selector de año, elegir año válido y género, pulsar Comenzar; entrar a Fe y cargar calendario, cambiar año, volver y comprobar Cursos/Oraciones. Si persiste un cierre, enviar Android Studio Logcat filtrado por FATAL EXCEPTION y com.chayzay.catequesisapp.
+
+Sincronizar y compilar primero. Tras probar: git status; git add .; git commit -m "Corrige selector inicial y agrega seccion Fe"; git push origin main. No subir google-services.json.

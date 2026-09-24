@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.chayzay.catequesisapp.profile.InitialSetupScreen
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.prayer.PrayerScreen
+import com.chayzay.catequesisapp.faith.FaithScreen
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -89,8 +90,11 @@ class MainActivity : ComponentActivity() {
                     var section by remember { mutableStateOf("courses") }
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
-                            if (section == "courses") CatalogScreen(repository, imageRepository, profile!!)
-                            else PrayerScreen(profile!!)
+                            when (section) {
+                                "courses" -> CatalogScreen(repository, imageRepository, profile!!)
+                                "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
+                                else -> PrayerScreen(profile!!)
+                            }
                         }
                         Row(modifier = Modifier.fillMaxWidth().background(profile!!.accent)
                             .padding(vertical = 7.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -99,6 +103,12 @@ class MainActivity : ComponentActivity() {
                                 Image(painterResource(R.drawable.corpus), contentDescription = null,
                                     modifier = Modifier.size(26.dp))
                                 Text("Cursos", color = Color.White, modifier = Modifier.padding(start = 6.dp))
+                            }
+                            Row(modifier = Modifier.clickable { section = "faith" }.padding(7.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Image(painterResource(R.drawable.calendar), contentDescription = null,
+                                    modifier = Modifier.size(26.dp))
+                                Text("Fe", color = Color.White, modifier = Modifier.padding(start = 6.dp))
                             }
                             Row(modifier = Modifier.clickable { section = "prayer" }.padding(7.dp),
                                 verticalAlignment = Alignment.CenterVertically) {

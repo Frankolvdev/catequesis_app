@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +49,19 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
     val accent = gender?.let { ProfileSettings(year, it).accent } ?: Color(0xFF037AD8)
 
     Box(modifier = Modifier.fillMaxSize()) {
+        if (expanded) {
+            Dialog(onDismissRequest = { expanded = false }) {
+                androidx.compose.material3.Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().height(360.dp)) {
+                        items((1940..currentYear).toList().reversed()) { option ->
+                            Text(option.toString(), modifier = Modifier.fillMaxWidth()
+                                .clickable { year = option; expanded = false; error = null }
+                                .padding(horizontal = 24.dp, vertical = 14.dp), color = Color.Black)
+                        }
+                    }
+                }
+            }
+        }
         Image(painterResource(R.drawable.background_splash_screen), contentDescription = null,
             contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -66,15 +78,6 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
                 Text(year.toString(), modifier = Modifier.fillMaxWidth().background(Color.White)
                     .clickable { expanded = true }.padding(14.dp),
                     color = Color.Black)
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
-                        items((1940..currentYear).toList().reversed()) { option ->
-                            Text(option.toString(), modifier = Modifier.fillMaxWidth()
-                                .clickable { year = option; expanded = false; error = null }
-                                .padding(horizontal = 20.dp, vertical = 9.dp))
-                        }
-                    }
-                }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 listOf("MALE", "FEMALE").forEach { option ->
