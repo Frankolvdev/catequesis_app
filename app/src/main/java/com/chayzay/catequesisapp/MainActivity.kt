@@ -84,6 +84,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.chayzay.catequesisapp.data.Course
 import com.chayzay.catequesisapp.data.CourseClass
@@ -164,36 +165,46 @@ class MainActivity : ComponentActivity() {
                                 else -> PrayerScreen(profile!!)
                             }
                         }
-                        if (section != "courses" || atCatalogRoot) Row(modifier = Modifier.fillMaxWidth().background(profile!!.accent)
-                            .padding(vertical = 7.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            Row(modifier = Modifier.clickable { section = "news" }.padding(7.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.mipmap.document), contentDescription = null,
-                                    modifier = Modifier.size(26.dp))
-                                Text("Noticias", color = Color.White, modifier = Modifier.padding(start = 4.dp))
+                        if (section != "courses" || atCatalogRoot) Column(
+                            modifier = Modifier.fillMaxWidth().background(profile!!.accent)
+                                .padding(vertical = 5.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                Column(Modifier.weight(1f).clickable { section = "news" }.padding(3.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(painterResource(R.mipmap.document), contentDescription = null,
+                                        modifier = Modifier.size(24.dp))
+                                    Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                }
+                                Column(Modifier.weight(1f).clickable { section = "courses" }.padding(3.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(painterResource(R.drawable.corpus), contentDescription = null,
+                                        modifier = Modifier.size(24.dp))
+                                    Text("Cursos", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                }
+                                Column(Modifier.weight(1f).clickable { section = "faith" }.padding(3.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(painterResource(R.mipmap.vela), contentDescription = null,
+                                        modifier = Modifier.size(24.dp))
+                                    Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                }
+                                Column(Modifier.weight(1f).clickable { section = "prayer" }.padding(3.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(painterResource(R.mipmap.prayer), contentDescription = null,
+                                        modifier = Modifier.size(24.dp))
+                                    Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                }
                             }
-                            Row(modifier = Modifier.clickable { section = "courses" }.padding(7.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.drawable.corpus), contentDescription = null,
-                                    modifier = Modifier.size(26.dp))
-                                Text("Cursos", color = Color.White, modifier = Modifier.padding(start = 6.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                Box(Modifier.weight(1f).clickable { section = "chat" }
+                                    .padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
+                                    Text("Chat", color = Color.White)
+                                }
+                                Box(Modifier.weight(1f).clickable { section = "account" }
+                                    .padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
+                                    Text(if (session == null) "Acceder" else "Cuenta", color = Color.White)
+                                }
                             }
-                            Row(modifier = Modifier.clickable { section = "faith" }.padding(7.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.mipmap.vela), contentDescription = null,
-                                    modifier = Modifier.size(26.dp))
-                                Text("Fe", color = Color.White, modifier = Modifier.padding(start = 6.dp))
-                            }
-                            Row(modifier = Modifier.clickable { section = "prayer" }.padding(7.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.mipmap.prayer), contentDescription = null,
-                                    modifier = Modifier.size(26.dp))
-                                Text("Oraciones", color = Color.White, modifier = Modifier.padding(start = 6.dp))
-                            }
-                            Text("Chat", color = Color.White,
-                                modifier = Modifier.clickable { section = "chat" }.padding(7.dp))
-                            Text(if (session == null) "Acceder" else "Cuenta", color = Color.White,
-                                modifier = Modifier.clickable { section = "account" }.padding(7.dp))
                         }
                     }
                 }

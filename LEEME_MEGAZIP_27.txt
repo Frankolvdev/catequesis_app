@@ -1,0 +1,7 @@
+MegaZIP 27 — Chat y Acceder visibles en pantallas estrechas
+
+Extraer en la raíz de app_2026 y reemplazar MainActivity.kt. Debes tener ya aplicados los MegaZIPs 23 al 26: este parche únicamente cambia la disposición de la barra inferior. Los accesos a Noticias, Cursos, Fe y Oraciones permanecen en la primera fila; Chat y Acceder (o Cuenta al iniciar sesión) siempre se muestran en la segunda fila, con botones que caben en pantallas estrechas.
+
+En Android Studio sincroniza, compila y ejecuta. En la pantalla principal de Cursos, toca Acceder para iniciar sesión o crear una cuenta. Si estás dentro de un curso o una clase, vuelve primero a la lista principal de Cursos: como antes, la navegación inferior se oculta en las pantallas internas del curso.
+
+Verificado: estructura de ZIP, un único archivo Kotlin y conservados los destinos de navegación. No hay Android SDK local para compilar o probar en dispositivo.
