@@ -1,0 +1,20 @@
+Catequesis Android — MegaZIP 01
+
+Extraer dentro de app_2026, donde están settings.gradle.kts y la carpeta app/.
+El ZIP no tiene carpeta contenedora.
+
+Incluye iconos y pantalla de inicio del proyecto original, listado inicial de cursos
+con GET /API/v1/course/all, y dependencia de Firebase Realtime Database.
+El chat y demás pantallas todavía no se han migrado.
+
+IMPORTANTE: app/google-services.json es el MISMO archivo del proyecto anterior.
+.gitignore ya lo excluye: comprobar con git status antes de subir a GitHub.
+Si status muestra ese archivo, detener el push y agregarlo a .gitignore.
+
+El build debug usa HTTP provisionalmente para probar la API actual. El release
+usa HTTPS y no debe publicarse hasta que el certificado del servidor sea válido.
+versionCode = 7 es provisional: confirmar en Play Console que supera el último
+código publicado antes de generar un AAB de lanzamiento.
+
+Abrir en Android Studio, Sync Project with Gradle Files y ejecutar variante debug.
+Esta entrega no incluye dependencias ni contraseñas de firma antiguas.

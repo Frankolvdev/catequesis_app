@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Catequesis</string>
+    <!-- La version de lanzamiento usa HTTPS. Se cambia tras instalar un certificado valido. -->
+    <string name="api_base_url" translatable="false">https://www.catequesis.org/API/v1/</string>
 </resources>
