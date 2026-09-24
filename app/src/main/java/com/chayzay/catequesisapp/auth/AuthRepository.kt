@@ -31,7 +31,18 @@ class AuthRepository(private val baseUrl: String) {
             .put("date_created", date).put("date_modified", date).put("locale", "es"))
     }
 
-    private fun post(path: String, body: JSONObject): JSONObject {
+    /** Contratos usados por User.updateUserVolley y User.deleteUserVolley en la app original. */
+    fun update(user: UserSession, email: String, firstName: String, lastName: String, gender: String): UserSession {
+        post("user/updateApp", JSONObject().put("api_key", user.apiKey).put("email", email)
+            .put("first_name", firstName).put("last_name", lastName).put("gender", gender), user.apiKey)
+        return user.copy(email = email, firstName = firstName, lastName = lastName, gender = gender)
+    }
+
+    fun delete(user: UserSession) {
+        post("user/deleteFromApp", JSONObject().put("id_user", user.id.toString()), user.apiKey)
+    }
+
+    private fun post(path: String, body: JSONObject, authorization: String? = null): JSONObject {
         val url = URL(baseUrl.trimEnd('/') + "/" + path)
         if (url.protocol != "https") throw IllegalStateException("El acceso necesita HTTPS")
         val connection = (url.openConnection() as HttpURLConnection).apply {
@@ -41,6 +52,7 @@ class AuthRepository(private val baseUrl: String) {
             readTimeout = 12000
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
+            if (authorization != null) setRequestProperty("Authorization", authorization)
         }
         return try {
             connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }

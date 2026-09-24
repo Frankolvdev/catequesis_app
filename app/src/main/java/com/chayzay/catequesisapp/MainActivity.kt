@@ -29,6 +29,7 @@ import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
 import com.chayzay.catequesisapp.contact.ContactScreen
 import com.chayzay.catequesisapp.help.HelpUsScreen
+import com.chayzay.catequesisapp.help.LegacyInfoScreen
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
@@ -125,6 +126,7 @@ class MainActivity : ComponentActivity() {
                 var session by remember { mutableStateOf(sessionStore.load()) }
                 val progressStore = remember(session?.id) { ClassProgressStore(this@MainActivity, session?.id) }
                 var syncVersion by remember { mutableStateOf(0) }
+                var catalogContentVersion by remember { mutableStateOf(0) }
                 LaunchedEffect(session?.id) {
                     val current = session ?: return@LaunchedEffect
                     try {
@@ -158,11 +160,12 @@ class MainActivity : ComponentActivity() {
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
-                                "courses" -> key(session?.id) {
+                                "courses" -> key(session?.id, catalogContentVersion) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
                                         session, syncRepository, syncVersion, { syncVersion++ },
                                         { section = "account" }, { openContact(6) },
-                                        { section = "help_us" }) { atCatalogRoot = it }
+                                        { section = "help_us" }, { section = "help" },
+                                        { section = "information" }) { atCatalogRoot = it }
                                 }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url)) { openContact(0) }
                                 "news" -> NewsScreen(profile!!)
@@ -186,6 +189,11 @@ class MainActivity : ComponentActivity() {
                                 }
                                 "help_us" -> HelpUsScreen(session, progressStore, repository,
                                     syncRepository, getString(R.string.api_base_url)) {
+                                    section = "courses"
+                                }
+                                "help" -> LegacyInfoScreen(help = true, repository = repository) { section = "courses" }
+                                "information" -> LegacyInfoScreen(help = false, repository = repository) {
+                                    catalogContentVersion++
                                     section = "courses"
                                 }
                                 else -> PrayerScreen(profile!!) { openContact(it) }
@@ -292,6 +300,8 @@ private fun CatalogScreen(
     onOpenAccount: () -> Unit,
     onOpenContact: () -> Unit,
     onOpenHelpUs: () -> Unit,
+    onOpenHelp: () -> Unit,
+    onOpenInformation: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -503,6 +513,10 @@ private fun CatalogScreen(
                         onClick = { accountMenuOpen = false; onOpenContact() })
                     DropdownMenuItem(text = { Text("Ayúdanos") },
                         onClick = { accountMenuOpen = false; onOpenHelpUs() })
+                    DropdownMenuItem(text = { Text("Información") },
+                        onClick = { accountMenuOpen = false; onOpenInformation() })
+                    DropdownMenuItem(text = { Text("Ayuda") },
+                        onClick = { accountMenuOpen = false; onOpenHelp() })
                 }
             }
         }

@@ -63,6 +63,17 @@ class PendingRealtimeStore(context: Context) {
         prefs.edit().putString("items", output.toString()).commit()
     }
 
+    @Synchronized
+    fun clearForUser(user: UserSession) {
+        val rows = all()
+        val remaining = JSONArray()
+        for (index in 0 until rows.length()) {
+            val row = rows.optJSONObject(index) ?: continue
+            if (row.optString("sender") != user.apiKey) remaining.put(row)
+        }
+        prefs.edit().putString("items", remaining.toString()).commit()
+    }
+
     /** Firebase confirma la escritura; PHP no vuelve a recibir el mensaje al reintentar. */
     fun flush(root: DatabaseReference, user: UserSession, onResult: (Throwable?) -> Unit) {
         forUser(user).forEach { item ->

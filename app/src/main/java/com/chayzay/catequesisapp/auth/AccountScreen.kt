@@ -6,6 +6,8 @@ import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.ProgressSyncRepository
+import com.chayzay.catequesisapp.chat.ChatAccountCleanup
+import com.chayzay.catequesisapp.chat.PendingRealtimeStore
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,6 +54,13 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     var syncing by remember(session?.id) { mutableStateOf(false) }
     var syncMessage by remember(session?.id) { mutableStateOf<String?>(null) }
     var approvedPage by remember(session?.id) { mutableStateOf<Boolean?>(null) }
+    var editing by remember(session?.id) { mutableStateOf(false) }
+    var editEmail by remember(session?.id) { mutableStateOf(session?.email.orEmpty()) }
+    var editFirstName by remember(session?.id) { mutableStateOf(session?.firstName.orEmpty()) }
+    var editLastName by remember(session?.id) { mutableStateOf(session?.lastName.orEmpty()) }
+    var editGender by remember(session?.id) { mutableStateOf(session?.gender.orEmpty()) }
+    var confirmReset by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val guestStore = remember(context) { ClassProgressStore(context) }
     val scope = rememberCoroutineScope()
@@ -66,8 +75,49 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
         if (session != null) {
             Text("Sesión iniciada: ${session.displayName}")
             Text(session.email)
+            Button(onClick = { editing = !editing; message = null }) { Text("Editar perfil") }
+            if (editing) {
+                OutlinedTextField(editEmail, { editEmail = it.trim() }, label = { Text("Correo electrónico") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(editFirstName, { editFirstName = it }, label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(editLastName, { editLastName = it }, label = { Text("Apellido") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true)
+                TextButton(onClick = { editGender = if (editGender == "MALE") "FEMALE" else "MALE" }) {
+                    Text(if (editGender == "MALE") "Masculino ▾" else "Femenino ▾")
+                }
+                Button(enabled = !loading, onClick = {
+                    message = when {
+                        !Patterns.EMAIL_ADDRESS.matcher(editEmail).matches() -> "Escribe un correo válido"
+                        editFirstName.isBlank() || editLastName.isBlank() -> "Completa el nombre y el apellido"
+                        else -> null
+                    }
+                    if (message == null) scope.launch {
+                        loading = true
+                        try {
+                            val updated = withContext(Dispatchers.IO) {
+                                repository.update(session, editEmail, editFirstName.trim(), editLastName.trim(), editGender)
+                            }
+                            store.save(updated)
+                            onSessionChanged(updated)
+                            editEmail = updated.email
+                            editFirstName = updated.firstName
+                            editLastName = updated.lastName
+                            editGender = updated.gender
+                            editing = false
+                            message = "Datos actualizados"
+                        } catch (cause: Exception) {
+                            message = ApiMessages.fromException(cause, "No se pudo actualizar el perfil")
+                        } finally { loading = false }
+                    }
+                }) { Text("Guardar cambios") }
+            }
+            if (loading) CircularProgressIndicator()
+            message?.let { Text(it) }
             Button(onClick = { approvedPage = false }) { Text("Mis cursos aprobados") }
             Button(onClick = { approvedPage = true }) { Text("Mis certificados") }
+            Button(onClick = { confirmReset = true }) { Text("Reiniciar progreso local") }
+            Button(onClick = { confirmDelete = true }) { Text("Borrar cuenta") }
             Button(enabled = !syncing, onClick = {
                 syncing = true
                 syncMessage = null
@@ -170,4 +220,43 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             confirmLogout = false
         }) { Text("Cerrar sesión") } },
         dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } })
+    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false },
+        title = { Text("Reiniciar progreso") },
+        text = { Text("Se borrará el progreso guardado en este teléfono. Si tienes una cuenta, los cursos aprobados en el servidor volverán al sincronizar.") },
+        confirmButton = { TextButton(onClick = {
+            try {
+                progressStore.clearLocalProgress()
+                onSynced()
+                message = "Progreso local reiniciado"
+            } catch (cause: Exception) {
+                message = ApiMessages.fromException(cause, "No se pudo reiniciar el progreso")
+            }
+            confirmReset = false
+        }) { Text("Reiniciar") } },
+        dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancelar") } })
+    if (confirmDelete && session != null) AlertDialog(onDismissRequest = { confirmDelete = false },
+        title = { Text("¿Borrar la cuenta?") },
+        text = { Text("Esta acción elimina tu cuenta del servidor. No podrás volver a entrar con ella.") },
+        confirmButton = { TextButton(enabled = !loading, onClick = {
+            confirmDelete = false
+            scope.launch {
+                loading = true
+                try {
+                    withContext(Dispatchers.IO) { repository.delete(session) }
+                    store.clear()
+                    onSessionChanged(null)
+                    try { progressStore.clearLocalProgress() } catch (_: Exception) { }
+                    PendingRealtimeStore(context).clearForUser(session)
+                    try {
+                        withContext(Dispatchers.IO) { ChatAccountCleanup.removeConversations(session) }
+                        message = "Cuenta eliminada"
+                    } catch (_: Exception) {
+                        message = "Cuenta eliminada; no se pudieron limpiar las conversaciones del chat. Contacta al administrador."
+                    }
+                } catch (cause: Exception) {
+                    message = ApiMessages.fromException(cause, "No se pudo borrar la cuenta")
+                } finally { loading = false }
+            }
+        }) { Text("Borrar cuenta") } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
 }

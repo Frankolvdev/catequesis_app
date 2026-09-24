@@ -12,6 +12,13 @@ class ClassProgressStore(private val context: Context, private val accountId: In
     private val courseApprovedFile = File(context.filesDir, "course_approved$suffix.json")
     private val testsFile = File(context.filesDir, "test_class$suffix.json")
 
+    /** Equivale a borrar los tres JSON de progreso en la app antigua. */
+    fun clearLocalProgress() {
+        listOf(internal, courseApprovedFile, testsFile).forEach { file ->
+            if (file.exists() && !file.delete()) throw IllegalStateException("No se pudo reiniciar el progreso local")
+        }
+    }
+
     private fun tests(): JSONArray {
         if (accountId == null && !testsFile.exists()) {
             val external = context.getExternalFilesDir(null)

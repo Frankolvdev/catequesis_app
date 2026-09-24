@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="legacy_textContentHowtoApp">© 2021, Universidad de Los Hemisferios (Quito, Ecuador)&lt;br/&gt;&lt;br/&gt;
+        &lt;a href="http://www.uhemisferios.edu.ec/"&gt;www.uhemisferios.edu.ec&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;
+
+        Catequesis App es una plataforma gratuita construida para facilitar la formación cristiana de los catequistas y para procurarles herramientas didácticas en sus clases. Se procura impartir una sólida y segura formación fiel al Magisterio de la Iglesia.&lt;br/&gt;&lt;br/&gt;
+Cualquier usuario tiene acceso a todas las lecciones de los cursos disponibles en la plataforma. Cada lección contiene, a más del material de estudio, recursos on-line y off-line para hacer más divertidas sus clases: juegos, imágenes de cuadros famosos, piezas musicales, quiz, entre otros.
+Los usuarios registrados además pueden rendir los exámenes y, si demuestran que se han asimilado los conocimientos, podrán obtener sin costo un certificado de haber aprobado el curso emitido por la Universidad de Los Hemisferios.&lt;br/&gt;&lt;br/&gt;
+La App cuenta además con otras funcionalidades que un catequista agradecerá tener: información sobre el calendario litúrgico, noticias periódicas sobre la Iglesia y el Papa, chat en vivo para despejar dudas, posibilidades de solicitar información sobre charlas o retiros, peticiones de oraciones, entre otras.</string>
+  <string name="legacy_textFuncApp">Cómo funciona la app</string>
+  <string name="legacy_textFuncAppContent">Usar esta App es muy sencillo. Simplemente escoges en la pantalla inicial el curso que desees, y a la lección que te interese. Allí conviene que repases cada pestaña que contiene el material de la lección, veas los juegos y actividades on-line y off-line que te pueden ayudar a repasar la materia, y, finalmente, puedes rendir el test para demostrar lo que has aprendido. &lt;br/&gt;&lt;br/&gt;
+Si estás registrado, una vez aprobados todos los test del curso recibirás gratis un certificado de haber aprobado el curso emitido por la Universidad de Los Hemisferios. Vale la pena que te registres. El registro, como todo en esta App, es gratuito.&lt;br/&gt;&lt;br/&gt;</string>
+  <string name="legacy_textApprovedCourse">Cómo aprobar los cursos</string>
+  <string name="legacy_textApprovedCourseContent">Aprobar cursos es muy sencillo. Únicamente debes registrarte y rendir los exámenes de cada lección, que son de respuesta múltiple. Eso sí, deberás sacar 10/10 en cada lección para aprobarla, pero no te preocupes, porque el examen lo puedes repetir cuantas veces quieras hasta que lo apruebes. Cuando acabes todos los exámenes, obtendrás automáticamente un certificado de haber aprobado el curso emitido por la Universidad de Los Hemisferios.</string>
+  <string name="legacy_textCertificateInformation">Cómo obtener los certificados digitales o físicos</string>
+  <string name="legacy_textCertificateInformationContent">Si apruebas los cursos de Catequesis App podrás recibir un certificado universitario de tu participación.&lt;br/&gt;&lt;br/&gt;
+        Los certificados digitales o físicos se entregan solo a los usuarios registrados. Los certificados digitales emitidos por la Universidad de Los Hemisferios se envían automáticamente al correo del usuario cuando éste ha rendido con éxito el último examen del curso.&lt;br/&gt;&lt;br/&gt;
+Si quieres un certificado físico simplemente deberás: (i) solicitarlo a &lt;a href="mailto:catequesisapp@gmail.com"&gt;catequesisapp@gmail.com&lt;/a&gt;; (ii) rendir una pequeña prueba presencial, en la Universidad de Los Hemisferios o por Skype, el día que te lo señalen; (iii) hacer un curso de retiro de un fin de semana, en cualquier lugar; y, (iv) cancelar unos costos mínimos para la expedición y envío del diploma. Por todo lo que implica el certificado físico, el diploma acreditará más horas de estudio que el certificado digital.</string>
+  <string name="legacy_textDesarrolladoPor">© 2021, Universidad de Los Hemisferios (Quito, Ecuador)&lt;br/&gt;&lt;br/&gt;
+        &lt;a href="http://www.uhemisferios.edu.ec/"&gt;www.uhemisferios.edu.ec&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;
+
+        Desarrollo tecnológico&lt;br/&gt;
+        Ing. Daniel Alejandro Molina Monjes&lt;br/&gt;
+        &lt;a href="mailto:soporterosarioapp@gmail.com"&gt;(soporterosarioapp@gmail.com)&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;
+        Mis Aplicaciones&lt;br/&gt;
+        &lt;a href="https://play.google.com/store/apps/details?id=com.chayzay.rosarioappv2&amp;hl=es"&gt;Descarga - El Santo Rosario App&lt;/a&gt;&lt;br/&gt;
+        &lt;a href="https://play.google.com/store/apps/details?id=com.chayzay.coronilladm&amp;hl=es"&gt;Descarga - Coronilla de la Divina Misericordia&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;
+
+        Desarrollo de contenidos&lt;br/&gt;
+        Juan Carlos Riofrío Martínez-Villalba&lt;br/&gt;
+        Martín Müller Ponce&lt;br/&gt;
+        Marcelo Caicedo&lt;br/&gt;
+        Cristina Correa&lt;br/&gt;
+        Marcelo Salvador&lt;br/&gt;
+        Thomas Kroiss&lt;br/&gt;
+        Jesús Cárdenas&lt;br/&gt;
+        Joaquin Chiriboga&lt;br/&gt;
+        Luis Antonio Jiménez&lt;br/&gt;
+        Arturo Sánchezy&lt;br/&gt;&lt;br/&gt;
+
+        Diseño gráfico&lt;br/&gt;
+        Agustín Bermeo&lt;br/&gt;&lt;br/&gt;
+
+        Los contenidos de la primera comunión se han desarrollado a partir del libro Curso de Catequesis de Jaime Pujol Balcells y Jesús Sancho Bielsa, editado por EUNSA en Pamplona el año 1982.&lt;br/&gt;&lt;br/&gt;
+        Los documentos del Magisterio de la Iglesia Católica utilizados dentro de esta App, son de propiedad de sus autores, que aparecen debidamente citados.&lt;br/&gt;</string>
+</resources>

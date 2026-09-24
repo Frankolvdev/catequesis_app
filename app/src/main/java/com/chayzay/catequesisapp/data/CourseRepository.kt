@@ -23,6 +23,13 @@ data class HangmanWord(val id: Int, val word: String, val clue: String)
 data class ImageActivity(val id: Int, val classId: Int, val text: String, val imageUrl: String, val type: String)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    /** Lista descargada al iniciar y al actualizar contenido en la aplicación antigua. */
+    fun refreshContent() {
+        listOf("course", "class_course", "theme", "meta_class", "real_activities",
+            "games_activity_offline", "image_activity_offline", "lesson_class", "anecdote_lesson",
+            "catechism_lesson", "extension_lesson", "country", "civil_status", "activity_online",
+            "question", "response", "active_game").forEach { request("$it/all", allowOfflineCache = false) }
+    }
     fun getImageActivities(classId: Int, type: String): List<ImageActivity> =
         request("image_activity_offline/all").mapNotNull { item ->
             val id = item.optInt("id_image_activity_offline", -1)
@@ -204,7 +211,7 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
                 name, item.optString("content_lesson_class"))
         }.sortedWith(compareBy<Lesson> { it.number }.thenBy { it.id })
 
-    private fun request(path: String): List<JSONObject> {
+    private fun request(path: String, allowOfflineCache: Boolean = true): List<JSONObject> {
         val cache = File(cacheDir, path.replace('/', '_') + ".json")
         val body = try {
             val connection = (URL(baseUrl + path).openConnection() as HttpURLConnection).apply {
@@ -223,7 +230,7 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
             }
         } catch (error: Exception) {
             // Al perder conexión, conserva la experiencia de lectura de contenido descargado.
-            if (cache.exists()) cache.readText(Charsets.UTF_8) else throw error
+            if (allowOfflineCache && cache.exists()) cache.readText(Charsets.UTF_8) else throw error
         }
         val response = JSONObject(body)
         if (response.optString("status") != "1") {
