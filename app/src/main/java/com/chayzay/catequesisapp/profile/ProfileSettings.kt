@@ -41,7 +41,7 @@ data class ProfileSettings(val birthYear: Int, val gender: String) {
 
         fun load(context: Context): ProfileSettings? {
             val prefs = preferences(context)
-            val gender = prefs.getString(GENDER_KEY, null)
+            val gender = prefs.getString(GENDER_KEY, null) ?: return null
             val year = prefs.getString(BIRTHDATE_KEY, null)?.substringAfterLast('/')?.toIntOrNull()
             val currentYear = Calendar.getInstance().get(Calendar.YEAR)
             if (gender !in listOf("MALE", "FEMALE") || year == null ||

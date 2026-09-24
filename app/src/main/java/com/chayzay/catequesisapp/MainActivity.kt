@@ -1,6 +1,8 @@
 package com.chayzay.catequesisapp
 
 import android.os.Bundle
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import com.chayzay.catequesisapp.profile.InitialSetupScreen
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import android.text.method.LinkMovementMethod
@@ -57,6 +59,7 @@ import com.chayzay.catequesisapp.data.CourseClass
 import com.chayzay.catequesisapp.data.ClassTheme
 import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
+import com.chayzay.catequesisapp.data.CourseImageRepository
 import com.chayzay.catequesisapp.ui.theme.CatequesisTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -66,7 +69,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        val repository = CourseRepository(getString(R.string.api_base_url))
+        val repository = CourseRepository(getString(R.string.api_base_url), cacheDir)
+        val imageRepository = CourseImageRepository(cacheDir)
         setContent {
             CatequesisTheme {
                 var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
@@ -80,7 +84,7 @@ class MainActivity : ComponentActivity() {
                     selected.save(this@MainActivity)
                     profile = selected
                 }
-                else CatalogScreen(repository, profile!!)
+                else CatalogScreen(repository, imageRepository, profile!!)
             }
         }
     }
@@ -125,7 +129,11 @@ private sealed interface CatalogState {
 }
 
 @Composable
-private fun CatalogScreen(repository: CourseRepository, profile: ProfileSettings) {
+private fun CatalogScreen(
+    repository: CourseRepository,
+    imageRepository: CourseImageRepository,
+    profile: ProfileSettings
+) {
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -133,6 +141,14 @@ private fun CatalogScreen(repository: CourseRepository, profile: ProfileSettings
     var classes by remember { mutableStateOf<List<CourseClass>>(emptyList()) }
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
+    var courseImage by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(page) {
+        courseImage = null
+        val current = page
+        if (current is CatalogPage.Classes) {
+            courseImage = withContext(Dispatchers.IO) { imageRepository.load(current.course) }
+        }
+    }
 
     fun goBack() {
         page = when (val current = page) {
@@ -217,23 +233,31 @@ private fun CatalogScreen(repository: CourseRepository, profile: ProfileSettings
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
             } else if (page is CatalogPage.Classes) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
-                    // El mapa numerado y el índice de clases reproducen la pantalla anterior.
-                    result.rows.chunked(3).forEach { row ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            row.forEach { entry ->
-                                Box(modifier = Modifier.size(76.dp).padding(2.dp)
-                                    .background(Color(0xFFE1E1E1), RoundedCornerShape(3.dp))
-                                    .clickable {
-                                        val selected = classes.firstOrNull { it.id == entry.id }
-                                        val current = page as? CatalogPage.Classes
-                                        if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
-                                    }, contentAlignment = Alignment.Center) {
-                                    Text(classes.firstOrNull { it.id == entry.id }?.number?.toString() ?: "",
-                                        style = MaterialTheme.typography.titleMedium, color = Color(0xFF505050))
+                    // Fondo original del mapa de clases: path_image_solve de la API.
+                    Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
+                        courseImage?.let { bitmap ->
+                            Image(bitmap = bitmap.asImageBitmap(), contentDescription = null,
+                                contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            result.rows.chunked(3).forEach { row ->
+                                Row(horizontalArrangement = Arrangement.Center) {
+                                    row.forEach { entry ->
+                                        Text(classes.firstOrNull { it.id == entry.id }?.number?.toString() ?: "",
+                                            modifier = Modifier.padding(2.dp).size(55.dp)
+                                                .background(Color(0x88E1E1E1), RoundedCornerShape(3.dp))
+                                                .clickable {
+                                                    val selected = classes.firstOrNull { it.id == entry.id }
+                                                    val current = page as? CatalogPage.Classes
+                                                    if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
+                                                }.padding(15.dp),
+                                            color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
+                                    }
                                 }
                             }
                         }
                     }
+                    // El índice original sigue accesible debajo del mapa.
                     Text("Índice", modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
                         style = MaterialTheme.typography.titleMedium)
                     result.rows.forEach { entry ->
