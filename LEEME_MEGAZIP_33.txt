@@ -1,0 +1,13 @@
+MegaZIP 33 - revisión funcional posterior al paquete 32
+Base: ZIP catequesis_app-main (3).zip recibido de tu proyecto actualizado.
+
+Extraer DENTRO de la raíz app_2026, reemplazando los archivos. No incluye
+carpeta envoltorio ni repite el certificado SSL ya presente en el ZIP base.
+Android Studio: Sync Project with Gradle Files; Build > Make Project; Run.
+
+Corrige registro exitoso seguido de login automático fallido; homogeneiza
+mensajes de error; agrega lista de aprobados, vista de sus clases, enlace
+HTTPS a certificados y la sección Ayúdanos (solicitud de catequista, oración,
+donaciones). Revisa REVISION_FUNCIONAL_CATEQUESIS_33.md para las pruebas y
+funciones faltantes. No considerar la app finalizada hasta completar esas
+funciones y probar servidor + dispositivo.

@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,7 +48,7 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var feedback by remember(classId) { mutableStateOf("") }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getCrosswordWords(classId) } }
-        catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudo cargar el crucigrama" }
+        catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudo cargar el crucigrama") }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {

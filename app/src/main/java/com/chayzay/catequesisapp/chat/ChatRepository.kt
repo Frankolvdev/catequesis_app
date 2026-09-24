@@ -2,6 +2,7 @@ package com.chayzay.catequesisapp.chat
 
 import com.chayzay.catequesisapp.auth.UserSession
 import com.chayzay.catequesisapp.profile.ProfileSettings
+import com.chayzay.catequesisapp.data.ApiMessages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -56,7 +57,8 @@ class ChatRepository(private val baseUrl: String) {
                 throw IllegalStateException("Respuesta inválida del servidor")
             }
             if (result.optString("status") != "1" && !(allowEmpty && result.optString("status") == "11"))
-                throw IllegalStateException(result.optString("message").ifBlank { "No se completó la operación" })
+                throw IllegalStateException(ApiMessages.fromServer(result.optString("message"),
+                    "No se completó la operación"))
             result
         } finally { connection.disconnect() }
     }

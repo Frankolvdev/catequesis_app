@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
+import com.chayzay.catequesisapp.data.ApiMessages
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -112,7 +113,7 @@ private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: Str
         try {
             celebrations = withContext(Dispatchers.IO) { loadCalendar(apiBaseUrl, year) }
         } catch (e: Exception) {
-            error = e.localizedMessage ?: "No se pudo cargar el calendario"
+            error = ApiMessages.fromException(e, "No se pudo cargar el calendario")
         }
     }
     Column(Modifier.fillMaxSize()) {
@@ -152,7 +153,8 @@ private fun loadCalendar(base: String, year: Int): List<Celebration> {
     try {
         if (connection.responseCode !in 200..299) throw IllegalStateException("HTTP ${connection.responseCode}")
         val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-        if (json.has("status")) throw IllegalStateException(json.optString("message", "Error del servidor"))
+        if (json.has("status")) throw IllegalStateException(ApiMessages.fromServer(
+            json.optString("message"), "Error del servidor"))
         return json.keys().asSequence().filter { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
             .map { date ->
                 val entries = json.getJSONArray(date)

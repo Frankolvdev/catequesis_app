@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -45,7 +46,7 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
     var enlarged by remember(classId, type, index) { mutableStateOf(false) }
     LaunchedEffect(classId, type) {
         try { images = withContext(Dispatchers.IO) { repository.getImageActivities(classId, type) } }
-        catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las imágenes" }
+        catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las imágenes") }
     }
     val current = images?.getOrNull(index)
     LaunchedEffect(current?.id) {

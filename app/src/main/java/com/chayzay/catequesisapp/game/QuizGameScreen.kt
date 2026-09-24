@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +33,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var correct by remember(classId) { mutableIntStateOf(0) }
     LaunchedEffect(classId) {
         try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
-        catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las preguntas" }
+        catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
     }
     Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {

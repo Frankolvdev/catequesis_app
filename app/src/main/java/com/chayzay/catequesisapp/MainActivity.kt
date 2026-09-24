@@ -28,6 +28,7 @@ import com.chayzay.catequesisapp.auth.UserSessionStore
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
 import com.chayzay.catequesisapp.contact.ContactScreen
+import com.chayzay.catequesisapp.help.HelpUsScreen
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
@@ -97,6 +98,7 @@ import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.CourseImageRepository
 import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.ProgressSyncRepository
 import com.chayzay.catequesisapp.auth.UserSession
 import com.chayzay.catequesisapp.data.ClassGoal
@@ -159,18 +161,19 @@ class MainActivity : ComponentActivity() {
                                 "courses" -> key(session?.id) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
                                         session, syncRepository, syncVersion, { syncVersion++ },
-                                        { section = "account" }, { openContact(6) }) { atCatalogRoot = it }
+                                        { section = "account" }, { openContact(6) },
+                                        { section = "help_us" }) { atCatalogRoot = it }
                                 }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url)) { openContact(0) }
                                 "news" -> NewsScreen(profile!!)
-                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
+                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }) { signedIn ->
                                     session = signedIn
                                     if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
                                         profile?.gender != signedIn.gender) {
                                         profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
                                     }
                                 } else ChatScreen(session!!, profile!!, chatRepository)
-                                "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
+                                "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }) { signedIn ->
                                     session = signedIn
                                     if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
                                         profile?.gender != signedIn.gender) {
@@ -180,6 +183,10 @@ class MainActivity : ComponentActivity() {
                                 "contact" -> ContactScreen(profile!!, session,
                                     getString(R.string.api_base_url), contactSubject) {
                                     section = contactReturnSection
+                                }
+                                "help_us" -> HelpUsScreen(session, progressStore, repository,
+                                    syncRepository, getString(R.string.api_base_url)) {
+                                    section = "courses"
                                 }
                                 else -> PrayerScreen(profile!!) { openContact(it) }
                             }
@@ -284,6 +291,7 @@ private fun CatalogScreen(
     onSynced: () -> Unit,
     onOpenAccount: () -> Unit,
     onOpenContact: () -> Unit,
+    onOpenHelpUs: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -323,7 +331,7 @@ private fun CatalogScreen(
                         repository.getLessonExtras(lessons.map { it.id }.toSet())
                     }
                 } catch (error: Exception) {
-                    lessonExtrasError = error.localizedMessage ?: "Error del servidor"
+                    lessonExtrasError = ApiMessages.fromException(error, "Error del servidor")
                 }
             }
         }
@@ -407,7 +415,7 @@ private fun CatalogScreen(
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
-            CatalogState.Error(error.localizedMessage ?: "No se pudo conectar con el servidor")
+            CatalogState.Error(ApiMessages.fromException(error, "No se pudo conectar con el servidor"))
         }
     }
 
@@ -493,6 +501,8 @@ private fun CatalogScreen(
                         onClick = { accountMenuOpen = false; onOpenAccount() })
                     DropdownMenuItem(text = { Text("Contactar") },
                         onClick = { accountMenuOpen = false; onOpenContact() })
+                    DropdownMenuItem(text = { Text("Ayúdanos") },
+                        onClick = { accountMenuOpen = false; onOpenHelpUs() })
                 }
             }
         }

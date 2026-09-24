@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.auth.UserSession
 import com.chayzay.catequesisapp.profile.ProfileSettings
+import com.chayzay.catequesisapp.data.ApiMessages
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -78,7 +79,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
             }
             override fun onCancelled(databaseError: DatabaseError) {
                 loading = false
-                error = "No se pudieron cargar las conversaciones: ${databaseError.message}"
+                error = "No se pudieron cargar las conversaciones. Revisa la conexión."
             }
         }
         root.addValueEventListener(listener)
@@ -89,7 +90,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
         if (choosing) {
             loading = true
             try { contacts = repository.catechists(user, profile); error = "" }
-            catch (e: Exception) { error = e.message ?: "No se pudieron cargar los catequistas" }
+            catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudieron cargar los catequistas") }
             finally { loading = false }
         }
     }
@@ -99,7 +100,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
         ConversationScreen(user, contact, root, repository, outbox,
             onOutboxChanged = { problem ->
                 pendingCount = outbox.forUser(user).size
-                if (problem != null) pendingError = problem.localizedMessage ?: "Error en Firebase"
+                if (problem != null) pendingError = "No se pudo actualizar el chat en tiempo real."
             }, onBack = { selected = null })
         return
     }
@@ -153,7 +154,7 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
             }
             override fun onCancelled(databaseError: DatabaseError) {
                 loading = false
-                error = databaseError.message
+                error = "No se pudo cargar esta conversación."
             }
         }
         root.addListenerForSingleValueEvent(listener)
@@ -169,7 +170,9 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                         row.child("message").getValue(String::class.java).orEmpty())
                 }
             }
-            override fun onCancelled(databaseError: DatabaseError) { error = databaseError.message }
+            override fun onCancelled(databaseError: DatabaseError) {
+                error = "No se pudieron cargar los mensajes."
+            }
         }
         messages?.addValueEventListener(listener)
         onDispose { messages?.removeEventListener(listener) }
@@ -188,7 +191,7 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
             Button(onClick = {
                 outbox.flush(root, user) { problem ->
                     onOutboxChanged(problem)
-                    error = problem?.localizedMessage.orEmpty()
+                    error = if (problem == null) "" else "No se pudo actualizar el chat en tiempo real."
                 }
             }) { Text("Reintentar publicación") }
         }
@@ -221,9 +224,9 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                             outbox.flush(root, user) { problem ->
                                 onOutboxChanged(problem)
                                 error = if (problem == null) "" else
-                                    "Guardado en el servidor; publicación pendiente en Firebase: ${problem.localizedMessage}"
+                                    "Guardado en el servidor; pendiente de actualizar en el chat."
                             }
-                        } catch (e: Exception) { error = e.message ?: "No se pudo enviar el mensaje" }
+                        } catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo enviar el mensaje") }
                         finally { sending = false }
                     }
                 }, modifier = Modifier.padding(start = 6.dp)) { Text("Enviar") }

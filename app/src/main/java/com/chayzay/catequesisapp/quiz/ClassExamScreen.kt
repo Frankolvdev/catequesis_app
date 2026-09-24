@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.quiz
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,7 +57,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
         error = null
         questions = null
         try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
-        catch (e: Exception) { error = e.localizedMessage ?: "No se pudo cargar el examen" }
+        catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo cargar el examen") }
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -128,7 +129,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         } else if (position == 9) {
                             if (correctCount == 10) {
                                 try { store.markPassed(classId); onPassed() }
-                                catch (e: Exception) { error = "No se pudo guardar la clase: ${e.localizedMessage}"; return@Button }
+                                catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo guardar la clase"); return@Button }
                             }
                             finished = true
                         } else {

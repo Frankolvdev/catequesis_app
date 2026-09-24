@@ -1,7 +1,10 @@
 package com.chayzay.catequesisapp.auth
 
 import android.util.Patterns
+import androidx.activity.compose.BackHandler
 import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.CourseRepository
+import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.ProgressSyncRepository
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +38,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AccountScreen(session: UserSession?, repository: AuthRepository, store: UserSessionStore,
                   progressStore: ClassProgressStore, syncRepository: ProgressSyncRepository,
+                  courseRepository: CourseRepository, apiBaseUrl: String,
                   onSynced: () -> Unit, onSessionChanged: (UserSession?) -> Unit) {
     var registering by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
@@ -47,14 +51,23 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     var confirmLogout by remember { mutableStateOf(false) }
     var syncing by remember(session?.id) { mutableStateOf(false) }
     var syncMessage by remember(session?.id) { mutableStateOf<String?>(null) }
+    var approvedPage by remember(session?.id) { mutableStateOf<Boolean?>(null) }
     val context = LocalContext.current
     val guestStore = remember(context) { ClassProgressStore(context) }
     val scope = rememberCoroutineScope()
+    if (session != null && approvedPage != null) {
+        BackHandler { approvedPage = null }
+        ApprovedCoursesScreen(session, progressStore, courseRepository, syncRepository,
+            apiBaseUrl, approvedPage!!, onSynced) { approvedPage = null }
+        return
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (session != null) {
             Text("Sesión iniciada: ${session.displayName}")
             Text(session.email)
+            Button(onClick = { approvedPage = false }) { Text("Mis cursos aprobados") }
+            Button(onClick = { approvedPage = true }) { Text("Mis certificados") }
             Button(enabled = !syncing, onClick = {
                 syncing = true
                 syncMessage = null
@@ -64,7 +77,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         syncMessage = "Progreso sincronizado. ${result.recovered} registros consultados; ${result.uploaded} enviados."
                         onSynced()
                     } catch (cause: Exception) {
-                        syncMessage = cause.localizedMessage ?: "No se pudo sincronizar"
+                        syncMessage = ApiMessages.fromException(cause, "No se pudo sincronizar")
                     } finally { syncing = false }
                 }
             }) { Text("Sincronizar progreso") }
@@ -83,7 +96,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         syncMessage = "Se importó y sincronizó el progreso de invitado con esta cuenta."
                         onSynced()
                     } catch (cause: Exception) {
-                        syncMessage = cause.localizedMessage ?: "No se pudo importar el progreso"
+                        syncMessage = ApiMessages.fromException(cause, "No se pudo importar el progreso")
                     } finally { syncing = false }
                 }
             }) { Text("Importar progreso local de invitado") }
@@ -123,16 +136,24 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                 }
                 if (message == null) scope.launch {
                     loading = true
+                    var accountCreated = false
                     try {
                         val user = withContext(Dispatchers.IO) {
-                            if (registering) repository.register(email, password, firstName.trim(), lastName.trim(), gender)
+                            if (registering) {
+                                repository.register(email, password, firstName.trim(), lastName.trim(), gender)
+                                accountCreated = true
+                            }
                             repository.login(email, password)
                         }
                         store.save(user)
                         password = ""
                         onSessionChanged(user)
                     } catch (cause: Exception) {
-                        message = cause.localizedMessage ?: "No fue posible conectar con el servidor"
+                        if (accountCreated) {
+                            registering = false
+                            message = "La cuenta se creó, pero no pudimos iniciar sesión automáticamente. Intenta iniciar sesión."
+                        } else message = ApiMessages.fromException(cause,
+                            "No fue posible conectar con el servidor")
                     } finally { loading = false }
                 }
             }) { Text(if (registering) "Crear cuenta" else "Iniciar sesión") }

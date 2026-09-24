@@ -227,7 +227,8 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
         }
         val response = JSONObject(body)
         if (response.optString("status") != "1") {
-            throw IllegalStateException(response.optString("message", "No se pudieron cargar los datos"))
+            throw IllegalStateException(ApiMessages.fromServer(response.optString("message"),
+                "No se pudieron cargar los datos"))
         }
         val data = response.optJSONArray("data")
             ?: throw IllegalStateException("La respuesta no contiene la lista solicitada")

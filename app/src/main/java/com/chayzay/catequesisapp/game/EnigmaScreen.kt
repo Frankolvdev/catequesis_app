@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -47,7 +48,7 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var showHint by remember(classId, round, refresh) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getEnigmaWords(classId) } }
-        catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las palabras" }
+        catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
     }
     val word = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
     LaunchedEffect(classId, round, refresh, word?.id) {

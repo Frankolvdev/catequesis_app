@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,7 +49,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
         try {
             source = withContext(Dispatchers.IO) { repository.getTrueFalseQuestions(classId) }
                 .filter { it.type == "SIMPLE" && it.answers.any { answer -> answer.correct } }
-        } catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las preguntas" }
+        } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
     }
     LaunchedEffect(source, round) {
         val available = source.orEmpty()

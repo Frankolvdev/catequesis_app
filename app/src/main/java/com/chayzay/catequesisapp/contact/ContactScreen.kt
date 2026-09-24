@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.auth.UserSession
+import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import java.net.HttpURLConnection
 import java.net.URL
@@ -97,7 +98,7 @@ fun ContactScreen(
                     content = ""
                     message = "Mensaje enviado."
                 } catch (error: Exception) {
-                    message = error.localizedMessage ?: "No se pudo enviar el mensaje"
+                    message = ApiMessages.fromException(error, "No se pudo enviar el mensaje")
                 } finally {
                     loading = false
                 }
@@ -129,9 +130,8 @@ private fun sendContact(baseUrl: String, name: String, email: String, content: S
             throw IllegalStateException("Respuesta inválida del servidor")
         }
         if (response.optString("status") != "1") {
-            val detail = response.optString("message")
-            throw IllegalStateException(if (detail.contains("SQLSTATE", ignoreCase = true))
-                "No se pudo enviar el mensaje" else detail.ifBlank { "No se pudo enviar el mensaje" })
+            throw IllegalStateException(ApiMessages.fromServer(response.optString("message"),
+                "No se pudo enviar el mensaje"))
         }
     } finally {
         connection.disconnect()

@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,7 +52,7 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
             val questions = withContext(Dispatchers.IO) { repository.getTrueFalseQuestions(classId) }
             if (questions.isNotEmpty()) rounds = List(10) { val question = questions.random(); question to question.answers.random() }
             source = questions
-        } catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las preguntas" }
+        } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
     }
     LaunchedEffect(classId, rounds, index) {
         if (index < rounds.size) {

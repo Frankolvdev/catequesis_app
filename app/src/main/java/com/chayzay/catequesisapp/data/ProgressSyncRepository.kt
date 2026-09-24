@@ -66,7 +66,8 @@ class ProgressSyncRepository(private val baseUrl: String) {
             val status = result.optString("status")
             if (status != "1" && !(emptyStatus && status == "2" &&
                 result.optString("message").equals("No hay datos", ignoreCase = true)))
-                throw IllegalStateException(result.optString("message").ifBlank { "Error al sincronizar el progreso" })
+                throw IllegalStateException(ApiMessages.fromServer(result.optString("message"),
+                    "Error al sincronizar el progreso"))
             result
         } finally { connection.disconnect() }
     }

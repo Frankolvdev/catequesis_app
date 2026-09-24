@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -51,7 +52,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var showHint by remember(classId, round) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) } }
-        catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las palabras" }
+        catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
     }
     val current = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
