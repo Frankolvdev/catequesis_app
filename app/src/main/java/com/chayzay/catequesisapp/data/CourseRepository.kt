@@ -8,6 +8,7 @@ import java.net.URL
 data class Course(val id: Int, val name: String)
 data class CourseClass(val id: Int, val courseId: Int, val number: Int, val name: String)
 data class ClassTheme(val id: Int, val classId: Int, val number: Int, val name: String)
+data class Lesson(val id: Int, val themeId: Int, val number: Int, val name: String, val html: String)
 
 class CourseRepository(private val baseUrl: String) {
     fun getCourses(): List<Course> = request("course/all").mapNotNull { item ->
@@ -33,6 +34,16 @@ class CourseRepository(private val baseUrl: String) {
             if (parentId != classId || id < 0 || name.isEmpty()) null
             else ClassTheme(id, parentId, item.optInt("number_theme", 0), name)
         }.sortedWith(compareBy<ClassTheme> { it.number }.thenBy { it.id })
+
+    fun getLessons(themeId: Int): List<Lesson> = request("lesson_class/all")
+        .mapNotNull { item ->
+            val id = item.optInt("id_lesson_class", -1)
+            val parentId = item.optInt("id_theme", -1)
+            val name = item.optString("name_lesson_class").trim()
+            if (parentId != themeId || id < 0 || name.isEmpty()) null
+            else Lesson(id, parentId, item.optInt("number_lesson", 0),
+                name, item.optString("content_lesson_class"))
+        }.sortedWith(compareBy<Lesson> { it.number }.thenBy { it.id })
 
     private fun request(path: String): List<JSONObject> {
         val connection = (URL(baseUrl + path).openConnection() as HttpURLConnection).apply {

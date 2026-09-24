@@ -1,23 +1,35 @@
 package com.chayzay.catequesisapp
 
 import android.os.Bundle
+import android.text.method.LinkMovementMethod
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.text.HtmlCompat
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,11 +47,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.chayzay.catequesisapp.data.Course
 import com.chayzay.catequesisapp.data.CourseClass
 import com.chayzay.catequesisapp.data.ClassTheme
+import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.ui.theme.CatequesisTheme
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +105,8 @@ private sealed interface CatalogPage {
     data object Courses : CatalogPage
     data class Classes(val course: Course) : CatalogPage
     data class Themes(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class Lessons(val course: Course, val courseClass: CourseClass, val theme: ClassTheme) : CatalogPage
+    data class LessonDetail(val course: Course, val courseClass: CourseClass, val theme: ClassTheme, val lesson: Lesson) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -108,12 +124,15 @@ private fun CatalogScreen(repository: CourseRepository) {
     var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
     var classes by remember { mutableStateOf<List<CourseClass>>(emptyList()) }
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
+    var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
 
     fun goBack() {
         page = when (val current = page) {
             CatalogPage.Courses -> CatalogPage.Courses
             is CatalogPage.Classes -> CatalogPage.Courses
             is CatalogPage.Themes -> CatalogPage.Classes(current.course)
+            is CatalogPage.Lessons -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.LessonDetail -> CatalogPage.Lessons(current.course, current.courseClass, current.theme)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -134,6 +153,11 @@ private fun CatalogScreen(repository: CourseRepository) {
                     themes = withContext(Dispatchers.IO) { repository.getThemes(current.courseClass.id) }
                     themes.map { CatalogRow(it.id, "Tema ${it.number}: ${it.name}") }
                 }
+                is CatalogPage.Lessons -> {
+                    lessons = withContext(Dispatchers.IO) { repository.getLessons(current.theme.id) }
+                    lessons.map { CatalogRow(it.id, "Lección ${it.number}: ${it.name}") }
+                }
+                is CatalogPage.LessonDetail -> emptyList()
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -141,49 +165,105 @@ private fun CatalogScreen(repository: CourseRepository) {
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF6F8FF)).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text("Catequesis", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        if (page != CatalogPage.Courses) {
-            Button(onClick = { goBack() }) { Text("Atrás") }
+    val accent = Color(0xFF037AD8) // Azul de colorMale1 en la app original.
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(accent).padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (page != CatalogPage.Courses) {
+                Text("‹", modifier = Modifier.clickable { goBack() }.padding(end = 20.dp),
+                    color = Color.White, style = MaterialTheme.typography.headlineMedium)
+            }
+            Text("Catequesis", color = Color.White, style = MaterialTheme.typography.titleLarge)
         }
         val title = when (val current = page) {
             CatalogPage.Courses -> "Cursos"
-            is CatalogPage.Classes -> current.course.name
+            is CatalogPage.Classes -> "Clases de ${current.course.name}"
             is CatalogPage.Themes -> current.courseClass.name
+            is CatalogPage.Lessons -> current.theme.name
+            is CatalogPage.LessonDetail -> current.lesson.name
         }
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        when (val result = state) {
+        Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
+            style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
+        if (page is CatalogPage.LessonDetail) {
+            val detail = page as CatalogPage.LessonDetail
+            AndroidView(
+                factory = { context -> TextView(context).apply {
+                    textSize = 16f
+                    setTextColor(android.graphics.Color.DKGRAY)
+                    movementMethod = LinkMovementMethod.getInstance()
+                } },
+                update = { it.text = HtmlCompat.fromHtml(detail.lesson.html, HtmlCompat.FROM_HTML_MODE_LEGACY) },
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp)
+            )
+        } else when (val result = state) {
             CatalogState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            is CatalogState.Error -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            is CatalogState.Error -> Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("No se pudo cargar: ${result.message}")
                 Button(onClick = { reload++ }) { Text("Reintentar") }
             }
             is CatalogState.Ready -> if (result.rows.isEmpty()) {
-                Text("No hay contenido disponible en esta sección.")
+                Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
+            } else if (page is CatalogPage.Classes) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
+                    // El mapa numerado y el índice de clases reproducen la pantalla anterior.
+                    result.rows.chunked(3).forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            row.forEach { entry ->
+                                Box(modifier = Modifier.size(76.dp).padding(2.dp)
+                                    .background(Color(0xFFE1E1E1), RoundedCornerShape(3.dp))
+                                    .clickable {
+                                        val selected = classes.firstOrNull { it.id == entry.id }
+                                        val current = page as? CatalogPage.Classes
+                                        if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
+                                    }, contentAlignment = Alignment.Center) {
+                                    Text(classes.firstOrNull { it.id == entry.id }?.number?.toString() ?: "",
+                                        style = MaterialTheme.typography.titleMedium, color = Color(0xFF505050))
+                                }
+                            }
+                        }
+                    }
+                    Text("Índice", modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.titleMedium)
+                    result.rows.forEach { entry ->
+                        Text(entry.label, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                            .background(Color(0xFFF0F0F0)).clickable {
+                                val selected = classes.firstOrNull { it.id == entry.id }
+                                val current = page as? CatalogPage.Classes
+                                if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
+                            }.padding(12.dp), color = Color(0xFF505050))
+                    }
+                }
             } else {
-                LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     items(result.rows, key = { it.id }) { row ->
-                        Card(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                row.label,
-                                modifier = Modifier.fillMaxWidth().clickable {
+                        val position = result.rows.indexOf(row)
+                        val icon = listOf(R.drawable.corpus, R.drawable.rings, R.drawable.maletin,
+                            R.drawable.cloud, R.drawable.cloud, R.drawable.familia).getOrElse(position) { R.drawable.corpus }
+                        val isCourse = page == CatalogPage.Courses
+                        val itemColor = if (isCourse) accent else Color(0xFFF0F0F0)
+                        Card(modifier = Modifier.fillMaxWidth().padding(horizontal = if (isCourse) 20.dp else 12.dp, vertical = 2.dp),
+                            shape = RoundedCornerShape(4.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().background(itemColor)
+                                .clickable {
                                     when (val current = page) {
-                                        CatalogPage.Courses -> {
-                                            courses.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Classes(it) }
-                                        }
-                                        is CatalogPage.Classes -> {
-                                            classes.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Themes(current.course, it) }
-                                        }
-                                        is CatalogPage.Themes -> { /* El detalle del tema llegará en la siguiente entrega. */ }
+                                        CatalogPage.Courses -> courses.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Classes(it) }
+                                        is CatalogPage.Themes -> themes.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Lessons(current.course, current.courseClass, it) }
+                                        is CatalogPage.Lessons -> lessons.firstOrNull { it.id == row.id }?.let { page = CatalogPage.LessonDetail(current.course, current.courseClass, current.theme, it) }
+                                        else -> Unit
                                     }
-                                }.padding(20.dp),
-                                style = MaterialTheme.typography.titleMedium
-                            )
+                                }.padding(12.dp).height(if (isCourse) 48.dp else 40.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(row.label, modifier = Modifier.weight(1f), maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis, color = if (isCourse) Color.White else Color(0xFF505050),
+                                    style = MaterialTheme.typography.titleMedium)
+                                if (isCourse) Image(painterResource(icon), contentDescription = null,
+                                    modifier = Modifier.size(36.dp))
+                                else Text("›", color = Color(0xFF505050), style = MaterialTheme.typography.headlineMedium)
+                            }
                         }
                     }
                 }
