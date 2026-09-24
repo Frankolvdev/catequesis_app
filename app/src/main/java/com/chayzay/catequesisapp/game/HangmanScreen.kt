@@ -1,13 +1,16 @@
 package com.chayzay.catequesisapp.game
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -16,35 +19,43 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.HangmanWord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
 
-/** Ahorcado de la app original: palabras marcadas in_ahor, pista y seis fallos. */
+private val gallows = intArrayOf(R.drawable.ahorcado0, R.drawable.ahorcado1,
+    R.drawable.ahorcado2, R.drawable.ahorcado3, R.drawable.ahorcado4,
+    R.drawable.ahorcado5, R.drawable.ahorcado6, R.drawable.ahorcado7, R.drawable.ahorcadowin)
+
+/** Aspecto del antiguo Ahorcado: horca original y teclado QWERTY de tres filas. */
 @Composable
 fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
-    var round by remember(classId) { mutableStateOf(0) }
+    var round by remember(classId) { mutableIntStateOf(0) }
     var selected by remember(classId, round) { mutableStateOf<Set<Char>>(emptySet()) }
+    var showHint by remember(classId, round) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) } }
         catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las palabras" }
     }
     val current = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Ahorcado", fontWeight = FontWeight.Bold, color = accent)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             error != null -> Text(error!!)
             words == null -> CircularProgressIndicator()
@@ -53,24 +64,35 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 val answer = normalize(current.word)
                 val mistakes = selected.count { it !in answer }
                 val won = answer.filter { it in 'A'..'Z' }.all { it in selected }
-                val finished = won || mistakes >= 6
-                Text("Fallos: $mistakes / 6")
-                Text("Pista: ${current.clue.ifBlank { "Sin pista disponible" }}")
+                val finished = won || mistakes >= 7
                 Text(answer.map { letter ->
                     if (letter !in 'A'..'Z' || letter in selected || finished) letter.toString() else "_"
-                }.joinToString(" "), fontWeight = FontWeight.Bold)
+                }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
+                Image(painterResource(gallows[if (won) 8 else mistakes.coerceIn(0, 7)]),
+                    contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.size(130.dp))
+                if (showHint) Text(current.clue.ifBlank { "Sin pista disponible" })
+                else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
-                    Text(if (won) "¡Ganaste!" else "Se agotaron los intentos. La palabra era $answer")
-                    Button(onClick = { round++ }) { Text("Otra palabra") }
-                } else {
-                    "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".chunked(7).forEach { row ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            row.forEach { letter ->
-                                Text(letter.toString(), modifier = Modifier
-                                    .background(if (letter in selected) Color.LightGray else accent)
-                                    .clickable { if (letter !in selected) selected = selected + letter }
-                                    .padding(horizontal = 10.dp, vertical = 9.dp),
-                                    color = if (letter in selected) Color.DarkGray else Color.White)
+                    Text(if (won) "¡Ganaste!" else "La palabra era $answer", color = Color(0xFF653E26))
+                    Button(onClick = { round++ }) { Text("Jugar otra vez") }
+                }
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val keyWidth = (maxWidth / 10).coerceAtMost(32.dp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                        listOf("QWERTYUIOP", "ASDFGHJKLÑ", "ZXCVBNM").forEach { line ->
+                            Row(horizontalArrangement = Arrangement.Center) {
+                                line.forEach { letter ->
+                                    val guessed = letter in selected
+                                    Text(letter.toString(), modifier = Modifier.padding(1.dp).size(keyWidth)
+                                        .background(when {
+                                            !guessed -> Color(0xFF653E26)
+                                            letter in answer -> Color(0xFFD48656)
+                                            else -> Color.Transparent
+                                        }).clickable(enabled = !guessed && !finished) { selected = selected + letter },
+                                        color = if (guessed && letter !in answer) Color.Transparent else Color.White,
+                                        fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                }
                             }
                         }
                     }

@@ -19,6 +19,9 @@ import com.chayzay.catequesisapp.game.MatchScreen
 import com.chayzay.catequesisapp.game.EnigmaScreen
 import com.chayzay.catequesisapp.game.CrosswordScreen
 import com.chayzay.catequesisapp.game.ImageActivitiesScreen
+import com.chayzay.catequesisapp.game.GameHubScreen
+import com.chayzay.catequesisapp.game.QuizGameScreen
+import com.chayzay.catequesisapp.game.WhiteBoardScreen
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -193,6 +196,9 @@ private sealed interface CatalogPage {
     data class Enigma(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Crossword(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class ImageGame(val course: Course, val courseClass: CourseClass, val type: String) : CatalogPage
+    data class GameHub(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class QuizGame(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class Board(val course: Course, val courseClass: CourseClass) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -262,12 +268,15 @@ private fun CatalogScreen(
             is CatalogPage.Goals -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Activities -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Exam -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.Hangman -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.TrueFalse -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.Match -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.Enigma -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.Crossword -> CatalogPage.Themes(current.course, current.courseClass)
-            is CatalogPage.ImageGame -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.Hangman -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.TrueFalse -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.Match -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.Enigma -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.Crossword -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.ImageGame -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.GameHub -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.QuizGame -> CatalogPage.GameHub(current.course, current.courseClass)
+            is CatalogPage.Board -> CatalogPage.GameHub(current.course, current.courseClass)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -315,6 +324,9 @@ private fun CatalogScreen(
                 is CatalogPage.Enigma -> emptyList()
                 is CatalogPage.Crossword -> emptyList()
                 is CatalogPage.ImageGame -> emptyList()
+                is CatalogPage.GameHub -> emptyList()
+                is CatalogPage.QuizGame -> emptyList()
+                is CatalogPage.Board -> emptyList()
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -338,7 +350,7 @@ private fun CatalogScreen(
                     style = MaterialTheme.typography.headlineMedium)
             }
             if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword || page is CatalogPage.ImageGame) {
+                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
                     is CatalogPage.Lessons -> current.courseClass
@@ -378,12 +390,25 @@ private fun CatalogScreen(
             } else Text(when (page) {
                 CatalogPage.Courses -> "Invitado"
                 is CatalogPage.Classes -> "Clases"
+                is CatalogPage.GameHub -> "Actividades virtuales off-line"
+                is CatalogPage.Hangman -> "El ahorcado"
+                is CatalogPage.Crossword -> "Crucigramas"
+                is CatalogPage.Enigma -> "Enigma"
+                is CatalogPage.QuizGame -> "Preguntados (Quiz)"
+                is CatalogPage.Match -> "Hacer el match"
+                is CatalogPage.TrueFalse -> "Verdadero o Falso"
+                is CatalogPage.ImageGame -> when ((page as CatalogPage.ImageGame).type) {
+                    "IMAGES" -> "Imágenes"
+                    "IMAGES_TEXT" -> "Imagen con texto"
+                    else -> "Juego \"adivina\""
+                }
+                is CatalogPage.Board -> "Pizarra"
                 else -> "Catequesis"
             }, modifier = Modifier.align(Alignment.Center), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
         }
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword || page is CatalogPage.ImageGame) {
+            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
             val currentClass = when (val current = page) {
                 is CatalogPage.Themes -> current.courseClass
                 is CatalogPage.Lessons -> current.courseClass
@@ -427,20 +452,8 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Actividades", modifier = Modifier.clickable { page = CatalogPage.Activities(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Ahorcado", modifier = Modifier.clickable { page = CatalogPage.Hangman(currentCourse, currentClass) }
+                    Text("Juegos", modifier = Modifier.clickable { page = CatalogPage.GameHub(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Verdadero o falso", modifier = Modifier.clickable { page = CatalogPage.TrueFalse(currentCourse, currentClass) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Relacionar", modifier = Modifier.clickable { page = CatalogPage.Match(currentCourse, currentClass) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Enigma", modifier = Modifier.clickable { page = CatalogPage.Enigma(currentCourse, currentClass) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Crucigrama", modifier = Modifier.clickable { page = CatalogPage.Crossword(currentCourse, currentClass) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    listOf("Imágenes" to "IMAGES", "Imagen y texto" to "IMAGES_TEXT", "Adivina" to "GAME_ADIVINA").forEach { (name, type) ->
-                        Text(name, modifier = Modifier.clickable { page = CatalogPage.ImageGame(currentCourse, currentClass, type) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    }
                     Text("Examen", modifier = Modifier.clickable { page = CatalogPage.Exam(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
@@ -460,15 +473,46 @@ private fun CatalogScreen(
             is CatalogPage.Match -> "Relacionar respuestas"
             is CatalogPage.Enigma -> "Enigma"
             is CatalogPage.Crossword -> "Crucigrama"
+            is CatalogPage.GameHub -> "Actividades virtuales off-line"
+            is CatalogPage.QuizGame -> "Preguntados (Quiz)"
+            is CatalogPage.Board -> "Pizarra"
             is CatalogPage.ImageGame -> when (current.type) {
                 "IMAGES" -> "Imágenes"
                 "IMAGES_TEXT" -> "Imagen y texto"
                 else -> "Adivina la imagen"
             }
         }
-        if (page !is CatalogPage.Lessons) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
+        val gamePage = page is CatalogPage.GameHub || page is CatalogPage.QuizGame ||
+            page is CatalogPage.Board || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse ||
+            page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword ||
+            page is CatalogPage.ImageGame
+        if (page !is CatalogPage.Lessons && !gamePage) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
-        if (page is CatalogPage.ImageGame) {
+        if (page is CatalogPage.GameHub) {
+            val hub = page as CatalogPage.GameHub
+            GameHubScreen(accent) { key ->
+                page = when (key) {
+                    "hangman" -> CatalogPage.Hangman(hub.course, hub.courseClass)
+                    "crossword" -> CatalogPage.Crossword(hub.course, hub.courseClass)
+                    "enigma" -> CatalogPage.Enigma(hub.course, hub.courseClass)
+                    "match" -> CatalogPage.Match(hub.course, hub.courseClass)
+                    "truefalse" -> CatalogPage.TrueFalse(hub.course, hub.courseClass)
+                    "quiz" -> CatalogPage.QuizGame(hub.course, hub.courseClass)
+                    "board" -> CatalogPage.Board(hub.course, hub.courseClass)
+                    "selfie" -> {
+                        try { context.startActivity(Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)) }
+                        catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la cámara", Toast.LENGTH_SHORT).show() }
+                        page
+                    }
+                    else -> CatalogPage.ImageGame(hub.course, hub.courseClass, key)
+                }
+            }
+        } else if (page is CatalogPage.QuizGame) {
+            val game = page as CatalogPage.QuizGame
+            QuizGameScreen(game.courseClass.id, repository, accent)
+        } else if (page is CatalogPage.Board) {
+            WhiteBoardScreen()
+        } else if (page is CatalogPage.ImageGame) {
             val game = page as CatalogPage.ImageGame
             ImageActivitiesScreen(game.courseClass.id, game.type, repository, accent)
         } else if (page is CatalogPage.Crossword) {
