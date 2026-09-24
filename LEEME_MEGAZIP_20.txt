@@ -1,0 +1,5 @@
+MegaZIP 20 — Tres modalidades de imágenes originales
+
+Extrae este ZIP en la raíz de app_2026 y reemplaza archivos. En Cursos > Clase encontrarás Imágenes, Imagen y texto, y Adivina. Se consultan los registros de image_activity_offline/all de cada clase por tipo (IMAGES, IMAGES_TEXT, GAME_ADIVINA). Se descargan las URLs de imágenes originales y se guardan en la caché privada. Imagen y texto presenta el texto de su registro; Adivina avanza tras 20 segundos, como el juego antiguo. Pulsa la imagen para ampliarla y Siguiente para avanzar manualmente. Conservan su proporción con ContentScale.Fit.
+
+Prueba la compilación Android Studio y una clase que tenga registros para cada modalidad. Comprueba imágenes, texto, secuencia, ampliación, temporizador, fin y reinicio. Los archivos gráficos no están en el ZIP porque se descargan de las rutas del servidor original; si alguna URL original está caída o su SSL falla, aparecerá un mensaje en esa imagen. Los juegos no cambian la aprobación del curso.

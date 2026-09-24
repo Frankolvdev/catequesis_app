@@ -1,9 +1,12 @@
 package com.chayzay.catequesisapp.data
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.io.File
+import java.io.ByteArrayOutputStream
 
 /** Contratos originales: course/all, class_course/all y theme/all devuelven {status, data}. */
 data class Course(val id: Int, val name: String, val imageUrl: String)
@@ -17,8 +20,47 @@ data class ExamAnswer(val id: Int, val text: String, val correct: Boolean)
 data class ExamQuestion(val id: Int, val text: String, val type: String, val answers: List<ExamAnswer>)
 data class LessonExtras(val extension: List<String>, val anecdotes: List<String>, val catechism: List<String>)
 data class HangmanWord(val id: Int, val word: String, val clue: String)
+data class ImageActivity(val id: Int, val classId: Int, val text: String, val imageUrl: String, val type: String)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    fun getImageActivities(classId: Int, type: String): List<ImageActivity> =
+        request("image_activity_offline/all").mapNotNull { item ->
+            val id = item.optInt("id_image_activity_offline", -1)
+            val image = item.optString("path_image").trim().let {
+                if (baseUrl.startsWith("https://")) it.replaceFirst("http://", "https://") else it
+            }
+            if (id < 0 || item.optInt("id_class_course", -1) != classId ||
+                item.optString("type_game") != type || !image.startsWith("https://")) null
+            else ImageActivity(id, classId, item.optString("text_image"), image, type)
+        }
+
+    /** Cache privada de las imágenes originales; limita descargas para evitar agotar memoria. */
+    fun loadImageActivity(item: ImageActivity): Bitmap? {
+        val cache = File(cacheDir, "image_activity_${item.id}.img")
+        if (cache.isFile) BitmapFactory.decodeFile(cache.absolutePath)?.let { return it }
+        val connection = (URL(item.imageUrl).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 10000
+            readTimeout = 10000
+        }
+        return try {
+            if (connection.responseCode !in 200..299) return null
+            val buffer = ByteArray(8192)
+            val out = ByteArrayOutputStream()
+            connection.inputStream.use { input ->
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (out.size() + count > 6_000_000) return null
+                    out.write(buffer, 0, count)
+                }
+            }
+            val bytes = out.toByteArray()
+            val image = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+            try { cache.writeBytes(bytes) } catch (_: Exception) { }
+            image
+        } catch (_: Exception) { null }
+        finally { connection.disconnect() }
+    }
     fun getTrueFalseQuestions(classId: Int): List<ExamQuestion> {
         val themeIds = getThemes(classId).map { it.id }.toSet()
         val responses = request("response/all").mapNotNull { item ->

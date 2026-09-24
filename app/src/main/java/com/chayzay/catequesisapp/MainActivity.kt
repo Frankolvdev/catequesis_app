@@ -18,6 +18,7 @@ import com.chayzay.catequesisapp.game.TrueFalseScreen
 import com.chayzay.catequesisapp.game.MatchScreen
 import com.chayzay.catequesisapp.game.EnigmaScreen
 import com.chayzay.catequesisapp.game.CrosswordScreen
+import com.chayzay.catequesisapp.game.ImageActivitiesScreen
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -191,6 +192,7 @@ private sealed interface CatalogPage {
     data class Match(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Enigma(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Crossword(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class ImageGame(val course: Course, val courseClass: CourseClass, val type: String) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -265,6 +267,7 @@ private fun CatalogScreen(
             is CatalogPage.Match -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Enigma -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Crossword -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.ImageGame -> CatalogPage.Themes(current.course, current.courseClass)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -311,6 +314,7 @@ private fun CatalogScreen(
                 is CatalogPage.Match -> emptyList()
                 is CatalogPage.Enigma -> emptyList()
                 is CatalogPage.Crossword -> emptyList()
+                is CatalogPage.ImageGame -> emptyList()
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -334,7 +338,7 @@ private fun CatalogScreen(
                     style = MaterialTheme.typography.headlineMedium)
             }
             if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword) {
+                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword || page is CatalogPage.ImageGame) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
                     is CatalogPage.Lessons -> current.courseClass
@@ -347,6 +351,7 @@ private fun CatalogScreen(
                 is CatalogPage.Match -> current.courseClass
                 is CatalogPage.Enigma -> current.courseClass
                 is CatalogPage.Crossword -> current.courseClass
+                is CatalogPage.ImageGame -> current.courseClass
                     else -> null
                 }
                 val selectedCourse = when (val current = page) {
@@ -361,6 +366,7 @@ private fun CatalogScreen(
                 is CatalogPage.Match -> current.course
                 is CatalogPage.Enigma -> current.course
                 is CatalogPage.Crossword -> current.course
+                is CatalogPage.ImageGame -> current.course
                     else -> null
                 }
                 Column(Modifier.align(Alignment.Center).padding(start = 48.dp, end = 12.dp)) {
@@ -377,7 +383,7 @@ private fun CatalogScreen(
                 style = MaterialTheme.typography.titleMedium)
         }
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword) {
+            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse || page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword || page is CatalogPage.ImageGame) {
             val currentClass = when (val current = page) {
                 is CatalogPage.Themes -> current.courseClass
                 is CatalogPage.Lessons -> current.courseClass
@@ -390,6 +396,7 @@ private fun CatalogScreen(
                 is CatalogPage.Match -> current.courseClass
                 is CatalogPage.Enigma -> current.courseClass
                 is CatalogPage.Crossword -> current.courseClass
+                is CatalogPage.ImageGame -> current.courseClass
                 else -> null
             }
             val currentCourse = when (val current = page) {
@@ -404,6 +411,7 @@ private fun CatalogScreen(
                 is CatalogPage.Match -> current.course
                 is CatalogPage.Enigma -> current.course
                 is CatalogPage.Crossword -> current.course
+                is CatalogPage.ImageGame -> current.course
                 else -> null
             }
             if (currentCourse != null && currentClass != null) {
@@ -429,6 +437,10 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Crucigrama", modifier = Modifier.clickable { page = CatalogPage.Crossword(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    listOf("Imágenes" to "IMAGES", "Imagen y texto" to "IMAGES_TEXT", "Adivina" to "GAME_ADIVINA").forEach { (name, type) ->
+                        Text(name, modifier = Modifier.clickable { page = CatalogPage.ImageGame(currentCourse, currentClass, type) }
+                            .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    }
                     Text("Examen", modifier = Modifier.clickable { page = CatalogPage.Exam(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
@@ -448,10 +460,18 @@ private fun CatalogScreen(
             is CatalogPage.Match -> "Relacionar respuestas"
             is CatalogPage.Enigma -> "Enigma"
             is CatalogPage.Crossword -> "Crucigrama"
+            is CatalogPage.ImageGame -> when (current.type) {
+                "IMAGES" -> "Imágenes"
+                "IMAGES_TEXT" -> "Imagen y texto"
+                else -> "Adivina la imagen"
+            }
         }
         if (page !is CatalogPage.Lessons) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
-        if (page is CatalogPage.Crossword) {
+        if (page is CatalogPage.ImageGame) {
+            val game = page as CatalogPage.ImageGame
+            ImageActivitiesScreen(game.courseClass.id, game.type, repository, accent)
+        } else if (page is CatalogPage.Crossword) {
             val game = page as CatalogPage.Crossword
             CrosswordScreen(game.courseClass.id, repository, accent)
         } else if (page is CatalogPage.Enigma) {
