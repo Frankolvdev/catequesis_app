@@ -15,6 +15,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -89,20 +91,21 @@ class MainActivity : ComponentActivity() {
                 }
                 else {
                     var section by remember { mutableStateOf("courses") }
+                    var atCatalogRoot by remember { mutableStateOf(true) }
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
-                                "courses" -> CatalogScreen(repository, imageRepository, profile!!)
+                                "courses" -> CatalogScreen(repository, imageRepository, profile!!) { atCatalogRoot = it }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
                                 "news" -> NewsScreen(profile!!)
                                 else -> PrayerScreen(profile!!)
                             }
                         }
-                        Row(modifier = Modifier.fillMaxWidth().background(profile!!.accent)
+                        if (section != "courses" || atCatalogRoot) Row(modifier = Modifier.fillMaxWidth().background(profile!!.accent)
                             .padding(vertical = 7.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                             Row(modifier = Modifier.clickable { section = "news" }.padding(7.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.drawable.feed), contentDescription = null,
+                                Image(painterResource(R.mipmap.document), contentDescription = null,
                                     modifier = Modifier.size(26.dp))
                                 Text("Noticias", color = Color.White, modifier = Modifier.padding(start = 4.dp))
                             }
@@ -114,13 +117,13 @@ class MainActivity : ComponentActivity() {
                             }
                             Row(modifier = Modifier.clickable { section = "faith" }.padding(7.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.drawable.calendar), contentDescription = null,
+                                Image(painterResource(R.mipmap.vela), contentDescription = null,
                                     modifier = Modifier.size(26.dp))
                                 Text("Fe", color = Color.White, modifier = Modifier.padding(start = 6.dp))
                             }
                             Row(modifier = Modifier.clickable { section = "prayer" }.padding(7.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Image(painterResource(R.drawable.rezar), contentDescription = null,
+                                Image(painterResource(R.mipmap.prayer), contentDescription = null,
                                     modifier = Modifier.size(26.dp))
                                 Text("Oraciones", color = Color.White, modifier = Modifier.padding(start = 6.dp))
                             }
@@ -174,7 +177,8 @@ private sealed interface CatalogState {
 private fun CatalogScreen(
     repository: CourseRepository,
     imageRepository: CourseImageRepository,
-    profile: ProfileSettings
+    profile: ProfileSettings,
+    onRootChanged: (Boolean) -> Unit
 ) {
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
     var reload by remember { mutableStateOf(0) }
@@ -184,6 +188,7 @@ private fun CatalogScreen(
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
     var courseImage by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(page) { onRootChanged(page == CatalogPage.Courses) }
     LaunchedEffect(page) {
         courseImage = null
         val current = page
@@ -233,15 +238,25 @@ private fun CatalogScreen(
 
     val accent = profile.accent // Matriz original ColorView según edad y género.
     Column(modifier = Modifier.fillMaxSize().background(profile.baseColor)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().background(accent).padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (page != CatalogPage.Courses) {
-                Text("‹", modifier = Modifier.clickable { goBack() }.padding(end = 20.dp),
-                    color = Color.White, style = MaterialTheme.typography.headlineMedium)
+        Box(modifier = Modifier.fillMaxWidth().height(56.dp).background(accent)) {
+            if (page == CatalogPage.Courses) {
+                Image(painterResource(if (profile.gender == "MALE") {
+                    if (profile.age >= 18) R.drawable.man else R.drawable.boy
+                } else {
+                    if (profile.age >= 18) R.drawable.woman else R.drawable.girl
+                }), contentDescription = null,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp).size(35.dp))
+            } else {
+                Text("‹", modifier = Modifier.align(Alignment.CenterStart).clickable { goBack() }
+                    .padding(horizontal = 16.dp), color = Color.White,
+                    style = MaterialTheme.typography.headlineMedium)
             }
-            Text("Catequesis", color = Color.White, style = MaterialTheme.typography.titleLarge)
+            Text(when (page) {
+                CatalogPage.Courses -> "Invitado"
+                is CatalogPage.Classes -> "Clases"
+                else -> "Catequesis"
+            }, modifier = Modifier.align(Alignment.Center), color = Color.White,
+                style = MaterialTheme.typography.titleMedium)
         }
         val title = when (val current = page) {
             CatalogPage.Courses -> "Cursos"
@@ -275,25 +290,33 @@ private fun CatalogScreen(
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
             } else if (page is CatalogPage.Classes) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
-                    // Fondo original del mapa de clases: path_image_solve de la API.
-                    Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
-                        courseImage?.let { bitmap ->
-                            Image(bitmap = bitmap.asImageBitmap(), contentDescription = null,
-                                contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            result.rows.chunked(3).forEach { row ->
-                                Row(horizontalArrangement = Arrangement.Center) {
-                                    row.forEach { entry ->
-                                        Text(classes.firstOrNull { it.id == entry.id }?.number?.toString() ?: "",
-                                            modifier = Modifier.padding(2.dp).size(55.dp)
-                                                .background(Color(0x88E1E1E1), RoundedCornerShape(3.dp))
+                    // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
+                    // filas de 30 unidades para un ancho de 200. Se escala junto con el mapa.
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                        contentAlignment = Alignment.Center) {
+                        val mapWidth = maxWidth
+                        val rowCount = (classes.size + 4) / 5
+                        val mapHeight = mapWidth * (rowCount.coerceAtLeast(1) * 30f / 200f)
+                        Box(modifier = Modifier.width(mapWidth).height(mapHeight)) {
+                            courseImage?.let { bitmap ->
+                                Image(bitmap = bitmap.asImageBitmap(), contentDescription = null,
+                                    contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+                            }
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                classes.chunked(5).forEach { row ->
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        row.forEach { selected ->
+                                            Box(modifier = Modifier.width(mapWidth / 5).height(mapHeight / rowCount.coerceAtLeast(1))
+                                                .background(Color(0xFFE1E1E1))
+                                                .border(1.dp, Color(0xFF0A0A0A))
                                                 .clickable {
-                                                    val selected = classes.firstOrNull { it.id == entry.id }
                                                     val current = page as? CatalogPage.Classes
-                                                    if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
-                                                }.padding(15.dp),
-                                            color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
+                                                    if (current != null) page = CatalogPage.Themes(current.course, selected)
+                                                }, contentAlignment = Alignment.Center) {
+                                                Text(selected.number.toString(), color = Color(0xFF444444),
+                                                    style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
                                     }
                                 }
                             }
