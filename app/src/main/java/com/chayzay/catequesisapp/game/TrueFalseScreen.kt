@@ -1,11 +1,17 @@
 package com.chayzay.catequesisapp.game
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +33,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-/** Diez rondas, una respuesta aleatoria por pregunta y temporizador de veinte segundos. */
+private val gameRed = Color(0xFFD23131)
+private val gameGreen = Color(0xFF2E7B0B)
+
+/** Disposición original: fallos/tiempo/aciertos, pregunta al centro, dos botones abajo. */
 @Composable
 fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
@@ -35,51 +44,62 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var rounds by remember(classId) { mutableStateOf<List<Pair<ExamQuestion, ExamAnswer>>>(emptyList()) }
     var index by remember(classId) { mutableIntStateOf(0) }
     var correct by remember(classId) { mutableIntStateOf(0) }
+    var wrong by remember(classId) { mutableIntStateOf(0) }
     var seconds by remember(classId) { mutableIntStateOf(20) }
     LaunchedEffect(classId) {
         try {
             val questions = withContext(Dispatchers.IO) { repository.getTrueFalseQuestions(classId) }
-            if (questions.isNotEmpty()) rounds = List(10) {
-                val question = questions.random()
-                question to question.answers.random()
-            }
+            if (questions.isNotEmpty()) rounds = List(10) { val question = questions.random(); question to question.answers.random() }
             source = questions
         } catch (cause: Exception) { error = cause.localizedMessage ?: "No se pudieron cargar las preguntas" }
     }
     LaunchedEffect(classId, rounds, index) {
         if (index < rounds.size) {
             seconds = 20
-            repeat(20) {
-                delay(1000)
-                seconds--
-            }
-            if (index < rounds.size) index++
+            repeat(20) { delay(1000); seconds-- }
+            if (index < rounds.size) { wrong++; index++ }
         }
     }
-    Column(Modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Verdadero o falso", fontWeight = FontWeight.Bold, color = accent)
+    Column(Modifier.fillMaxSize()) {
         when {
-            error != null -> Text(error!!)
+            error != null -> Text(error!!, modifier = Modifier.padding(20.dp))
             source == null -> CircularProgressIndicator()
-            source!!.isEmpty() -> Text("Esta clase no tiene preguntas disponibles para el juego.")
+            source!!.isEmpty() -> Text("Esta clase no tiene preguntas disponibles para el juego.", modifier = Modifier.padding(20.dp))
             index >= rounds.size -> {
-                Text("Terminaste: $correct / 10")
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("Terminaste: $correct / 10", color = accent, fontWeight = FontWeight.Bold)
+                }
                 Button(onClick = {
                     rounds = List(10) { val question = source!!.random(); question to question.answers.random() }
                     index = 0
                     correct = 0
-                }) { Text("Jugar de nuevo") }
+                    wrong = 0
+                }, modifier = Modifier.fillMaxWidth()) { Text("Jugar de nuevo") }
             }
             else -> {
                 val (question, answer) = rounds[index]
-                Text("Pregunta ${index + 1} / 10  ·  Aciertos: $correct")
-                Text("00:${seconds.toString().padStart(2, '0')}")
-                Text(question.text, fontWeight = FontWeight.Bold)
-                Text(answer.text)
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(onClick = { if (answer.correct) correct++; index++ }) { Text("Verdadero") }
-                    Button(onClick = { if (!answer.correct) correct++; index++ }) { Text("Falso") }
+                Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Text("Mal\n$wrong", color = gameRed, fontWeight = FontWeight.Bold)
+                    Text("00:${seconds.toString().padStart(2, '0')}",
+                        color = if (seconds <= 10) gameRed else Color(0xFF505050), fontWeight = FontWeight.Bold)
+                    Text("Bien\n$correct", color = gameGreen, fontWeight = FontWeight.Bold)
+                }
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Column(Modifier.fillMaxWidth().padding(20.dp)
+                        .background(Color(0xFFE1E1E1), RoundedCornerShape(5.dp))
+                        .border(5.dp, Color(0xFF838383), RoundedCornerShape(5.dp)).padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(question.text, fontWeight = FontWeight.Bold)
+                        Text(answer.text)
+                    }
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    Button(onClick = { if (!answer.correct) correct++ else wrong++; index++ },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = gameRed)) { Text("Falso") }
+                    Button(onClick = { if (answer.correct) correct++ else wrong++; index++ },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = gameGreen)) { Text("Verdadero") }
                 }
             }
         }
