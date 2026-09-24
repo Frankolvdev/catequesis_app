@@ -30,6 +30,8 @@ import com.chayzay.catequesisapp.chat.ChatScreen
 import com.chayzay.catequesisapp.contact.ContactScreen
 import com.chayzay.catequesisapp.help.HelpUsScreen
 import com.chayzay.catequesisapp.help.LegacyInfoScreen
+import com.chayzay.catequesisapp.settings.AppPreferences
+import com.chayzay.catequesisapp.settings.SettingsScreen
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
@@ -80,6 +82,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -121,7 +124,8 @@ class MainActivity : ComponentActivity() {
         val chatRepository = ChatRepository(getString(R.string.api_base_url))
         val syncRepository = ProgressSyncRepository(getString(R.string.api_base_url))
         setContent {
-            CatequesisTheme {
+            var fontOption by remember { mutableIntStateOf(AppPreferences(this@MainActivity).font) }
+            CatequesisTheme(fontOption = fontOption) {
                 var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
                 var session by remember { mutableStateOf(sessionStore.load()) }
                 val progressStore = remember(session?.id) { ClassProgressStore(this@MainActivity, session?.id) }
@@ -165,18 +169,22 @@ class MainActivity : ComponentActivity() {
                                         session, syncRepository, syncVersion, { syncVersion++ },
                                         { section = "account" }, { openContact(6) },
                                         { section = "help_us" }, { section = "help" },
-                                        { section = "information" }) { atCatalogRoot = it }
+                                        { section = "information" }, { section = "settings" }) { atCatalogRoot = it }
                                 }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url)) { openContact(0) }
                                 "news" -> NewsScreen(profile!!)
-                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }) { signedIn ->
+                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }, { year ->
+                                    profile = profile?.copy(birthYear = year)?.also { it.save(this@MainActivity) }
+                                }) { signedIn ->
                                     session = signedIn
                                     if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
                                         profile?.gender != signedIn.gender) {
                                         profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
                                     }
                                 } else ChatScreen(session!!, profile!!, chatRepository)
-                                "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }) { signedIn ->
+                                "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }, { year ->
+                                    profile = profile?.copy(birthYear = year)?.also { it.save(this@MainActivity) }
+                                }) { signedIn ->
                                     session = signedIn
                                     if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
                                         profile?.gender != signedIn.gender) {
@@ -196,6 +204,7 @@ class MainActivity : ComponentActivity() {
                                     catalogContentVersion++
                                     section = "courses"
                                 }
+                                "settings" -> SettingsScreen(repository, imageRepository) { fontOption = it }
                                 else -> PrayerScreen(profile!!) { openContact(it) }
                             }
                         }
@@ -302,6 +311,7 @@ private fun CatalogScreen(
     onOpenHelpUs: () -> Unit,
     onOpenHelp: () -> Unit,
     onOpenInformation: () -> Unit,
+    onOpenSettings: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -517,6 +527,8 @@ private fun CatalogScreen(
                         onClick = { accountMenuOpen = false; onOpenInformation() })
                     DropdownMenuItem(text = { Text("Ayuda") },
                         onClick = { accountMenuOpen = false; onOpenHelp() })
+                    DropdownMenuItem(text = { Text("Ajustes") },
+                        onClick = { accountMenuOpen = false; onOpenSettings() })
                 }
             }
         }

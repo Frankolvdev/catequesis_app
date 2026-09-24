@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.sp
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.HangmanWord
+import com.chayzay.catequesisapp.settings.GameFeedback
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
@@ -45,6 +47,7 @@ private val gallows = intArrayOf(R.drawable.ahorcado0, R.drawable.ahorcado1,
 /** Aspecto del antiguo Ahorcado: horca original y teclado QWERTY de tres filas. */
 @Composable
 fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
@@ -90,7 +93,13 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                                             !guessed -> Color(0xFF653E26)
                                             letter in answer -> Color(0xFFD48656)
                                             else -> Color.Transparent
-                                        }).clickable(enabled = !guessed && !finished) { selected = selected + letter },
+                                        }).clickable(enabled = !guessed && !finished) {
+                                            val next = selected + letter
+                                            val completed = answer.filter { it in 'A'..'Z' }.all { it in next }
+                                            if (completed || next.count { it !in answer } >= 7)
+                                                GameFeedback.play(context, completed)
+                                            selected = next
+                                        },
                                         color = if (guessed && letter !in answer) Color.Transparent else Color.White,
                                         fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                 }

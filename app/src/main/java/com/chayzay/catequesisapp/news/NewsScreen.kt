@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
+import com.chayzay.catequesisapp.settings.AppPreferences
 import java.io.File
 import java.io.StringReader
 import java.net.HttpURLConnection
@@ -51,6 +52,16 @@ private data class Article(val title: String, val description: String, val date:
 @Composable
 fun NewsScreen(profile: ProfileSettings) {
     val context = LocalContext.current
+    val settings = remember(context) { AppPreferences(context) }
+    var newsEnabled by remember { mutableStateOf(settings.news) }
+    if (!newsEnabled) {
+        Column(Modifier.fillMaxSize().background(profile.baseColor).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Las noticias están desactivadas en Ajustes.")
+            Button(onClick = { settings.news = true; newsEnabled = true }) { Text("Activar noticias") }
+        }
+        return
+    }
     var refresh by remember { mutableStateOf(0) }
     var articles by remember { mutableStateOf<List<Article>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }

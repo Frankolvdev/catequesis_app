@@ -41,7 +41,8 @@ import kotlinx.coroutines.withContext
 fun AccountScreen(session: UserSession?, repository: AuthRepository, store: UserSessionStore,
                   progressStore: ClassProgressStore, syncRepository: ProgressSyncRepository,
                   courseRepository: CourseRepository, apiBaseUrl: String,
-                  onSynced: () -> Unit, onSessionChanged: (UserSession?) -> Unit) {
+                  onSynced: () -> Unit, onBirthYearChanged: (Int) -> Unit,
+                  onSessionChanged: (UserSession?) -> Unit) {
     var registering by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -54,6 +55,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     var syncing by remember(session?.id) { mutableStateOf(false) }
     var syncMessage by remember(session?.id) { mutableStateOf<String?>(null) }
     var approvedPage by remember(session?.id) { mutableStateOf<Boolean?>(null) }
+    var detailsPage by remember(session?.id) { mutableStateOf(false) }
     var editing by remember(session?.id) { mutableStateOf(false) }
     var editEmail by remember(session?.id) { mutableStateOf(session?.email.orEmpty()) }
     var editFirstName by remember(session?.id) { mutableStateOf(session?.firstName.orEmpty()) }
@@ -64,6 +66,12 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     val context = LocalContext.current
     val guestStore = remember(context) { ClassProgressStore(context) }
     val scope = rememberCoroutineScope()
+    if (session != null && detailsPage) {
+        BackHandler { detailsPage = false }
+        ProfileDetailsScreen(session, store, apiBaseUrl, { onSessionChanged(it) },
+            onBirthYearChanged) { detailsPage = false }
+        return
+    }
     if (session != null && approvedPage != null) {
         BackHandler { approvedPage = null }
         ApprovedCoursesScreen(session, progressStore, courseRepository, syncRepository,
@@ -76,6 +84,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             Text("Sesión iniciada: ${session.displayName}")
             Text(session.email)
             Button(onClick = { editing = !editing; message = null }) { Text("Editar perfil") }
+            Button(onClick = { detailsPage = true }) { Text("Foto, datos personales y contactos") }
             if (editing) {
                 OutlinedTextField(editEmail, { editEmail = it.trim() }, label = { Text("Correo electrónico") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true)

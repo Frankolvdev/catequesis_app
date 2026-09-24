@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamAnswer
 import com.chayzay.catequesisapp.data.ExamQuestion
+import com.chayzay.catequesisapp.settings.GameFeedback
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -40,6 +42,7 @@ private val gameGreen = Color(0xFF2E7B0B)
 /** Disposición original: fallos/tiempo/aciertos, pregunta al centro, dos botones abajo. */
 @Composable
 fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var rounds by remember(classId) { mutableStateOf<List<Pair<ExamQuestion, ExamAnswer>>>(emptyList()) }
@@ -58,7 +61,7 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
         if (index < rounds.size) {
             seconds = 20
             repeat(20) { delay(1000); seconds-- }
-            if (index < rounds.size) { wrong++; index++ }
+            if (index < rounds.size) { GameFeedback.timeout(context); wrong++; index++ }
         }
     }
     Column(Modifier.fillMaxSize()) {
@@ -95,10 +98,10 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     }
                 }
                 Row(Modifier.fillMaxWidth()) {
-                    Button(onClick = { if (!answer.correct) correct++ else wrong++; index++ },
+                    Button(onClick = { GameFeedback.play(context, !answer.correct); if (!answer.correct) correct++ else wrong++; index++ },
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = gameRed)) { Text("Falso") }
-                    Button(onClick = { if (answer.correct) correct++ else wrong++; index++ },
+                    Button(onClick = { GameFeedback.play(context, answer.correct); if (answer.correct) correct++ else wrong++; index++ },
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = gameGreen)) { Text("Verdadero") }
                 }

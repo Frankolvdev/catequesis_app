@@ -26,11 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.text.HtmlCompat
 import com.chayzay.catequesisapp.data.ClassTheme
 import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.LessonExtras
 import com.chayzay.catequesisapp.links.HttpsLinks
+import com.chayzay.catequesisapp.settings.AppPreferences
 import kotlinx.coroutines.launch
 
 /** Estructura de ThemeClassFragment: ideas, desarrollo y tres anexos por lección. */
@@ -83,7 +85,8 @@ fun ThemeReadingScreen(theme: ClassTheme, lessons: List<Lesson>, extras: Map<Int
 
 @Composable
 private fun ExpandableExtra(title: String, content: List<String>, lessonId: Int) {
-    var expanded by remember(lessonId, title) { mutableStateOf(false) }
+    val context = LocalContext.current
+    var expanded by remember(lessonId, title) { mutableStateOf(AppPreferences(context).extra(title)) }
     Text("$title  ${if (expanded) "−" else "+"}",
         color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium,
         modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }
@@ -96,11 +99,14 @@ private fun ExpandableExtra(title: String, content: List<String>, lessonId: Int)
 
 @Composable
 private fun HtmlBlock(html: String) {
+    val context = LocalContext.current
+    val multiplier = when (AppPreferences(context).font) { 1 -> 0.85f; 3 -> 1.2f; 4 -> 1.4f; else -> 1f }
     AndroidView(factory = { ctx -> TextView(ctx).apply {
-        textSize = 16f
+        textSize = 16f * multiplier
         setTextColor(AndroidColor.DKGRAY)
         movementMethod = LinkMovementMethod.getInstance()
     } }, update = { view ->
+        view.textSize = 16f * multiplier
         view.text = HtmlCompat.fromHtml(HttpsLinks.html(html), HtmlCompat.FROM_HTML_MODE_LEGACY)
     }, modifier = Modifier.fillMaxWidth())
 }

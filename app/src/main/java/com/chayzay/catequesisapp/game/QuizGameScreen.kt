@@ -21,12 +21,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamQuestion
+import com.chayzay.catequesisapp.settings.GameFeedback
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Trivia independiente del examen que acredita la clase. */
 @Composable
 fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var questions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var position by remember(classId) { mutableIntStateOf(0) }
@@ -50,6 +53,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 Text(question.text)
                 question.answers.forEach { answer ->
                     Button(modifier = Modifier.fillMaxWidth(), onClick = {
+                        GameFeedback.play(context, answer.correct)
                         if (answer.correct) correct++
                         position++
                     }) { Text(answer.text) }

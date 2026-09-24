@@ -25,9 +25,13 @@ data class ProfileSettings(val birthYear: Int, val gender: String) {
     val baseColor: Color get() = Color(if (gender == "MALE") 0xFF90CAF8.toInt() else 0xFFD2C3EA.toInt())
 
     fun save(context: Context) {
-        preferences(context).edit()
+        val prefs = preferences(context)
+        val previousDate = prefs.getString(BIRTHDATE_KEY, "").orEmpty()
+        val date = previousDate.takeIf { it.matches(Regex("\\d{2}/\\d{2}/$birthYear")) }
+            ?: "01/01/$birthYear"
+        prefs.edit()
             .putString(GENDER_KEY, gender)
-            .putString(BIRTHDATE_KEY, "01/01/$birthYear")
+            .putString(BIRTHDATE_KEY, date)
             .putBoolean("pref_key_init_config", true)
             .apply()
     }

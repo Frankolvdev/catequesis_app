@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamQuestion
+import com.chayzay.catequesisapp.settings.GameFeedback
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -35,6 +37,7 @@ import kotlinx.coroutines.withContext
 /** Cuatro parejas SIMPLE, respuesta correcta, verificación explícita y un minuto por ronda. */
 @Composable
 fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
@@ -103,6 +106,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 else if (solved.size == 4) Text("¡Completaste todas las parejas!")
                 else Button(enabled = selectedQuestion != null && selectedAnswer != null,
                     onClick = {
+                        GameFeedback.play(context, selectedQuestion == selectedAnswer)
                         if (selectedQuestion == selectedAnswer) solved = solved + selectedQuestion!!
                         else mistakes++
                         selectedQuestion = null

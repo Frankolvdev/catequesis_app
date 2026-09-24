@@ -23,6 +23,29 @@ data class HangmanWord(val id: Int, val word: String, val clue: String)
 data class ImageActivity(val id: Int, val classId: Int, val text: String, val imageUrl: String, val type: String)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    /** Guarda JSON y recursos gráficos del curso para abrirlo sin conexión. */
+    fun downloadCourseOffline(course: Course, images: CourseImageRepository): Int {
+        refreshContent()
+        val ids = getClasses(course.id).map { it.id }.toSet()
+        if (ids.isEmpty()) throw IllegalStateException("El curso no tiene clases para descargar")
+        if (course.imageUrl.isNotBlank() && images.load(course) == null)
+            throw IllegalStateException("No se pudo descargar la imagen del curso")
+        val rows = request("image_activity_offline/all")
+        var saved = 0
+        rows.forEach { row ->
+            val id = row.optInt("id_image_activity_offline", -1)
+            val classId = row.optInt("id_class_course", -1)
+            if (id <= 0 || classId !in ids) return@forEach
+            val url = row.optString("path_image").replaceFirst("http://", "https://")
+            if (!url.startsWith("https://")) return@forEach
+            val item = ImageActivity(id, classId, row.optString("text_image"), url,
+                row.optString("type_game"))
+            if (loadImageActivity(item) == null)
+                throw IllegalStateException("No se pudo descargar una imagen de ${course.name}")
+            saved++
+        }
+        return saved
+    }
     /** Lista descargada al iniciar y al actualizar contenido en la aplicación antigua. */
     fun refreshContent() {
         listOf("course", "class_course", "theme", "meta_class", "real_activities",

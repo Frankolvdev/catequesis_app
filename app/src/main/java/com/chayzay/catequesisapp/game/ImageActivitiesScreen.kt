@@ -2,6 +2,12 @@ package com.chayzay.catequesisapp.game
 import com.chayzay.catequesisapp.data.ApiMessages
 
 import android.graphics.Bitmap
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.SystemClock
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -32,12 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ImageActivity
+import com.chayzay.catequesisapp.settings.GameFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
 fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var images by remember(classId, type) { mutableStateOf<List<ImageActivity>?>(null) }
     var error by remember(classId, type) { mutableStateOf<String?>(null) }
     var index by remember(classId, type) { mutableIntStateOf(0) }
@@ -57,9 +67,35 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
         }
     }
     var seconds by remember(classId, type, index) { mutableIntStateOf(20) }
+    DisposableEffect(classId, type) {
+        val manager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        val sensor = manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        var acceleration = 0f
+        var current = SensorManager.GRAVITY_EARTH
+        var last = SensorManager.GRAVITY_EARTH
+        var lastShake = 0L
+        val listener = object : SensorEventListener {
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+            override fun onSensorChanged(event: SensorEvent) {
+                if (type != "GAME_ADIVINA" || images.isNullOrEmpty() || index >= images!!.size) return
+                val (x, y, z) = event.values
+                last = current
+                current = kotlin.math.sqrt(x * x + y * y + z * z)
+                acceleration = acceleration * 0.9f + (current - last)
+                val now = SystemClock.elapsedRealtime()
+                if (acceleration > 7f && now - lastShake > 900L) {
+                    lastShake = now
+                    index++
+                }
+            }
+        }
+        if (sensor != null) manager?.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+        onDispose { if (sensor != null) manager?.unregisterListener(listener) }
+    }
     LaunchedEffect(classId, type, index, images) {
         if (type == "GAME_ADIVINA" && current != null) {
             repeat(20) { delay(1000); seconds-- }
+            GameFeedback.timeout(context)
             index++
         }
     }
