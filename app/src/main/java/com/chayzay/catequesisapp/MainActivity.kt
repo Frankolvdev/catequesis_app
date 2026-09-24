@@ -17,6 +17,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,6 +68,7 @@ import com.chayzay.catequesisapp.data.ClassTheme
 import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.CourseImageRepository
+import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.ui.theme.CatequesisTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -76,6 +80,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val repository = CourseRepository(getString(R.string.api_base_url), cacheDir)
         val imageRepository = CourseImageRepository(cacheDir)
+        val progressStore = ClassProgressStore(this)
         setContent {
             CatequesisTheme {
                 var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
@@ -95,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
-                                "courses" -> CatalogScreen(repository, imageRepository, profile!!) { atCatalogRoot = it }
+                                "courses" -> CatalogScreen(repository, imageRepository, progressStore, profile!!) { atCatalogRoot = it }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
                                 "news" -> NewsScreen(profile!!)
                                 else -> PrayerScreen(profile!!)
@@ -173,10 +178,12 @@ private sealed interface CatalogState {
     data class Error(val message: String) : CatalogState
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CatalogScreen(
     repository: CourseRepository,
     imageRepository: CourseImageRepository,
+    progressStore: ClassProgressStore,
     profile: ProfileSettings,
     onRootChanged: (Boolean) -> Unit
 ) {
@@ -188,6 +195,7 @@ private fun CatalogScreen(
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
     var courseImage by remember { mutableStateOf<Bitmap?>(null) }
+    var progressRefresh by remember { mutableStateOf(0) }
     LaunchedEffect(page) { onRootChanged(page == CatalogPage.Courses) }
     LaunchedEffect(page) {
         courseImage = null
@@ -251,12 +259,56 @@ private fun CatalogScreen(
                     .padding(horizontal = 16.dp), color = Color.White,
                     style = MaterialTheme.typography.headlineMedium)
             }
-            Text(when (page) {
+            if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail) {
+                val selectedClass = when (val current = page) {
+                    is CatalogPage.Themes -> current.courseClass
+                    is CatalogPage.Lessons -> current.courseClass
+                    is CatalogPage.LessonDetail -> current.courseClass
+                    else -> null
+                }
+                val selectedCourse = when (val current = page) {
+                    is CatalogPage.Themes -> current.course
+                    is CatalogPage.Lessons -> current.course
+                    is CatalogPage.LessonDetail -> current.course
+                    else -> null
+                }
+                Column(Modifier.align(Alignment.Center).padding(start = 48.dp, end = 12.dp)) {
+                    Text(selectedCourse?.name.orEmpty(), color = Color.White,
+                        style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    Text("Clase ${selectedClass?.number}: ${selectedClass?.name.orEmpty()}",
+                        color = Color.White, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                }
+            } else Text(when (page) {
                 CatalogPage.Courses -> "Invitado"
                 is CatalogPage.Classes -> "Clases"
                 else -> "Catequesis"
             }, modifier = Modifier.align(Alignment.Center), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
+        }
+        if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail) {
+            val currentClass = when (val current = page) {
+                is CatalogPage.Themes -> current.courseClass
+                is CatalogPage.Lessons -> current.courseClass
+                is CatalogPage.LessonDetail -> current.courseClass
+                else -> null
+            }
+            val currentCourse = when (val current = page) {
+                is CatalogPage.Themes -> current.course
+                is CatalogPage.Lessons -> current.course
+                is CatalogPage.LessonDetail -> current.course
+                else -> null
+            }
+            if (currentCourse != null && currentClass != null) {
+                Row(Modifier.fillMaxWidth().background(accent).horizontalScroll(rememberScrollState())) {
+                    Text("0", modifier = Modifier.clickable { page = CatalogPage.Themes(currentCourse, currentClass) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    themes.forEach { theme ->
+                        Text(theme.number.toString(), modifier = Modifier.clickable {
+                            page = CatalogPage.Lessons(currentCourse, currentClass, theme)
+                        }.padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White, maxLines = 1)
+                    }
+                }
+            }
         }
         val title = when (val current = page) {
             CatalogPage.Courses -> "Cursos"
@@ -306,15 +358,26 @@ private fun CatalogScreen(
                                 classes.chunked(5).forEach { row ->
                                     Row(modifier = Modifier.fillMaxWidth()) {
                                         row.forEach { selected ->
+                                            val flags = remember(selected.id, progressRefresh) { progressStore.flags(selected.id) }
                                             Box(modifier = Modifier.width(mapWidth / 5).height(mapHeight / rowCount.coerceAtLeast(1))
-                                                .background(Color(0xFFE1E1E1))
+                                                .background(if (flags.completed) Color(0x55FFFFFF) else Color(0xFFE1E1E1))
                                                 .border(1.dp, Color(0xFF0A0A0A))
-                                                .clickable {
+                                                .combinedClickable(onClick = {
                                                     val current = page as? CatalogPage.Classes
-                                                    if (current != null) page = CatalogPage.Themes(current.course, selected)
-                                                }, contentAlignment = Alignment.Center) {
-                                                Text(selected.number.toString(), color = Color(0xFF444444),
+                                                    if (current != null) {
+                                                        progressStore.setVisited(selected.id, true)
+                                                        progressRefresh++
+                                                        page = CatalogPage.Themes(current.course, selected)
+                                                    }
+                                                }, onLongClick = {
+                                                    progressStore.setVisited(selected.id, false)
+                                                    progressRefresh++
+                                                }), contentAlignment = Alignment.Center) {
+                                                Text(selected.number.toString(), color = if (flags.visited) Color.Black else Color(0xFF777777),
                                                     style = MaterialTheme.typography.bodyMedium)
+                                                if (flags.completed) Image(painterResource(R.drawable.approve_class),
+                                                    contentDescription = "Clase aprobada",
+                                                    modifier = Modifier.align(Alignment.BottomCenter).size(18.dp))
                                             }
                                         }
                                     }
@@ -326,12 +389,18 @@ private fun CatalogScreen(
                     Text("Índice", modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
                         style = MaterialTheme.typography.titleMedium)
                     result.rows.forEach { entry ->
+                        val flags = remember(entry.id, progressRefresh) { progressStore.flags(entry.id) }
                         Text(entry.label, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
                             .background(Color(0xFFF0F0F0)).clickable {
                                 val selected = classes.firstOrNull { it.id == entry.id }
                                 val current = page as? CatalogPage.Classes
-                                if (selected != null && current != null) page = CatalogPage.Themes(current.course, selected)
-                            }.padding(12.dp), color = Color(0xFF505050))
+                                if (selected != null && current != null) {
+                                    progressStore.setVisited(selected.id, true)
+                                    progressRefresh++
+                                    page = CatalogPage.Themes(current.course, selected)
+                                }
+                            }.padding(12.dp), color = if (flags.visited) Color.Black else Color(0xFF777777),
+                            fontWeight = if (flags.visited) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
             } else {
