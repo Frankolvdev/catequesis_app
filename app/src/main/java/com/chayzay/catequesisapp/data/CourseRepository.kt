@@ -49,6 +49,13 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
             if (word.isBlank()) null else HangmanWord(item.optInt("id_games_activity_offline"), word,
                 item.optString("track").trim())
         }
+    fun getCrosswordWords(classId: Int): List<HangmanWord> = request("games_activity_offline/all")
+        .filter { it.optInt("id_class_course", -1) == classId && it.optString("in_crucig") == "YES" }
+        .mapNotNull { item ->
+            val word = item.optString("word_content").trim().uppercase()
+            if (word.isBlank() || word.length > 15) null else HangmanWord(
+                item.optInt("id_games_activity_offline"), word, item.optString("track").trim())
+        }
     fun getLessonExtras(lessonIds: Set<Int>): Map<Int, LessonExtras> {
         if (lessonIds.isEmpty()) return emptyMap()
         fun texts(path: String, contentField: String): Map<Int, List<String>> = request(path)
