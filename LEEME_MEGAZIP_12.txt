@@ -1,0 +1,9 @@
+Catequesis Android — MegaZIP 12. Extraer en raíz de app_2026 sobre el 11.
+
+Examen por clase: consume theme/all, question/all y response/all de la API original; filtra preguntas SIMPLE/CLOSED de temas de la clase, elige 10 preguntas y hasta 4 respuestas cada una. El alumno selecciona una o varias opciones y pulsa Calificar. Solo se concede el punto si las seleccionadas coinciden exactamente con TODAS las respuestas correctas, sin opciones erróneas. Muestra aciertos/fallos e imágenes originales según género. Con 10/10 guarda class_finished en class_course_user.json y score 10 en test_class.json (archivos privados de la app). En el mapa se descubre la pieza aprobada. Si hay menos de 10 preguntas válidas, informa que no hay suficientes, sin marcar aprobada. No escribe registros falsos en el servidor.
+
+La versión antigua también emitía aprobación de todo el curso cuando se completaban todas las clases y, con sesión, registraba el examen en el servidor. Eso sigue pendiente de implementar. El sistema visual antiguo reproducía efectos y sonidos, todavía no incluidos en esta entrega. Probar contra datos reales y revisar que ningún error del backend desbloquee piezas.
+
+Probar: abrir Clase > Examen, responder diez preguntas; con un error debe mostrar X/10 y Reintentar sin descubrir pieza; con 10/10 descubrir pieza y persistir al cerrar app. Android Studio debe compilar el proyecto: no hay SDK local en este entorno.
+
+Después de compilar y probar: git status; git add .; git commit -m "Integra examen de diez preguntas y progreso de clase"; git push origin main.

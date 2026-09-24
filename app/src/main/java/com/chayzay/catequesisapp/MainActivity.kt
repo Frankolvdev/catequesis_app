@@ -11,6 +11,7 @@ import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.prayer.PrayerScreen
 import com.chayzay.catequesisapp.faith.FaithScreen
 import com.chayzay.catequesisapp.news.NewsScreen
+import com.chayzay.catequesisapp.quiz.ClassExamScreen
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -177,6 +178,7 @@ private sealed interface CatalogPage {
     data class LessonDetail(val course: Course, val courseClass: CourseClass, val theme: ClassTheme, val lesson: Lesson) : CatalogPage
     data class Goals(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Activities(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class Exam(val course: Course, val courseClass: CourseClass) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -226,6 +228,7 @@ private fun CatalogScreen(
             is CatalogPage.LessonDetail -> CatalogPage.Lessons(current.course, current.courseClass, current.theme)
             is CatalogPage.Goals -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Activities -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.Exam -> CatalogPage.Themes(current.course, current.courseClass)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -261,6 +264,7 @@ private fun CatalogScreen(
                     realActivities.map { CatalogRow(it.id, it.content) } +
                         onlineActivities.map { CatalogRow(it.id, it.title) }
                 }
+                is CatalogPage.Exam -> emptyList()
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -284,13 +288,14 @@ private fun CatalogScreen(
                     style = MaterialTheme.typography.headlineMedium)
             }
             if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-                page is CatalogPage.Goals || page is CatalogPage.Activities) {
+                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
                     is CatalogPage.Lessons -> current.courseClass
                     is CatalogPage.LessonDetail -> current.courseClass
                     is CatalogPage.Goals -> current.courseClass
                     is CatalogPage.Activities -> current.courseClass
+                    is CatalogPage.Exam -> current.courseClass
                     else -> null
                 }
                 val selectedCourse = when (val current = page) {
@@ -299,6 +304,7 @@ private fun CatalogScreen(
                     is CatalogPage.LessonDetail -> current.course
                     is CatalogPage.Goals -> current.course
                     is CatalogPage.Activities -> current.course
+                    is CatalogPage.Exam -> current.course
                     else -> null
                 }
                 Column(Modifier.align(Alignment.Center).padding(start = 48.dp, end = 12.dp)) {
@@ -315,13 +321,14 @@ private fun CatalogScreen(
                 style = MaterialTheme.typography.titleMedium)
         }
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-            page is CatalogPage.Goals || page is CatalogPage.Activities) {
+            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
             val currentClass = when (val current = page) {
                 is CatalogPage.Themes -> current.courseClass
                 is CatalogPage.Lessons -> current.courseClass
                 is CatalogPage.LessonDetail -> current.courseClass
                 is CatalogPage.Goals -> current.courseClass
                 is CatalogPage.Activities -> current.courseClass
+                is CatalogPage.Exam -> current.courseClass
                 else -> null
             }
             val currentCourse = when (val current = page) {
@@ -330,6 +337,7 @@ private fun CatalogScreen(
                 is CatalogPage.LessonDetail -> current.course
                 is CatalogPage.Goals -> current.course
                 is CatalogPage.Activities -> current.course
+                is CatalogPage.Exam -> current.course
                 else -> null
             }
             if (currentCourse != null && currentClass != null) {
@@ -345,6 +353,8 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Actividades", modifier = Modifier.clickable { page = CatalogPage.Activities(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    Text("Examen", modifier = Modifier.clickable { page = CatalogPage.Exam(currentCourse, currentClass) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
             }
         }
@@ -356,10 +366,14 @@ private fun CatalogScreen(
             is CatalogPage.LessonDetail -> current.lesson.name
             is CatalogPage.Goals -> "Metas de la clase"
             is CatalogPage.Activities -> "Actividades de la clase"
+            is CatalogPage.Exam -> "Examen de la clase"
         }
         Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
-        if (page is CatalogPage.LessonDetail) {
+        if (page is CatalogPage.Exam) {
+            val exam = page as CatalogPage.Exam
+            ClassExamScreen(exam.courseClass.id, repository, progressStore, profile) { progressRefresh++ }
+        } else if (page is CatalogPage.LessonDetail) {
             val detail = page as CatalogPage.LessonDetail
             AndroidView(
                 factory = { context -> TextView(context).apply {

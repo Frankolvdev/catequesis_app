@@ -13,8 +13,36 @@ data class Lesson(val id: Int, val themeId: Int, val number: Int, val name: Stri
 data class ClassGoal(val id: Int, val number: Int, val content: String)
 data class ClassActivity(val id: Int, val content: String)
 data class OnlineActivity(val id: Int, val title: String, val link: String, val type: String)
+data class ExamAnswer(val id: Int, val text: String, val correct: Boolean)
+data class ExamQuestion(val id: Int, val text: String, val type: String, val answers: List<ExamAnswer>)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    fun getExam(classId: Int): List<ExamQuestion> {
+        val themeIds = getThemes(classId).map { it.id }.toSet()
+        val questions = request("question/all").filter {
+            it.optInt("id_theme", -1) in themeIds &&
+                it.optString("type_question") in setOf("SIMPLE", "CLOSED")
+        }
+        val answersByQuestion = request("response/all").mapNotNull { item ->
+            val id = item.optInt("id_response", -1)
+            val questionId = item.optInt("id_question", -1)
+            val text = item.optString("content_response").trim()
+            if (id < 0 || questionId < 0 || text.isEmpty()) null
+            else questionId to ExamAnswer(id, text, item.optString("correct_response") == "YES")
+        }.groupBy({ it.first }, { it.second })
+        return questions.mapNotNull { item ->
+            val id = item.optInt("id_question", -1)
+            val content = item.optString("content_question").trim()
+            val answers = answersByQuestion[id].orEmpty()
+            val correct = answers.filter { it.correct }
+            val incorrect = answers.filterNot { it.correct }
+            // La app original mostraba primero las correctas y rellenaba hasta cuatro.
+            val selected = (correct + incorrect.take((4 - correct.size).coerceAtLeast(0))).shuffled()
+            if (id < 0 || content.isEmpty() || correct.isEmpty() || correct.size > 4 || selected.size < 2) null
+            else ExamQuestion(id, content, item.optString("type_question"), selected)
+        }.shuffled().take(10)
+    }
+
     fun getGoals(classId: Int): List<ClassGoal> = request("meta_class/all")
         .filter { it.optInt("id_class_course", -1) == classId }
         .mapNotNull { item ->

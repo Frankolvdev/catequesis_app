@@ -2,6 +2,7 @@ package com.chayzay.catequesisapp.data
 
 import android.content.Context
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 
 /** Respeta las claves class_<id>, bold_font_view y class_finished del proyecto antiguo. */
@@ -38,6 +39,31 @@ class ClassProgressStore(private val context: Context) {
         entry.put("bold_font_view", visited)
         all.put(key, entry)
         internal.writeText(all.toString(), Charsets.UTF_8)
+    }
+
+    fun markPassed(id: Int) {
+        val all = read()
+        val key = "class_$id"
+        val entry = all.optJSONObject(key) ?: JSONObject()
+        entry.put("bold_font_view", true)
+        entry.put("class_finished", true)
+        all.put(key, entry)
+        internal.writeText(all.toString(), Charsets.UTF_8)
+
+        val file = File(context.filesDir, "test_class.json")
+        val tests = try { if (file.isFile) JSONArray(file.readText(Charsets.UTF_8)) else JSONArray() }
+            catch (_: Exception) { JSONArray() }
+        var found = false
+        for (position in 0 until tests.length()) {
+            val item = tests.optJSONObject(position) ?: continue
+            if (item.optInt("id_class_course", -1) == id) {
+                item.put("approved", 1).put("score", 10)
+                found = true
+                break
+            }
+        }
+        if (!found) tests.put(JSONObject().put("approved", 1).put("score", 10).put("id_class_course", id))
+        file.writeText(tests.toString(), Charsets.UTF_8)
     }
 
     data class Flags(val visited: Boolean, val completed: Boolean)
