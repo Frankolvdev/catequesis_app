@@ -1,0 +1,7 @@
+MegaZIP 24 — Chat original con API PHP y Firebase Realtime Database
+
+Extraer directamente en la raíz de app_2026 y reemplazar los archivos existentes. NO contiene una carpeta app_2026 ni google-services.json. La pestaña Chat abre las conversaciones existentes o, con una cuenta iniciada, permite elegir catequistas y enviar mensajes. Conserva las rutas originales: person_cateq/get_users_cateq, message/register_message y Conversations/{api_key+api_key}/Users|Messages/{datetime}. El envío guarda primero el mensaje en PHP y luego escribe la copia en Firebase usando el datetime devuelto por PHP.
+
+Necesita el mismo google-services.json del proyecto Firebase anterior en app/google-services.json, el plugin Google Services ya incluido en el proyecto y una cuenta válida del backoffice. Si Firebase tiene reglas que rechazan clientes sin Firebase Auth, Android Studio mostrará el error y habrá que revisar la configuración del proyecto original antes de cambiar reglas o credenciales.
+
+Prueba recomendada: iniciar sesión, abrir Chat, elegir un catequista, enviar un mensaje de prueba y comprobar con otra cuenta que aparece en ambos extremos y en backoffice. También comprobar error de red y volver a entrar a la conversación. No se verificó el envío real: este entorno no tiene Android SDK, credenciales de prueba ni acceso al proyecto Firebase privado.
