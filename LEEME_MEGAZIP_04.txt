@@ -1,0 +1,9 @@
+Catequesis Android — MegaZIP 04
+
+Extraer en la raíz app_2026. La pantalla de configuración inicial utiliza el mismo fondo, logo, imágenes de niño/niña/hombre/mujer, textos y matriz de colores según año de nacimiento y género del proyecto original.
+
+Se leen y escriben las preferencias originales: com.chayzay.catequesisapp_preferences / pref_key_birthdate / pref_key_gender. Si la app antigua aún conserva esos datos bajo el mismo applicationId, no aparece de nuevo la configuración inicial. Si no existen, se muestra una sola vez y se conservan para siguientes inicios.
+
+Prueba: Sync Project with Gradle Files; ejecutar debug; seleccionar año 2005 y Masculino o Femenino; verificar el color de cursos. Cerrar y abrir de nuevo: configuración no debe repetirse. Para probar otra vez sin perder la app vieja, usar un emulador limpio. No borrar datos de la app instalada si se necesitan conservar.
+
+No toca Firebase, la firma ni los iconos que ya están bien. Los módulos aún no migrados continúan pendientes de MegaZIPs posteriores.

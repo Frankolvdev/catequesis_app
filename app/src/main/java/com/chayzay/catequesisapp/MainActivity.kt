@@ -1,6 +1,8 @@
 package com.chayzay.catequesisapp
 
 import android.os.Bundle
+import com.chayzay.catequesisapp.profile.InitialSetupScreen
+import com.chayzay.catequesisapp.profile.ProfileSettings
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -67,12 +69,18 @@ class MainActivity : ComponentActivity() {
         val repository = CourseRepository(getString(R.string.api_base_url))
         setContent {
             CatequesisTheme {
+                var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
                 var showBrand by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
                     delay(900)
                     showBrand = false
                 }
-                if (showBrand) BrandScreen() else CatalogScreen(repository)
+                if (showBrand) BrandScreen()
+                else if (profile == null) InitialSetupScreen { selected ->
+                    selected.save(this@MainActivity)
+                    profile = selected
+                }
+                else CatalogScreen(repository, profile!!)
             }
         }
     }
@@ -117,7 +125,7 @@ private sealed interface CatalogState {
 }
 
 @Composable
-private fun CatalogScreen(repository: CourseRepository) {
+private fun CatalogScreen(repository: CourseRepository, profile: ProfileSettings) {
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -165,8 +173,8 @@ private fun CatalogScreen(repository: CourseRepository) {
         }
     }
 
-    val accent = Color(0xFF037AD8) // Azul de colorMale1 en la app original.
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    val accent = profile.accent // Matriz original ColorView según edad y género.
+    Column(modifier = Modifier.fillMaxSize().background(profile.baseColor)) {
         Row(
             modifier = Modifier.fillMaxWidth().background(accent).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
