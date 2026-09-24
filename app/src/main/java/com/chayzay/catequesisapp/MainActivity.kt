@@ -13,7 +13,7 @@ import com.chayzay.catequesisapp.faith.FaithScreen
 import com.chayzay.catequesisapp.news.NewsScreen
 import com.chayzay.catequesisapp.quiz.ClassExamScreen
 import com.chayzay.catequesisapp.course.ThemeReadingScreen
-import com.chayzay.catequesisapp.course.LessonVoiceControls
+import com.chayzay.catequesisapp.course.LessonDetailReading
 import com.chayzay.catequesisapp.game.HangmanScreen
 import com.chayzay.catequesisapp.game.TrueFalseScreen
 import com.chayzay.catequesisapp.game.MatchScreen
@@ -36,8 +36,6 @@ import com.chayzay.catequesisapp.settings.AppPreferences
 import com.chayzay.catequesisapp.settings.SettingsScreen
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
-import android.text.method.LinkMovementMethod
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -70,14 +68,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.text.HtmlCompat
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -670,19 +665,7 @@ private fun CatalogScreen(
             }
         } else if (page is CatalogPage.LessonDetail) {
             val detail = page as CatalogPage.LessonDetail
-            Column(Modifier.fillMaxSize()) {
-            TextButton(onClick = onOpenChat) { Text("Chat") }
-            LessonVoiceControls(listOf(detail.lesson))
-            AndroidView(
-                factory = { context -> TextView(context).apply {
-                    textSize = 16f
-                    setTextColor(android.graphics.Color.DKGRAY)
-                    movementMethod = LinkMovementMethod.getInstance()
-                } },
-                update = { it.text = HtmlCompat.fromHtml(HttpsLinks.html(detail.lesson.html), HtmlCompat.FROM_HTML_MODE_LEGACY) },
-                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp)
-            )
-            }
+            LessonDetailReading(detail.lesson, onOpenChat)
         } else if (page is CatalogPage.Lessons && state is CatalogState.Ready) {
             val current = page as CatalogPage.Lessons
             ThemeReadingScreen(current.theme, lessons, lessonExtras, lessonExtrasError, onOpenChat)

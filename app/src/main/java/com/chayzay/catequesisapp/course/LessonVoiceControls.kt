@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,42 +22,61 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import com.chayzay.catequesisapp.data.Lesson
+import com.chayzay.catequesisapp.links.HttpsLinks
 import java.util.Locale
 
-/** Controles de voz originales: reproducir, detener, anterior y siguiente. */
+/** Fragmentos leídos en el mismo orden en que se muestran; los anexos cerrados se omiten. */
+data class ReadingFocus(val lessonId: Int, val section: String, val paragraph: Int)
+data class VoicePassage(val focus: ReadingFocus, val text: String)
+
+fun readingParagraphs(html: String): List<String> = HtmlCompat.fromHtml(
+    HttpsLinks.html(html), HtmlCompat.FROM_HTML_MODE_LEGACY
+).toString().split('\n').map { it.trim() }.filter { it.isNotBlank() }
+
+fun lessonVoicePassages(lessons: List<Lesson>): List<VoicePassage> = lessons.flatMap { lesson ->
+    readingParagraphs(lesson.html).mapIndexed { index, text ->
+        VoicePassage(ReadingFocus(lesson.id, "main", index), text)
+    }
+}
+
+/** Lectura por párrafos, con selección, resaltado y navegación por contenido visible. */
 @Composable
-fun LessonVoiceControls(lessons: List<Lesson>) {
+fun LessonVoiceControls(
+    passages: List<VoicePassage>,
+    onFocus: (ReadingFocus?) -> Unit = {},
+    requestedFocus: ReadingFocus? = null,
+    requestNumber: Int = 0
+) {
     val context = LocalContext.current
     var reader by remember { mutableStateOf<TextToSpeech?>(null) }
     var ready by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
-    var position by remember(lessons.map { it.id }) { mutableIntStateOf(0) }
+    var position by remember(passages.map { it.focus }) { mutableIntStateOf(0) }
     var segment by remember { mutableIntStateOf(0) }
+    var consumedRequest by remember { mutableIntStateOf(0) }
     var message by remember { mutableStateOf("") }
-    fun speakAt(target: Int) {
-        val lesson = lessons.getOrNull(target) ?: return
+    fun speakAt(index: Int) {
+        val item = passages.getOrNull(index) ?: return
         val engine = reader ?: return
-        val text = "${lesson.name}. " + HtmlCompat.fromHtml(lesson.html,
-            HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim()
-        if (text.isBlank()) { message = "Esta lección no contiene texto para leer"; return }
         val language = engine.setLanguage(Locale("es", "ES"))
         if (language == TextToSpeech.LANG_MISSING_DATA || language == TextToSpeech.LANG_NOT_SUPPORTED) {
             message = "Instala una voz en español para escuchar la lección"
+            playing = false
             return
         }
         segment = 0
-        if (engine.speak(speechSegments(text).first(), TextToSpeech.QUEUE_FLUSH,
-                null, "catequesis-lesson-$target-0") == TextToSpeech.ERROR) {
+        if (engine.speak(speechSegments(item.text).first(), TextToSpeech.QUEUE_FLUSH,
+                null, "catequesis-read-$index-0") == TextToSpeech.ERROR) {
             message = "No se pudo reproducir el contenido"
             playing = false
         } else {
-            position = target
+            position = index
             playing = true
-            message = "Escuchando ${target + 1} de ${lessons.size}"
+            onFocus(item.focus)
+            message = "Escuchando ${index + 1} de ${passages.size}"
         }
     }
-    // Al cambiar de tema se detiene la voz anterior y se enlazan las lecciones nuevas.
-    DisposableEffect(context, lessons.map { it.id }) {
+    DisposableEffect(context, passages.map { it.focus }) {
         val handler = Handler(Looper.getMainLooper())
         val engine = TextToSpeech(context.applicationContext) { status ->
             handler.post {
@@ -69,21 +89,22 @@ fun LessonVoiceControls(lessons: List<Lesson>) {
             override fun onStart(utteranceId: String?) = Unit
             override fun onDone(utteranceId: String?) {
                 handler.post {
-                    if (!playing || utteranceId != "catequesis-lesson-$position-$segment") return@post
-                    val lesson = lessons.getOrNull(position) ?: return@post
-                    val text = "${lesson.name}. " + HtmlCompat.fromHtml(lesson.html,
-                        HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim()
-                    val chunks = speechSegments(text)
+                    if (!playing || utteranceId != "catequesis-read-$position-$segment") return@post
+                    val chunks = passages.getOrNull(position)?.let { speechSegments(it.text) } ?: return@post
                     if (segment < chunks.lastIndex) {
                         segment++
                         reader?.speak(chunks[segment], TextToSpeech.QUEUE_FLUSH,
-                            null, "catequesis-lesson-$position-$segment")
-                    } else if (position < lessons.lastIndex) speakAt(position + 1)
-                    else { playing = false; message = "Lectura terminada" }
+                            null, "catequesis-read-$position-$segment")
+                    } else if (position < passages.lastIndex) speakAt(position + 1)
+                    else { playing = false; onFocus(null); message = "Lectura terminada" }
                 }
             }
             override fun onError(utteranceId: String?) {
-                handler.post { playing = false; message = "No se pudo terminar la lectura" }
+                handler.post {
+                    if (playing && utteranceId == "catequesis-read-$position-$segment") {
+                        playing = false; onFocus(null); message = "No se pudo terminar la lectura"
+                    }
+                }
             }
         })
         onDispose {
@@ -92,16 +113,25 @@ fun LessonVoiceControls(lessons: List<Lesson>) {
             reader = null
             engine.stop()
             engine.shutdown()
+            onFocus(null)
+        }
+    }
+    LaunchedEffect(requestNumber, ready) {
+        if (requestNumber > consumedRequest && ready && requestedFocus != null) {
+            val index = passages.indexOfFirst { it.focus == requestedFocus }
+            if (index >= 0) { consumedRequest = requestNumber; speakAt(index) }
         }
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Button(enabled = ready && lessons.isNotEmpty(), onClick = {
+        Button(enabled = ready && passages.isNotEmpty(), onClick = {
             val engine = reader ?: return@Button
-            if (playing) { playing = false; engine.stop(); message = "Lectura detenida" }
-            else speakAt(position)
+            if (playing) {
+                playing = false; engine.stop(); onFocus(null); message = "Lectura detenida"
+            } else speakAt(position.coerceIn(passages.indices))
         }) { Text(if (playing) "Detener" else "Escuchar") }
-        Button(enabled = ready && position > 0, onClick = { speakAt(position - 1) }) { Text("‹") }
-        Button(enabled = ready && position < lessons.lastIndex, onClick = { speakAt(position + 1) }) { Text("›") }
+        Button(enabled = ready && playing && position > 0, onClick = { speakAt(position - 1) }) { Text("‹") }
+        Button(enabled = ready && playing && position < passages.lastIndex,
+            onClick = { speakAt(position + 1) }) { Text("›") }
     }
     if (message.isNotBlank()) Text(message)
 }
@@ -112,8 +142,7 @@ private fun speechSegments(content: String): List<String> {
     content.split(Regex("\\s+")).forEach { word ->
         if (word.isEmpty()) return@forEach
         if (chunk.length + word.length + 1 > 2500 && chunk.isNotEmpty()) {
-            result.add(chunk.toString())
-            chunk.clear()
+            result.add(chunk.toString()); chunk.clear()
         }
         if (chunk.isNotEmpty()) chunk.append(' ')
         chunk.append(word.take(2500))
