@@ -69,6 +69,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,6 +92,8 @@ import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.CourseImageRepository
 import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.ProgressSyncRepository
+import com.chayzay.catequesisapp.auth.UserSession
 import com.chayzay.catequesisapp.data.ClassGoal
 import com.chayzay.catequesisapp.data.ClassActivity
 import com.chayzay.catequesisapp.data.OnlineActivity
@@ -103,14 +108,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val repository = CourseRepository(getString(R.string.api_base_url), cacheDir)
         val imageRepository = CourseImageRepository(cacheDir)
-        val progressStore = ClassProgressStore(this)
         val sessionStore = UserSessionStore(this)
         val authRepository = AuthRepository(getString(R.string.api_base_url))
         val chatRepository = ChatRepository(getString(R.string.api_base_url))
+        val syncRepository = ProgressSyncRepository(getString(R.string.api_base_url))
         setContent {
             CatequesisTheme {
                 var profile by remember { mutableStateOf(ProfileSettings.load(this@MainActivity)) }
                 var session by remember { mutableStateOf(sessionStore.load()) }
+                val progressStore = remember(session?.id) { ClassProgressStore(this@MainActivity, session?.id) }
+                var syncVersion by remember { mutableStateOf(0) }
+                LaunchedEffect(session?.id) {
+                    val current = session ?: return@LaunchedEffect
+                    try {
+                        syncRepository.sync(current, progressStore)
+                        syncVersion++
+                    } catch (_: Exception) { /* Reintentar en Cuenta sin perder datos locales. */ }
+                }
                 var showBrand by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
                     delay(900)
@@ -127,13 +141,16 @@ class MainActivity : ComponentActivity() {
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
-                                "courses" -> CatalogScreen(repository, imageRepository, progressStore, profile!!) { atCatalogRoot = it }
+                                "courses" -> key(session?.id) {
+                                    CatalogScreen(repository, imageRepository, progressStore, profile!!,
+                                        session, syncRepository, syncVersion, { syncVersion++ }) { atCatalogRoot = it }
+                                }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
                                 "news" -> NewsScreen(profile!!)
-                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore) { signedIn ->
+                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
                                     session = signedIn
                                 } else ChatScreen(session!!, profile!!, chatRepository)
-                                "account" -> AccountScreen(session, authRepository, sessionStore) { signedIn ->
+                                "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
                                     session = signedIn
                                     if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
                                         profile?.gender != signedIn.gender) {
@@ -238,9 +255,14 @@ private fun CatalogScreen(
     imageRepository: CourseImageRepository,
     progressStore: ClassProgressStore,
     profile: ProfileSettings,
+    user: UserSession?,
+    syncRepository: ProgressSyncRepository,
+    syncVersion: Int,
+    onSynced: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val syncScope = rememberCoroutineScope()
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -304,7 +326,13 @@ private fun CatalogScreen(
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
 
-    LaunchedEffect(page, reload) {
+    LaunchedEffect(page, courseApproved, user?.id) {
+        if (page is CatalogPage.Classes && courseApproved && user != null) {
+            try { syncRepository.sync(user, progressStore) }
+            catch (_: Exception) { /* El progreso aprobado permanece guardado localmente. */ }
+        }
+    }
+    LaunchedEffect(page, reload, syncVersion) {
         state = CatalogState.Loading
         state = try {
             val rows = when (val current = page) {
@@ -555,7 +583,13 @@ private fun CatalogScreen(
             HangmanScreen(game.courseClass.id, repository, accent)
         } else if (page is CatalogPage.Exam) {
             val exam = page as CatalogPage.Exam
-            ClassExamScreen(exam.courseClass.id, repository, progressStore, profile) { progressRefresh++ }
+            ClassExamScreen(exam.courseClass.id, repository, progressStore, profile) {
+                progressRefresh++
+                if (user != null) syncScope.launch {
+                    try { syncRepository.sync(user, progressStore); onSynced() }
+                    catch (_: Exception) { /* Se mantiene local; reintentar en Cuenta. */ }
+                }
+            }
         } else if (page is CatalogPage.LessonDetail) {
             val detail = page as CatalogPage.LessonDetail
             AndroidView(

@@ -1,0 +1,11 @@
+MegaZIP 25 — Progreso por cuenta y sincronización con API original
+
+Descomprimir en la raíz de app_2026 y reemplazar archivos. Contiene cinco archivos Kotlin y este LEEME, sin carpeta app_2026.
+
+Al iniciar sesión, la aplicación descarga las clases y cursos aprobados desde test_class/all y course_approved/all; conserva los aprobados locales y envía solamente los ausentes mediante /manipulate. Vuelve a intentar al aprobar un examen, al abrir una clase de un curso aprobado o al pulsar Sincronizar progreso en Cuenta. Cada cuenta ahora usa archivos de progreso local propios; los archivos anteriores permanecen guardados como progreso de invitado. En Cuenta hay un botón explícito para importar y subir las aprobaciones antiguas del invitado a la cuenta actual. Esa importación no borra los archivos del invitado.
+
+Prueba: (1) iniciar sesión y abrir Cuenta > Sincronizar progreso; (2) aprobar un examen 10/10 y comprobar que al reinstalar/usar otro dispositivo con la misma cuenta se recupera; (3) comprobar un curso terminado; (4) cambiar de cuenta y verificar que no aparece el progreso local de la otra cuenta; (5) si había progreso antes de este ZIP, importar el progreso del invitado de forma explícita. Conserva un respaldo de datos y prueba con cuentas de prueba: el backend de producción no se pudo validar aquí.
+
+Requiere API HTTPS funcional, credenciales reales y endpoints test_class/all, test_class/manipulate, course_approved/all y course_approved/manipulate. Si falla la red, las aprobaciones locales quedan almacenadas y el botón en Cuenta muestra el error para reintentar. La sincronización sólo comparte clases con examen aprobado 10/10 y cursos aprobados; las marcas de contenido leído permanecen locales como en la app anterior.
+
+Verificación: estructura del ZIP y comparación de contratos con los archivos PHP/Java antiguos. No hay Android SDK disponible para compilar ni cuentas para probar la API en producción.

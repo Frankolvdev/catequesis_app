@@ -1,6 +1,9 @@
 package com.chayzay.catequesisapp.auth
 
 import android.util.Patterns
+import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.ProgressSyncRepository
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,7 +34,8 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun AccountScreen(session: UserSession?, repository: AuthRepository, store: UserSessionStore,
-                  onSessionChanged: (UserSession?) -> Unit) {
+                  progressStore: ClassProgressStore, syncRepository: ProgressSyncRepository,
+                  onSynced: () -> Unit, onSessionChanged: (UserSession?) -> Unit) {
     var registering by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -41,12 +45,50 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var confirmLogout by remember { mutableStateOf(false) }
+    var syncing by remember(session?.id) { mutableStateOf(false) }
+    var syncMessage by remember(session?.id) { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val guestStore = remember(context) { ClassProgressStore(context) }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (session != null) {
             Text("Sesión iniciada: ${session.displayName}")
             Text(session.email)
+            Button(enabled = !syncing, onClick = {
+                syncing = true
+                syncMessage = null
+                scope.launch {
+                    try {
+                        val result = syncRepository.sync(session, progressStore)
+                        syncMessage = "Progreso sincronizado. ${result.recovered} registros consultados; ${result.uploaded} enviados."
+                        onSynced()
+                    } catch (cause: Exception) {
+                        syncMessage = cause.localizedMessage ?: "No se pudo sincronizar"
+                    } finally { syncing = false }
+                }
+            }) { Text("Sincronizar progreso") }
+            val hasGuestProgress = remember(session.id) {
+                guestStore.approvedTests().isNotEmpty() || guestStore.approvedCourses().isNotEmpty()
+            }
+            if (hasGuestProgress) Button(enabled = !syncing, onClick = {
+                syncing = true
+                syncMessage = null
+                scope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            progressStore.mergeApprovals(guestStore.approvedTests(), guestStore.approvedCourses())
+                            syncRepository.sync(session, progressStore)
+                        }
+                        syncMessage = "Se importó y sincronizó el progreso de invitado con esta cuenta."
+                        onSynced()
+                    } catch (cause: Exception) {
+                        syncMessage = cause.localizedMessage ?: "No se pudo importar el progreso"
+                    } finally { syncing = false }
+                }
+            }) { Text("Importar progreso local de invitado") }
+            if (syncing) CircularProgressIndicator()
+            syncMessage?.let { Text(it) }
             Button(onClick = { confirmLogout = true }) { Text("Cerrar sesión") }
         } else {
             Text(if (registering) "Registrar usuario" else "Iniciar sesión")

@@ -6,13 +6,14 @@ import org.json.JSONArray
 import java.io.File
 
 /** Respeta las claves class_<id>, bold_font_view y class_finished del proyecto antiguo. */
-class ClassProgressStore(private val context: Context) {
-    private val internal = File(context.filesDir, "class_course_user.json")
-    private val courseApprovedFile = File(context.filesDir, "course_approved.json")
-    private val testsFile = File(context.filesDir, "test_class.json")
+class ClassProgressStore(private val context: Context, private val accountId: Int? = null) {
+    private val suffix = accountId?.takeIf { it > 0 }?.let { "_account_$it" }.orEmpty()
+    private val internal = File(context.filesDir, "class_course_user$suffix.json")
+    private val courseApprovedFile = File(context.filesDir, "course_approved$suffix.json")
+    private val testsFile = File(context.filesDir, "test_class$suffix.json")
 
     private fun tests(): JSONArray {
-        if (!testsFile.exists()) {
+        if (accountId == null && !testsFile.exists()) {
             val external = context.getExternalFilesDir(null)
             val legacy = listOfNotNull(
                 external?.resolve("Android/data/${context.packageName}/db/json/test_class.json"),
@@ -26,7 +27,7 @@ class ClassProgressStore(private val context: Context) {
     }
 
     private fun courseApprovals(): JSONArray {
-        if (!courseApprovedFile.exists()) {
+        if (accountId == null && !courseApprovedFile.exists()) {
             val external = context.getExternalFilesDir(null)
             val legacy = listOfNotNull(
                 external?.resolve("Android/data/${context.packageName}/db/json/course_approved.json"),
@@ -60,7 +61,7 @@ class ClassProgressStore(private val context: Context) {
     }
 
     private fun read(): JSONObject {
-        if (!internal.exists()) {
+        if (accountId == null && !internal.exists()) {
             // Archivos.getExternalBase de la app vieja cambió su base en Android 10.
             val external = context.getExternalFilesDir(null)
             val legacy = listOfNotNull(
@@ -118,6 +119,34 @@ class ClassProgressStore(private val context: Context) {
         }
         if (!found) tests.put(JSONObject().put("approved", 1).put("score", 10).put("id_class_course", id))
         testsFile.writeText(tests.toString(), Charsets.UTF_8)
+    }
+
+    /** Sólo se comparten aprobaciones; nunca se reemplaza una aprobación existente por cero. */
+    fun approvedTests(): Set<Int> {
+        val rows = tests()
+        return (0 until rows.length()).mapNotNull { index ->
+            val row = rows.optJSONObject(index) ?: return@mapNotNull null
+            row.optInt("id_class_course").takeIf { it > 0 && row.optInt("approved") == 1 && row.optInt("score") == 10 }
+        }.toSet()
+    }
+
+    fun approvedCourses(): Set<Int> {
+        val rows = courseApprovals()
+        return (0 until rows.length()).mapNotNull { index ->
+            val row = rows.optJSONObject(index) ?: return@mapNotNull null
+            row.optInt("id_course").takeIf { it > 0 && row.optInt("approved") == 1 }
+        }.toSet()
+    }
+
+    fun mergeApprovals(testIds: Set<Int>, courseIds: Set<Int>) {
+        val pendingTests = testIds - approvedTests()
+        pendingTests.forEach { markPassed(it) }
+        val pendingCourses = courseIds - approvedCourses()
+        if (pendingCourses.isNotEmpty()) {
+            val rows = courseApprovals()
+            pendingCourses.forEach { rows.put(JSONObject().put("approved", 1).put("id_course", it)) }
+            courseApprovedFile.writeText(rows.toString(), Charsets.UTF_8)
+        }
     }
 
     data class Flags(val visited: Boolean, val completed: Boolean)
