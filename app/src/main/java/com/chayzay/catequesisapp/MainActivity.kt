@@ -27,6 +27,7 @@ import com.chayzay.catequesisapp.auth.AuthRepository
 import com.chayzay.catequesisapp.auth.UserSessionStore
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
+import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -618,7 +619,7 @@ private fun CatalogScreen(
                     setTextColor(android.graphics.Color.DKGRAY)
                     movementMethod = LinkMovementMethod.getInstance()
                 } },
-                update = { it.text = HtmlCompat.fromHtml(detail.lesson.html, HtmlCompat.FROM_HTML_MODE_LEGACY) },
+                update = { it.text = HtmlCompat.fromHtml(HttpsLinks.html(detail.lesson.html), HtmlCompat.FROM_HTML_MODE_LEGACY) },
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp)
             )
         } else if (page is CatalogPage.Lessons && state is CatalogState.Ready) {
@@ -666,8 +667,11 @@ private fun CatalogScreen(
                         onlineActivities.forEach { activity ->
                             Text(activity.title, modifier = Modifier.fillMaxWidth()
                                 .background(Color(0x77FFFFFF)).clickable {
-                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(activity.link))) }
-                                    catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show() }
+                                    val link = HttpsLinks.external(activity.link)
+                                    if (link != null) {
+                                        try { context.startActivity(Intent(Intent.ACTION_VIEW, link)) }
+                                        catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace por HTTPS", Toast.LENGTH_SHORT).show() }
+                                    }
                                 }.padding(12.dp), color = Color(0xFF505050))
                         }
                     }

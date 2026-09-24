@@ -101,8 +101,8 @@ fun PrayerScreen(profile: ProfileSettings) {
             "links" -> PrayerList(prayerLinks) { index ->
                 val url = when (index) {
                     0 -> "https://w2.vatican.va/content/francesco/es/homilies/${Calendar.getInstance().get(Calendar.YEAR)}.index.html"
-                    1 -> "http://www.hablarcondios.org/meditaciondiaria.asp"
-                    else -> "http://www.escrivaobras.org/"
+                    1 -> "https://hablarcondios.org/meditacion-diaria/"
+                    else -> "https://escriva.org/es/"
                 }
                 try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                 catch (_: Exception) { Toast.makeText(context, "No se puede abrir el enlace", Toast.LENGTH_SHORT).show() }

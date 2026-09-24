@@ -30,6 +30,7 @@ import androidx.core.text.HtmlCompat
 import com.chayzay.catequesisapp.data.ClassTheme
 import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.LessonExtras
+import com.chayzay.catequesisapp.links.HttpsLinks
 import kotlinx.coroutines.launch
 
 /** Estructura de ThemeClassFragment: ideas, desarrollo y tres anexos por lección. */
@@ -100,6 +101,6 @@ private fun HtmlBlock(html: String) {
         setTextColor(AndroidColor.DKGRAY)
         movementMethod = LinkMovementMethod.getInstance()
     } }, update = { view ->
-        view.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        view.text = HtmlCompat.fromHtml(HttpsLinks.html(html), HtmlCompat.FROM_HTML_MODE_LEGACY)
     }, modifier = Modifier.fillMaxWidth())
 }

@@ -10,13 +10,15 @@ import java.net.URL
 /** Descarga la misma path_image_solve que usaba ClassCourseActivity en la app anterior. */
 class CourseImageRepository(private val cacheDir: File) {
     fun load(course: Course): Bitmap? {
-        if (course.imageUrl.isBlank()) return null
+        if (!course.imageUrl.startsWith("https://", ignoreCase = true)) return null
         val cache = File(cacheDir, "course_image_${course.id}.img")
         if (cache.exists()) BitmapFactory.decodeFile(cache.absolutePath)?.let { return it }
-        val connection = (URL(course.imageUrl).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 10000
-            readTimeout = 10000
-        }
+        val connection = try {
+            (URL(course.imageUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10000
+                readTimeout = 10000
+            }
+        } catch (_: Exception) { return null }
         return try {
             if (connection.responseCode !in 200..299) return null
             val buffer = ByteArray(8192)

@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import java.io.File
@@ -84,10 +85,10 @@ fun NewsScreen(profile: ProfileSettings) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(articles!!, key = { it.link }) { article ->
                             Card(Modifier.fillMaxWidth().clickable {
-                                val uri = Uri.parse(article.link)
-                                if (uri.scheme == "https" || uri.scheme == "http") {
+                                val uri = HttpsLinks.external(article.link)
+                                if (uri != null) {
                                     try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                    catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la noticia", Toast.LENGTH_SHORT).show() }
+                                    catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la noticia por HTTPS", Toast.LENGTH_SHORT).show() }
                                 }
                             }) {
                                 Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp)) {
