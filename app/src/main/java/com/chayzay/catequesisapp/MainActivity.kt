@@ -59,6 +59,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
@@ -139,12 +141,14 @@ class MainActivity : ComponentActivity() {
                 else {
                     var section by remember { mutableStateOf("courses") }
                     var atCatalogRoot by remember { mutableStateOf(true) }
+                    BackHandler(enabled = section != "courses") { section = "courses" }
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
                                 "courses" -> key(session?.id) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
-                                        session, syncRepository, syncVersion, { syncVersion++ }) { atCatalogRoot = it }
+                                        session, syncRepository, syncVersion, { syncVersion++ },
+                                        { section = "account" }) { atCatalogRoot = it }
                                 }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
                                 "news" -> NewsScreen(profile!!)
@@ -165,45 +169,34 @@ class MainActivity : ComponentActivity() {
                                 else -> PrayerScreen(profile!!)
                             }
                         }
-                        if (section != "courses" || atCatalogRoot) Column(
+                        if (section != "courses" || atCatalogRoot) Row(
                             modifier = Modifier.fillMaxWidth().background(profile!!.accent)
-                                .padding(vertical = 5.dp)
+                                .padding(vertical = 7.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                Column(Modifier.weight(1f).clickable { section = "news" }.padding(3.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(painterResource(R.mipmap.document), contentDescription = null,
-                                        modifier = Modifier.size(24.dp))
-                                    Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                                }
-                                Column(Modifier.weight(1f).clickable { section = "courses" }.padding(3.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(painterResource(R.drawable.corpus), contentDescription = null,
-                                        modifier = Modifier.size(24.dp))
-                                    Text("Cursos", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                                }
-                                Column(Modifier.weight(1f).clickable { section = "faith" }.padding(3.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(painterResource(R.mipmap.vela), contentDescription = null,
-                                        modifier = Modifier.size(24.dp))
-                                    Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                                }
-                                Column(Modifier.weight(1f).clickable { section = "prayer" }.padding(3.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(painterResource(R.mipmap.prayer), contentDescription = null,
-                                        modifier = Modifier.size(24.dp))
-                                    Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                                }
+                            Column(Modifier.weight(1f).clickable { section = "news" }.padding(3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Image(painterResource(R.mipmap.document), contentDescription = null,
+                                    modifier = Modifier.size(25.dp))
+                                Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                Box(Modifier.weight(1f).clickable { section = "chat" }
-                                    .padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
-                                    Text("Chat", color = Color.White)
-                                }
-                                Box(Modifier.weight(1f).clickable { section = "account" }
-                                    .padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
-                                    Text(if (session == null) "Acceder" else "Cuenta", color = Color.White)
-                                }
+                            Column(Modifier.weight(1f).clickable { section = "faith" }.padding(3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Image(painterResource(R.mipmap.vela), contentDescription = null,
+                                    modifier = Modifier.size(25.dp))
+                                Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                            }
+                            Column(Modifier.weight(1f).clickable { section = "prayer" }.padding(3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Image(painterResource(R.mipmap.prayer), contentDescription = null,
+                                    modifier = Modifier.size(25.dp))
+                                Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                            }
+                            Column(Modifier.weight(1f).clickable { section = "chat" }.padding(3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Image(painterResource(R.mipmap.chat), contentDescription = null,
+                                    modifier = Modifier.size(25.dp))
+                                Text("Chat", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
                         }
                     }
@@ -274,11 +267,13 @@ private fun CatalogScreen(
     syncRepository: ProgressSyncRepository,
     syncVersion: Int,
     onSynced: () -> Unit,
+    onOpenAccount: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val syncScope = rememberCoroutineScope()
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
+    var accountMenuOpen by remember { mutableStateOf(false) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
     var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
@@ -454,7 +449,7 @@ private fun CatalogScreen(
                         color = Color.White, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                 }
             } else Text(when (page) {
-                CatalogPage.Courses -> "Invitado"
+                CatalogPage.Courses -> user?.displayName ?: if (profile.gender == "MALE") "Invitado" else "Invitada"
                 is CatalogPage.Classes -> "Clases"
                 is CatalogPage.GameHub -> "Actividades virtuales off-line"
                 is CatalogPage.Hangman -> "El ahorcado"
@@ -472,6 +467,16 @@ private fun CatalogScreen(
                 else -> "Catequesis"
             }, modifier = Modifier.align(Alignment.Center), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
+            Box(Modifier.align(Alignment.CenterEnd)) {
+                Text("⋮", color = Color.White, fontSize = 24.sp,
+                    modifier = Modifier.clickable { accountMenuOpen = true }
+                        .padding(horizontal = 16.dp, vertical = 8.dp))
+                DropdownMenu(expanded = accountMenuOpen,
+                    onDismissRequest = { accountMenuOpen = false }) {
+                    DropdownMenuItem(text = { Text(if (user == null) "Iniciar sesión" else "Perfil / Cuenta") },
+                        onClick = { accountMenuOpen = false; onOpenAccount() })
+                }
+            }
         }
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
             page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
