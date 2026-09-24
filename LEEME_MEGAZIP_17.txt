@@ -1,0 +1,5 @@
+MegaZIP 17 — Relacionar preguntas y respuestas
+
+Descomprime en la raíz del proyecto Android Studio app_2026, reemplazando los archivos existentes. En Cursos > Clase > Relacionar aparecen cuatro preguntas de tipo SIMPLE y sus cuatro respuestas correctas en orden mezclado. Selecciona una de cada columna y pulsa Comprobar. Al resolverlas todas o agotar el minuto, puedes volver a jugar. Los datos vienen de question/all y response/all mediante el repositorio del MegaZIP 16.
+
+Prueba compilación, vincular pareja correcta e incorrecta, reiniciar y dejar agotar el temporizador. Si una clase tiene menos de cuatro parejas, mostrará un aviso. Los juegos no conceden aprobación del curso.
