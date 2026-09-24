@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Android 13 system images may predate SSL.com's 2022 RSA root.
+         Limit the additional CA to our API hosts; keep system trust as well. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain>catequesis.org</domain>
+        <domain>www.catequesis.org</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/sslcom_tls_rsa_root_ca_2022" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

@@ -48,7 +48,7 @@ private data class Celebration(val date: String, val description: String)
 private data class FaithItem(val title: String, val summary: String, val icon: Int)
 
 @Composable
-fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String) {
+fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String, onContact: () -> Unit) {
     var page by remember { mutableStateOf("menu") }
     var year by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
     val context = LocalContext.current
@@ -78,13 +78,11 @@ fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String) {
                     val item = options[index]
                     Card(Modifier.fillMaxWidth().clickable {
                         if (index == 0) page = "calendar"
+                        else if (index == 3) onContact()
                         else {
                             val intent = when (index) {
                                 1 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.itsharedservices.hdsmyc.app"))
                                 2 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=ws.ebs.stjosemaria"))
-                                3 -> Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:catequesisapp@gmail.com")).apply {
-                                    putExtra(Intent.EXTRA_SUBJECT, "Quiero recibir formación")
-                                }
                                 else -> Intent(Intent.ACTION_VIEW, Uri.parse("https://www.vaticano.com/como-solicitar-la-bendicion-apostolica-del-papa/"))
                             }
                             try { context.startActivity(intent) }

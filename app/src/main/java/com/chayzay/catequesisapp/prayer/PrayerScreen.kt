@@ -19,10 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,7 +62,7 @@ private val devotionals = listOf(
 )
 
 @Composable
-fun PrayerScreen(profile: ProfileSettings) {
+fun PrayerScreen(profile: ProfileSettings, onContact: (Int) -> Unit) {
     var page by remember { mutableStateOf("menu") }
     var selected by remember { mutableStateOf(0) }
     val context = LocalContext.current
@@ -84,19 +82,13 @@ fun PrayerScreen(profile: ProfileSettings) {
                 "links" -> "Textos para orar"
                 "devotionals" -> "Devocionario"
                 "devotional_page" -> devotionals[selected].first
-                "contact_pope" -> "Pide oraciones al Papa"
-                "contact_personal" -> "Necesito oraciones por una intención mía"
                 else -> "Oraciones"
             }, color = Color.White, style = MaterialTheme.typography.titleLarge)
         }
         when (page) {
             "menu" -> PrayerList(prayerMenu) { index ->
-                page = when (index) {
-                    0 -> "contact_pope"
-                    1 -> "contact_personal"
-                    2 -> "links"
-                    else -> "devotionals"
-                }
+                if (index == 0 || index == 1) onContact(if (index == 0) 3 else 4)
+                else page = if (index == 2) "links" else "devotionals"
             }
             "links" -> PrayerList(prayerLinks) { index ->
                 val url = when (index) {
@@ -121,7 +113,6 @@ fun PrayerScreen(profile: ProfileSettings) {
                     if (view.url != asset) view.loadUrl(asset)
                 }, modifier = Modifier.fillMaxSize()
             )
-            "contact_pope", "contact_personal" -> ContactPrayer(page == "contact_pope")
         }
     }
 }
@@ -143,32 +134,5 @@ private fun PrayerList(items: List<PrayerItem>, onSelect: (Int) -> Unit) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ContactPrayer(toPope: Boolean) {
-    val context = LocalContext.current
-    var name by remember(toPope) { mutableStateOf("") }
-    var message by remember(toPope) { mutableStateOf("") }
-    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        OutlinedTextField(value = name, onValueChange = { name = it },
-            label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = message, onValueChange = { message = it },
-            label = { Text("Intención") }, modifier = Modifier.fillMaxWidth(), minLines = 5)
-        Button(onClick = {
-            if (name.isBlank() || message.isBlank()) {
-                Toast.makeText(context, "Escribe tu nombre y tu intención", Toast.LENGTH_SHORT).show()
-            } else {
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:catequesisapp@gmail.com")).apply {
-                    putExtra(Intent.EXTRA_SUBJECT,
-                        if (toPope) "Pide oraciones al Papa" else "Necesito oraciones por una intención mía")
-                    putExtra(Intent.EXTRA_TEXT, "${name.trim()}:\n\n${message.trim()}")
-                }
-                try { context.startActivity(Intent.createChooser(intent, "Enviar correo")) }
-                catch (_: Exception) { Toast.makeText(context, "No hay aplicación de correo", Toast.LENGTH_SHORT).show() }
-            }
-        }) { Text("Enviar") }
     }
 }

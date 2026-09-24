@@ -27,6 +27,7 @@ import com.chayzay.catequesisapp.auth.AuthRepository
 import com.chayzay.catequesisapp.auth.UserSessionStore
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
+import com.chayzay.catequesisapp.contact.ContactScreen
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
@@ -141,17 +142,26 @@ class MainActivity : ComponentActivity() {
                 }
                 else {
                     var section by remember { mutableStateOf("courses") }
+                    var contactSubject by remember { mutableStateOf(6) }
+                    var contactReturnSection by remember { mutableStateOf("courses") }
                     var atCatalogRoot by remember { mutableStateOf(true) }
-                    BackHandler(enabled = section != "courses") { section = "courses" }
+                    fun openContact(subject: Int) {
+                        contactReturnSection = section
+                        contactSubject = subject
+                        section = "contact"
+                    }
+                    BackHandler(enabled = section != "courses") {
+                        section = if (section == "contact") contactReturnSection else "courses"
+                    }
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) {
                             when (section) {
                                 "courses" -> key(session?.id) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
                                         session, syncRepository, syncVersion, { syncVersion++ },
-                                        { section = "account" }) { atCatalogRoot = it }
+                                        { section = "account" }, { openContact(6) }) { atCatalogRoot = it }
                                 }
-                                "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
+                                "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url)) { openContact(0) }
                                 "news" -> NewsScreen(profile!!)
                                 "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
                                     session = signedIn
@@ -167,7 +177,11 @@ class MainActivity : ComponentActivity() {
                                         profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
                                     }
                                 }
-                                else -> PrayerScreen(profile!!)
+                                "contact" -> ContactScreen(profile!!, session,
+                                    getString(R.string.api_base_url), contactSubject) {
+                                    section = contactReturnSection
+                                }
+                                else -> PrayerScreen(profile!!) { openContact(it) }
                             }
                         }
                         if (section != "courses" || atCatalogRoot) Row(
@@ -269,6 +283,7 @@ private fun CatalogScreen(
     syncVersion: Int,
     onSynced: () -> Unit,
     onOpenAccount: () -> Unit,
+    onOpenContact: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -476,6 +491,8 @@ private fun CatalogScreen(
                     onDismissRequest = { accountMenuOpen = false }) {
                     DropdownMenuItem(text = { Text(if (user == null) "Iniciar sesión" else "Perfil / Cuenta") },
                         onClick = { accountMenuOpen = false; onOpenAccount() })
+                    DropdownMenuItem(text = { Text("Contactar") },
+                        onClick = { accountMenuOpen = false; onOpenContact() })
                 }
             }
         }

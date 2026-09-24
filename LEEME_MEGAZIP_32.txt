@@ -1,0 +1,16 @@
+MegaZIP 32. Base: catequesis_app-main (2).zip recibido el 24-Sep-2026.
+
+Se incluyen los tres archivos SSL del MegaZIP 31 porque faltan en el ZIP base.
+Se corrige el mensaje SQL de correo duplicado en registro, se restaura el
+formulario Contactar con los siete asuntos antiguos y el POST JSON original.
+Los accesos desde Oraciones y Fe van a ese formulario en vez de usar mailto.
+Desde Cursos se agrega Contactar en el menu de tres puntos.
+
+Extraccion: dentro de la raiz del proyecto app_2026, sustituyendo archivos.
+No contiene carpeta envoltorio ni cambia versiones de Gradle.
+Android Studio: Sync Project with Gradle Files; Build > Make Project; Run.
+Probar cursos, registro de correo repetido, envio Contactar y verificar en
+backoffice el mensaje. Nunca usar correos reales para ensayos repetidos.
+
+La auditoria incluida enumera funciones aun faltantes: este ZIP no significa
+paridad funcional, ni habilita la etapa final de replica de interfaces.

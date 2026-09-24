@@ -1,0 +1,17 @@
+MegaZIP 31: compatibilidad de confianza HTTPS en Android 13
+
+Base: ZIP de proyecto catequesis_app-main (1).zip que enviaste el 24-Sep-2026.
+
+Cambia AndroidManifest.xml para apuntar a network_security_config.xml; agrega
+una CA adicional y comprobada: SSL.com TLS RSA Root CA 2022, SHA256
+8F:AF:7D:2E:2C:B4:70:9B:B8:E0:B3:36:66:BF:75:A5:DD:45:B5:DE:48:0F:8E:A8:D4:BF:E6:BE:BC:17:F2:ED.
+Esta CA se utiliza solo para catequesis.org y www.catequesis.org y se conservan
+las CA del sistema. La validacion del certificado y nombre del host permanecen
+activas; no se habilita HTTP.
+
+Aplicar: descomprimir en la raiz de app_2026, reemplazando los archivos.
+Android Studio: Sync Project with Gradle Files; Run en el Android 13.
+Probar Cursos y Crear cuenta. Si persiste, enviar Logcat del error completo
+(sin contrasenas ni tokens), junto a la fecha y hora del telefono.
+
+Origen raiz: https://www.ssl.com/repository/ (CA TLS RSA Root CA 2022)

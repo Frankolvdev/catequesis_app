@@ -49,8 +49,19 @@ class AuthRepository(private val baseUrl: String) {
             val result = try { JSONObject(text) } catch (_: Exception) {
                 throw IllegalStateException("El servidor devolvió una respuesta inválida")
             }
-            if (result.optString("status") != "1")
-                throw IllegalStateException(result.optString("message").ifBlank { "No se pudo completar la solicitud" })
+            if (result.optString("status") != "1") {
+                val serverMessage = result.optString("message")
+                val publicMessage = when {
+                    path == "user/register_user" &&
+                        serverMessage.contains("duplicate entry", ignoreCase = true) &&
+                        serverMessage.contains("email_unique", ignoreCase = true) ->
+                        "Este correo ya está registrado. Inicia sesión."
+                    serverMessage.contains("SQLSTATE", ignoreCase = true) ->
+                        "No se pudo completar la solicitud. Inténtalo nuevamente."
+                    else -> serverMessage.ifBlank { "No se pudo completar la solicitud" }
+                }
+                throw IllegalStateException(publicMessage)
+            }
             result
         } finally { connection.disconnect() }
     }
