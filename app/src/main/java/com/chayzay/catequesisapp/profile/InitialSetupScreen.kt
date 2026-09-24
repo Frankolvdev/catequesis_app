@@ -51,8 +51,12 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (expanded) {
             Dialog(onDismissRequest = { expanded = false }) {
-                androidx.compose.material3.Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)) {
-                    LazyColumn(modifier = Modifier.fillMaxWidth().height(360.dp)) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    color = Color.White,
+                    tonalElevation = 0.dp
+                ) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().height(360.dp).background(Color.White)) {
                         items((1940..currentYear).toList().reversed()) { option ->
                             Text(option.toString(), modifier = Modifier.fillMaxWidth()
                                 .clickable { year = option; expanded = false; error = null }

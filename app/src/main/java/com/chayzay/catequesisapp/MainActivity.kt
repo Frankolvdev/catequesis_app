@@ -7,6 +7,7 @@ import com.chayzay.catequesisapp.profile.InitialSetupScreen
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.prayer.PrayerScreen
 import com.chayzay.catequesisapp.faith.FaithScreen
+import com.chayzay.catequesisapp.news.NewsScreen
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -93,11 +94,18 @@ class MainActivity : ComponentActivity() {
                             when (section) {
                                 "courses" -> CatalogScreen(repository, imageRepository, profile!!)
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url))
+                                "news" -> NewsScreen(profile!!)
                                 else -> PrayerScreen(profile!!)
                             }
                         }
                         Row(modifier = Modifier.fillMaxWidth().background(profile!!.accent)
                             .padding(vertical = 7.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            Row(modifier = Modifier.clickable { section = "news" }.padding(7.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Image(painterResource(R.drawable.feed), contentDescription = null,
+                                    modifier = Modifier.size(26.dp))
+                                Text("Noticias", color = Color.White, modifier = Modifier.padding(start = 4.dp))
+                            }
                             Row(modifier = Modifier.clickable { section = "courses" }.padding(7.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Image(painterResource(R.drawable.corpus), contentDescription = null,
