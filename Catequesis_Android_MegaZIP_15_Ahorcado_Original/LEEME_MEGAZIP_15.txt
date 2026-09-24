@@ -1,5 +1,0 @@
-MegaZIP 15 — Juego Ahorcado de la clase
-
-Extrae el ZIP en la raíz de app_2026 y reemplaza los archivos. Entra en Cursos > Clase > Ahorcado. Obtiene palabras reales de games_activity_offline/all, usa exclusivamente registros de esa clase habilitados para Ahorcado (in_ahor=YES), muestra la pista y permite seis fallos, como el juego original. Tras ganar o perder permite pasar a otra palabra. El repositorio conserva su caché para lectura sin red después de una descarga correcta.
-
-Verifica en Android Studio que el proyecto compile, que una clase con palabras muestre pista y teclado, y que una clase sin palabras muestre el mensaje correspondiente. Este paquete no incluye crucigramas, enigmas ni los demás juegos.

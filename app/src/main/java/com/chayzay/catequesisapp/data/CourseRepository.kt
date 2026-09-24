@@ -19,6 +19,22 @@ data class LessonExtras(val extension: List<String>, val anecdotes: List<String>
 data class HangmanWord(val id: Int, val word: String, val clue: String)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    fun getTrueFalseQuestions(classId: Int): List<ExamQuestion> {
+        val themeIds = getThemes(classId).map { it.id }.toSet()
+        val responses = request("response/all").mapNotNull { item ->
+            val questionId = item.optInt("id_question", -1)
+            val text = item.optString("content_response").trim()
+            if (questionId < 0 || text.isBlank()) null else questionId to ExamAnswer(
+                item.optInt("id_response", -1), text, item.optString("correct_response") == "YES")
+        }.groupBy({ it.first }, { it.second })
+        return request("question/all").mapNotNull { item ->
+            val id = item.optInt("id_question", -1)
+            val text = item.optString("content_question").trim()
+            val answers = responses[id].orEmpty()
+            if (id < 0 || item.optInt("id_theme", -1) !in themeIds || text.isBlank() || answers.isEmpty()) null
+            else ExamQuestion(id, text, item.optString("type_question"), answers)
+        }
+    }
     fun getHangmanWords(classId: Int): List<HangmanWord> = request("games_activity_offline/all")
         .filter { it.optInt("id_class_course", -1) == classId && it.optString("in_ahor") == "YES" }
         .mapNotNull { item ->

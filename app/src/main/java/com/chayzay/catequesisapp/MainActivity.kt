@@ -14,6 +14,7 @@ import com.chayzay.catequesisapp.news.NewsScreen
 import com.chayzay.catequesisapp.quiz.ClassExamScreen
 import com.chayzay.catequesisapp.course.ThemeReadingScreen
 import com.chayzay.catequesisapp.game.HangmanScreen
+import com.chayzay.catequesisapp.game.TrueFalseScreen
 import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -183,6 +184,7 @@ private sealed interface CatalogPage {
     data class Activities(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Exam(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Hangman(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class TrueFalse(val course: Course, val courseClass: CourseClass) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -253,6 +255,7 @@ private fun CatalogScreen(
             is CatalogPage.Activities -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Exam -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.Hangman -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.TrueFalse -> CatalogPage.Themes(current.course, current.courseClass)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -295,6 +298,7 @@ private fun CatalogScreen(
                 }
                 is CatalogPage.Exam -> emptyList()
                 is CatalogPage.Hangman -> emptyList()
+                is CatalogPage.TrueFalse -> emptyList()
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -318,7 +322,7 @@ private fun CatalogScreen(
                     style = MaterialTheme.typography.headlineMedium)
             }
             if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman) {
+                page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
                     is CatalogPage.Lessons -> current.courseClass
@@ -327,6 +331,7 @@ private fun CatalogScreen(
                     is CatalogPage.Activities -> current.courseClass
                     is CatalogPage.Exam -> current.courseClass
                 is CatalogPage.Hangman -> current.courseClass
+                is CatalogPage.TrueFalse -> current.courseClass
                     else -> null
                 }
                 val selectedCourse = when (val current = page) {
@@ -337,6 +342,7 @@ private fun CatalogScreen(
                     is CatalogPage.Activities -> current.course
                     is CatalogPage.Exam -> current.course
                 is CatalogPage.Hangman -> current.course
+                is CatalogPage.TrueFalse -> current.course
                     else -> null
                 }
                 Column(Modifier.align(Alignment.Center).padding(start = 48.dp, end = 12.dp)) {
@@ -353,7 +359,7 @@ private fun CatalogScreen(
                 style = MaterialTheme.typography.titleMedium)
         }
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
-            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman) {
+            page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse) {
             val currentClass = when (val current = page) {
                 is CatalogPage.Themes -> current.courseClass
                 is CatalogPage.Lessons -> current.courseClass
@@ -362,6 +368,7 @@ private fun CatalogScreen(
                 is CatalogPage.Activities -> current.courseClass
                 is CatalogPage.Exam -> current.courseClass
                 is CatalogPage.Hangman -> current.courseClass
+                is CatalogPage.TrueFalse -> current.courseClass
                 else -> null
             }
             val currentCourse = when (val current = page) {
@@ -372,6 +379,7 @@ private fun CatalogScreen(
                 is CatalogPage.Activities -> current.course
                 is CatalogPage.Exam -> current.course
                 is CatalogPage.Hangman -> current.course
+                is CatalogPage.TrueFalse -> current.course
                 else -> null
             }
             if (currentCourse != null && currentClass != null) {
@@ -389,6 +397,8 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Ahorcado", modifier = Modifier.clickable { page = CatalogPage.Hangman(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    Text("Verdadero o falso", modifier = Modifier.clickable { page = CatalogPage.TrueFalse(currentCourse, currentClass) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Examen", modifier = Modifier.clickable { page = CatalogPage.Exam(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
@@ -404,10 +414,14 @@ private fun CatalogScreen(
             is CatalogPage.Activities -> "Actividades de la clase"
             is CatalogPage.Exam -> "Examen de la clase"
             is CatalogPage.Hangman -> "Ahorcado"
+            is CatalogPage.TrueFalse -> "Verdadero o falso"
         }
         if (page !is CatalogPage.Lessons) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
-        if (page is CatalogPage.Hangman) {
+        if (page is CatalogPage.TrueFalse) {
+            val game = page as CatalogPage.TrueFalse
+            TrueFalseScreen(game.courseClass.id, repository, accent)
+        } else if (page is CatalogPage.Hangman) {
             val game = page as CatalogPage.Hangman
             HangmanScreen(game.courseClass.id, repository, accent)
         } else if (page is CatalogPage.Exam) {
