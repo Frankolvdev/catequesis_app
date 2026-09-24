@@ -15,8 +15,26 @@ data class ClassActivity(val id: Int, val content: String)
 data class OnlineActivity(val id: Int, val title: String, val link: String, val type: String)
 data class ExamAnswer(val id: Int, val text: String, val correct: Boolean)
 data class ExamQuestion(val id: Int, val text: String, val type: String, val answers: List<ExamAnswer>)
+data class LessonExtras(val extension: List<String>, val anecdotes: List<String>, val catechism: List<String>)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    fun getLessonExtras(lessonIds: Set<Int>): Map<Int, LessonExtras> {
+        if (lessonIds.isEmpty()) return emptyMap()
+        fun texts(path: String, contentField: String): Map<Int, List<String>> = request(path)
+            .filter { it.optInt("id_lesson_class", -1) in lessonIds }
+            .mapNotNull { item ->
+                val id = item.optInt("id_lesson_class", -1)
+                val content = item.optString(contentField).trim()
+                if (id < 0 || content.isBlank()) null else id to content
+            }.groupBy({ it.first }, { it.second })
+        val extensions = texts("extension_lesson/all", "content_extension_lesson")
+        val anecdotes = texts("anecdote_lesson/all", "content_anecdote_lesson")
+        val catechism = texts("catechism_lesson/all", "content_catechism_lesson")
+        return lessonIds.associateWith { id ->
+            LessonExtras(extensions[id].orEmpty(), anecdotes[id].orEmpty(), catechism[id].orEmpty())
+        }
+    }
+
     fun getExam(classId: Int): List<ExamQuestion> {
         val themeIds = getThemes(classId).map { it.id }.toSet()
         val questions = request("question/all").filter {

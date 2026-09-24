@@ -12,6 +12,8 @@ import com.chayzay.catequesisapp.prayer.PrayerScreen
 import com.chayzay.catequesisapp.faith.FaithScreen
 import com.chayzay.catequesisapp.news.NewsScreen
 import com.chayzay.catequesisapp.quiz.ClassExamScreen
+import com.chayzay.catequesisapp.course.ThemeReadingScreen
+import com.chayzay.catequesisapp.data.LessonExtras
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -205,6 +207,8 @@ private fun CatalogScreen(
     var classes by remember { mutableStateOf<List<CourseClass>>(emptyList()) }
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
+    var lessonExtras by remember { mutableStateOf<Map<Int, LessonExtras>?>(null) }
+    var lessonExtrasError by remember { mutableStateOf<String?>(null) }
     var goals by remember { mutableStateOf<List<ClassGoal>>(emptyList()) }
     var realActivities by remember { mutableStateOf<List<ClassActivity>>(emptyList()) }
     var onlineActivities by remember { mutableStateOf<List<OnlineActivity>>(emptyList()) }
@@ -216,6 +220,22 @@ private fun CatalogScreen(
         val current = page
         if (current is CatalogPage.Classes) {
             courseImage = withContext(Dispatchers.IO) { imageRepository.load(current.course) }
+        }
+    }
+    LaunchedEffect(page, lessons) {
+        val current = page
+        if (current is CatalogPage.Lessons) {
+            lessonExtras = null
+            lessonExtrasError = null
+            if (lessons.isNotEmpty() && lessons.all { it.themeId == current.theme.id }) {
+                try {
+                    lessonExtras = withContext(Dispatchers.IO) {
+                        repository.getLessonExtras(lessons.map { it.id }.toSet())
+                    }
+                } catch (error: Exception) {
+                    lessonExtrasError = error.localizedMessage ?: "Error del servidor"
+                }
+            }
         }
     }
 
@@ -368,7 +388,7 @@ private fun CatalogScreen(
             is CatalogPage.Activities -> "Actividades de la clase"
             is CatalogPage.Exam -> "Examen de la clase"
         }
-        Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
+        if (page !is CatalogPage.Lessons) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
         if (page is CatalogPage.Exam) {
             val exam = page as CatalogPage.Exam
@@ -384,6 +404,9 @@ private fun CatalogScreen(
                 update = { it.text = HtmlCompat.fromHtml(detail.lesson.html, HtmlCompat.FROM_HTML_MODE_LEGACY) },
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp)
             )
+        } else if (page is CatalogPage.Lessons && state is CatalogState.Ready) {
+            val current = page as CatalogPage.Lessons
+            ThemeReadingScreen(current.theme, lessons, lessonExtras, lessonExtrasError)
         } else when (val result = state) {
             CatalogState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
