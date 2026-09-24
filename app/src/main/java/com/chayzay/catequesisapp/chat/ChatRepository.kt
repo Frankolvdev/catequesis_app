@@ -14,6 +14,24 @@ import java.util.Locale
 data class ChatContact(val key: String, val name: String, val picture: String)
 
 class ChatRepository(private val baseUrl: String) {
+    /** ChatListFragmentNoUser usaba este usuario público para consultar catequistas. */
+    suspend fun catechistsGuest(profile: ProfileSettings): List<ChatContact> = withContext(Dispatchers.IO) {
+        val response = post("person_cateq/get_users_cateq", GUEST_CATECHIST_KEY,
+            JSONObject().put("gender", profile.gender).put("language", Locale.getDefault().language), allowEmpty = true)
+        val rows = response.optJSONArray("data") ?: return@withContext emptyList()
+        (0 until rows.length()).mapNotNull { index ->
+            val item = rows.optJSONObject(index) ?: return@mapNotNull null
+            val key = item.optString("api_key")
+            if (key.isBlank() || key == "0") return@mapNotNull null
+            ChatContact(key, listOf(item.optString("first_name"), item.optString("last_name"))
+                .filter { it.isNotBlank() }.joinToString(" ").ifBlank { "Catequista" }, item.optString("picture"))
+        }
+    }
+
+    private companion object {
+        // Es la clave pública de consulta incluida en el ChatListFragmentNoUser original.
+        const val GUEST_CATECHIST_KEY = "4acde48bc90a1c8041110875a54fe40e"
+    }
     suspend fun catechists(user: UserSession, profile: ProfileSettings): List<ChatContact> = withContext(Dispatchers.IO) {
         val response = post("person_cateq/get_users_cateq", user.apiKey,
             JSONObject().put("gender", profile.gender).put("language", Locale.getDefault().language), allowEmpty = true)

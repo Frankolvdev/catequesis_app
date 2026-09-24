@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,10 +39,13 @@ import kotlinx.coroutines.launch
 /** Estructura de ThemeClassFragment: ideas, desarrollo y tres anexos por lección. */
 @Composable
 fun ThemeReadingScreen(theme: ClassTheme, lessons: List<Lesson>, extras: Map<Int, LessonExtras>?,
-                       extrasError: String?) {
+                       extrasError: String?, onOpenChat: () -> Unit) {
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+    Column(Modifier.fillMaxSize()) {
+    TextButton(onClick = onOpenChat) { Text("Chat") }
+    LessonVoiceControls(lessons)
+    LazyColumn(state = state, modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
@@ -80,6 +84,7 @@ fun ThemeReadingScreen(theme: ClassTheme, lessons: List<Lesson>, extras: Map<Int
             Text("No se pudieron cargar los anexos: $extrasError", color = Color(0xFF8B2626),
                 modifier = Modifier.padding(bottom = 16.dp))
         }
+    }
     }
 }
 

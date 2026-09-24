@@ -13,6 +13,7 @@ import com.chayzay.catequesisapp.faith.FaithScreen
 import com.chayzay.catequesisapp.news.NewsScreen
 import com.chayzay.catequesisapp.quiz.ClassExamScreen
 import com.chayzay.catequesisapp.course.ThemeReadingScreen
+import com.chayzay.catequesisapp.course.LessonVoiceControls
 import com.chayzay.catequesisapp.game.HangmanScreen
 import com.chayzay.catequesisapp.game.TrueFalseScreen
 import com.chayzay.catequesisapp.game.MatchScreen
@@ -27,6 +28,7 @@ import com.chayzay.catequesisapp.auth.AuthRepository
 import com.chayzay.catequesisapp.auth.UserSessionStore
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
+import com.chayzay.catequesisapp.chat.GuestChatScreen
 import com.chayzay.catequesisapp.contact.ContactScreen
 import com.chayzay.catequesisapp.help.HelpUsScreen
 import com.chayzay.catequesisapp.help.LegacyInfoScreen
@@ -75,6 +77,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -82,6 +85,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -150,6 +154,9 @@ class MainActivity : ComponentActivity() {
                 }
                 else {
                     var section by remember { mutableStateOf("courses") }
+                    val catalogPage = remember(session?.id, catalogContentVersion) {
+                        mutableStateOf<CatalogPage>(CatalogPage.Courses)
+                    }
                     var contactSubject by remember { mutableStateOf(6) }
                     var contactReturnSection by remember { mutableStateOf("courses") }
                     var atCatalogRoot by remember { mutableStateOf(true) }
@@ -166,21 +173,16 @@ class MainActivity : ComponentActivity() {
                             when (section) {
                                 "courses" -> key(session?.id, catalogContentVersion) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
-                                        session, syncRepository, syncVersion, { syncVersion++ },
+                                        session, syncRepository, syncVersion, catalogPage, { syncVersion++ },
                                         { section = "account" }, { openContact(6) },
                                         { section = "help_us" }, { section = "help" },
-                                        { section = "information" }, { section = "settings" }) { atCatalogRoot = it }
+                                        { section = "information" }, { section = "settings" },
+                                        { section = "chat" }) { atCatalogRoot = it }
                                 }
                                 "faith" -> FaithScreen(profile!!, getString(R.string.api_base_url)) { openContact(0) }
                                 "news" -> NewsScreen(profile!!)
-                                "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }, { year ->
-                                    profile = profile?.copy(birthYear = year)?.also { it.save(this@MainActivity) }
-                                }) { signedIn ->
-                                    session = signedIn
-                                    if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
-                                        profile?.gender != signedIn.gender) {
-                                        profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
-                                    }
+                                "chat" -> if (session == null) GuestChatScreen(profile!!, chatRepository) {
+                                    section = "account"
                                 } else ChatScreen(session!!, profile!!, chatRepository)
                                 "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, repository, getString(R.string.api_base_url), { syncVersion++ }, { year ->
                                     profile = profile?.copy(birthYear = year)?.also { it.save(this@MainActivity) }
@@ -305,6 +307,7 @@ private fun CatalogScreen(
     user: UserSession?,
     syncRepository: ProgressSyncRepository,
     syncVersion: Int,
+    pageState: MutableState<CatalogPage>,
     onSynced: () -> Unit,
     onOpenAccount: () -> Unit,
     onOpenContact: () -> Unit,
@@ -312,11 +315,12 @@ private fun CatalogScreen(
     onOpenHelp: () -> Unit,
     onOpenInformation: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenChat: () -> Unit,
     onRootChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val syncScope = rememberCoroutineScope()
-    var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
+    var page by pageState
     var accountMenuOpen by remember { mutableStateOf(false) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -666,6 +670,9 @@ private fun CatalogScreen(
             }
         } else if (page is CatalogPage.LessonDetail) {
             val detail = page as CatalogPage.LessonDetail
+            Column(Modifier.fillMaxSize()) {
+            TextButton(onClick = onOpenChat) { Text("Chat") }
+            LessonVoiceControls(listOf(detail.lesson))
             AndroidView(
                 factory = { context -> TextView(context).apply {
                     textSize = 16f
@@ -673,11 +680,12 @@ private fun CatalogScreen(
                     movementMethod = LinkMovementMethod.getInstance()
                 } },
                 update = { it.text = HtmlCompat.fromHtml(HttpsLinks.html(detail.lesson.html), HtmlCompat.FROM_HTML_MODE_LEGACY) },
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp)
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp)
             )
+            }
         } else if (page is CatalogPage.Lessons && state is CatalogState.Ready) {
             val current = page as CatalogPage.Lessons
-            ThemeReadingScreen(current.theme, lessons, lessonExtras, lessonExtrasError)
+            ThemeReadingScreen(current.theme, lessons, lessonExtras, lessonExtrasError, onOpenChat)
         } else when (val result = state) {
             CatalogState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
