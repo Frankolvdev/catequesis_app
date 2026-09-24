@@ -1,0 +1,9 @@
+MegaZIP 14 - Aprobación del curso y recuperación del progreso de exámenes
+
+Extrae este ZIP en la raíz del proyecto Android Studio app_2026, reemplazando los archivos existentes. No contiene una carpeta raíz adicional.
+
+Al volver al mapa de clases, la app comprueba las clases del curso. Si todas están aprobadas, guarda course_approved.json con las claves del proyecto original y muestra la aprobación. También recupera aprobaciones de test_class.json de la instalación anterior cuando el sistema permite leer esos archivos. En instalaciones nuevas, el progreso se guarda en el almacenamiento privado de la app.
+
+La aprobación local no emite certificados ni sincroniza una cuenta de usuario; esas funciones requieren autenticación y conexión con el servidor y se integrarán después.
+
+Compila y prueba en Android Studio. Comprueba que un curso incompleto no aparezca aprobado y que vuelva a mostrar la aprobación al reabrirlo tras terminar todas las clases.

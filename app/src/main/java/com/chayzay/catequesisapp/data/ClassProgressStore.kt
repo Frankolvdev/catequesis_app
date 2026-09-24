@@ -8,6 +8,56 @@ import java.io.File
 /** Respeta las claves class_<id>, bold_font_view y class_finished del proyecto antiguo. */
 class ClassProgressStore(private val context: Context) {
     private val internal = File(context.filesDir, "class_course_user.json")
+    private val courseApprovedFile = File(context.filesDir, "course_approved.json")
+    private val testsFile = File(context.filesDir, "test_class.json")
+
+    private fun tests(): JSONArray {
+        if (!testsFile.exists()) {
+            val external = context.getExternalFilesDir(null)
+            val legacy = listOfNotNull(
+                external?.resolve("Android/data/${context.packageName}/db/json/test_class.json"),
+                external?.parentFile?.resolve("db/json/test_class.json")
+            ).firstOrNull { it.isFile }
+            if (legacy != null) try { testsFile.writeText(legacy.readText(Charsets.UTF_8), Charsets.UTF_8) }
+                catch (_: Exception) { }
+        }
+        return try { if (testsFile.isFile) JSONArray(testsFile.readText(Charsets.UTF_8)) else JSONArray() }
+        catch (_: Exception) { JSONArray() }
+    }
+
+    private fun courseApprovals(): JSONArray {
+        if (!courseApprovedFile.exists()) {
+            val external = context.getExternalFilesDir(null)
+            val legacy = listOfNotNull(
+                external?.resolve("Android/data/${context.packageName}/db/json/course_approved.json"),
+                external?.parentFile?.resolve("db/json/course_approved.json")
+            ).firstOrNull { it.isFile }
+            if (legacy != null) try {
+                courseApprovedFile.writeText(legacy.readText(Charsets.UTF_8), Charsets.UTF_8)
+            } catch (_: Exception) { }
+        }
+        return try {
+            if (courseApprovedFile.isFile) JSONArray(courseApprovedFile.readText(Charsets.UTF_8)) else JSONArray()
+        } catch (_: Exception) { JSONArray() }
+    }
+
+    fun isCourseApproved(courseId: Int): Boolean {
+        val records = courseApprovals()
+        return (0 until records.length()).any { index ->
+            val item = records.optJSONObject(index)
+            item != null && item.optInt("id_course", -1) == courseId && item.optInt("approved", 0) == 1
+        }
+    }
+
+    /** No concede aprobación sin una lista real de clases y todas las piezas terminadas. */
+    fun approveCourseIfComplete(courseId: Int, classIds: List<Int>): Boolean {
+        if (classIds.isEmpty() || classIds.distinct().any { !flags(it).completed }) return false
+        if (isCourseApproved(courseId)) return true
+        val records = courseApprovals()
+        records.put(JSONObject().put("approved", "1").put("id_course", courseId.toString()))
+        courseApprovedFile.writeText(records.toString(), Charsets.UTF_8)
+        return true
+    }
 
     private fun read(): JSONObject {
         if (!internal.exists()) {
@@ -28,8 +78,14 @@ class ClassProgressStore(private val context: Context) {
 
     fun flags(id: Int): Flags {
         val entry = read().optJSONObject("class_$id")
-        return Flags(entry?.optBoolean("bold_font_view", false) == true,
-            entry?.optBoolean("class_finished", false) == true)
+        val testRecords = tests()
+        val testPassed = (0 until testRecords.length()).any { index ->
+            val test = testRecords.optJSONObject(index)
+            test != null && test.optInt("id_class_course", -1) == id &&
+                test.optInt("approved", 0) == 1 && test.optInt("score", 0) == 10
+        }
+        val completed = entry?.optBoolean("class_finished", false) == true || testPassed
+        return Flags(entry?.optBoolean("bold_font_view", false) == true || completed, completed)
     }
 
     fun setVisited(id: Int, visited: Boolean) {
@@ -50,9 +106,7 @@ class ClassProgressStore(private val context: Context) {
         all.put(key, entry)
         internal.writeText(all.toString(), Charsets.UTF_8)
 
-        val file = File(context.filesDir, "test_class.json")
-        val tests = try { if (file.isFile) JSONArray(file.readText(Charsets.UTF_8)) else JSONArray() }
-            catch (_: Exception) { JSONArray() }
+        val tests = tests()
         var found = false
         for (position in 0 until tests.length()) {
             val item = tests.optJSONObject(position) ?: continue
@@ -63,7 +117,7 @@ class ClassProgressStore(private val context: Context) {
             }
         }
         if (!found) tests.put(JSONObject().put("approved", 1).put("score", 10).put("id_class_course", id))
-        file.writeText(tests.toString(), Charsets.UTF_8)
+        testsFile.writeText(tests.toString(), Charsets.UTF_8)
     }
 
     data class Flags(val visited: Boolean, val completed: Boolean)

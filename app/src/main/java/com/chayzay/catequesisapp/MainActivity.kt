@@ -205,6 +205,7 @@ private fun CatalogScreen(
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
     var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
     var classes by remember { mutableStateOf<List<CourseClass>>(emptyList()) }
+    var courseApproved by remember { mutableStateOf(false) }
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
     var lessonExtras by remember { mutableStateOf<Map<Int, LessonExtras>?>(null) }
@@ -262,7 +263,12 @@ private fun CatalogScreen(
                     courses.map { CatalogRow(it.id, it.name) }
                 }
                 is CatalogPage.Classes -> {
+                    courseApproved = false
                     classes = withContext(Dispatchers.IO) { repository.getClasses(current.course.id) }
+                    courseApproved = withContext(Dispatchers.IO) {
+                        progressStore.approveCourseIfComplete(current.course.id, classes.map { it.id }) ||
+                            progressStore.isCourseApproved(current.course.id)
+                    }
                     classes.map { CatalogRow(it.id, "Clase ${it.number}: ${it.name}") }
                 }
                 is CatalogPage.Themes -> {
@@ -459,6 +465,9 @@ private fun CatalogScreen(
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
             } else if (page is CatalogPage.Classes) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
+                    if (courseApproved) Text("¡Felicidades! Curso aprobado.",
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
                     // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
                     // filas de 30 unidades para un ancho de 200. Se escala junto con el mapa.
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
