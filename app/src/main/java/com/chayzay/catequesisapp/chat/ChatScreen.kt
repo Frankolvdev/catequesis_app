@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -41,6 +42,18 @@ private data class ChatLine(val key: String, val sender: String, val text: Strin
 @Composable
 fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepository) {
     val root = remember { FirebaseDatabase.getInstance().getReference("Conversations") }
+    val context = LocalContext.current
+    val outbox = remember(context) { PendingRealtimeStore(context) }
+    var pendingCount by remember(user.apiKey) { mutableStateOf(outbox.forUser(user).size) }
+    var pendingError by remember(user.apiKey) { mutableStateOf("") }
+    fun retryPending() {
+        pendingError = ""
+        outbox.flush(root, user) { problem ->
+            pendingCount = outbox.forUser(user).size
+            if (problem != null) pendingError = problem.localizedMessage ?: "Firebase no confirmó el mensaje"
+        }
+    }
+    LaunchedEffect(user.apiKey) { retryPending() }
     var conversations by remember(user.apiKey) { mutableStateOf<List<Conversation>>(emptyList()) }
     var selected by remember(user.apiKey) { mutableStateOf<ChatContact?>(null) }
     var contacts by remember(user.apiKey) { mutableStateOf<List<ChatContact>>(emptyList()) }
@@ -83,7 +96,11 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
 
     if (selected != null) {
         val contact = selected!!
-        ConversationScreen(user, contact, root, repository, { selected = null })
+        ConversationScreen(user, contact, root, repository, outbox,
+            onOutboxChanged = { problem ->
+                pendingCount = outbox.forUser(user).size
+                if (problem != null) pendingError = problem.localizedMessage ?: "Error en Firebase"
+            }, onBack = { selected = null })
         return
     }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -91,6 +108,11 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
             Text(if (choosing) "Catequistas" else "Mensajes")
             Button(onClick = { choosing = !choosing; error = "" }) { Text(if (choosing) "Volver" else "Nuevo chat") }
         }
+        if (pendingCount > 0) {
+            Text("$pendingCount mensaje(s) guardado(s) en el servidor y pendiente(s) en Firebase")
+            Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
+        }
+        if (pendingError.isNotBlank()) Text(pendingError, color = Color.Red)
         if (loading) CircularProgressIndicator(Modifier.padding(12.dp))
         if (error.isNotBlank()) Text(error, color = Color.Red)
         val entries = if (choosing) contacts.map { Conversation(it, "") } else conversations
@@ -110,7 +132,8 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
 
 @Composable
 private fun ConversationScreen(user: UserSession, contact: ChatContact, root: DatabaseReference,
-                               repository: ChatRepository, onBack: () -> Unit) {
+                               repository: ChatRepository, outbox: PendingRealtimeStore,
+                               onOutboxChanged: (Throwable?) -> Unit, onBack: () -> Unit) {
     var thread by remember(user.apiKey, contact.key) { mutableStateOf<DatabaseReference?>(null) }
     var lines by remember(user.apiKey, contact.key) { mutableStateOf<List<ChatLine>>(emptyList()) }
     var loading by remember(user.apiKey, contact.key) { mutableStateOf(true) }
@@ -159,6 +182,16 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
         }
         if (loading) CircularProgressIndicator()
         if (error.isNotBlank()) Text(error, color = Color.Red)
+        val waiting = outbox.forUser(user).count { it.recipient.key == contact.key }
+        if (waiting > 0) {
+            Text("Hay $waiting mensaje(s) guardado(s) en el servidor y pendiente(s) de publicar en Firebase.")
+            Button(onClick = {
+                outbox.flush(root, user) { problem ->
+                    onOutboxChanged(problem)
+                    error = problem?.localizedMessage.orEmpty()
+                }
+            }) { Text("Reintentar publicación") }
+        }
         LazyColumn(Modifier.weight(1f), reverseLayout = true) {
             items(lines.asReversed(), key = { it.key }) { line ->
                 val mine = line.sender == user.apiKey
@@ -181,15 +214,15 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                     scope.launch {
                         try {
                             val datetime = repository.send(user, contact.key, message)
-                            // El servidor guarda primero el mensaje; Firebase distribuye su copia en tiempo real.
-                            destination.child("Users").child(user.apiKey).setValue(
-                                mapOf("name_user" to user.displayName, "picture" to user.picture))
-                            destination.child("Users").child(contact.key).setValue(
-                                mapOf("name_user" to contact.name, "picture" to contact.picture))
-                            destination.child("Messages").child(datetime).setValue(
-                                mapOf("user_send" to user.apiKey, "message" to message, "check" to false))
-                                .addOnSuccessListener { if (draft == message) draft = "" }
-                                .addOnFailureListener { error = "Guardado en el servidor, pero Firebase no pudo mostrarlo: ${it.message}" }
+                            // Después de que PHP acepta el mensaje, se guarda una copia para reintentos sin duplicar el POST.
+                            outbox.enqueue(user, contact, requireNotNull(destination.key), datetime, message)
+                            if (draft == message) draft = ""
+                            onOutboxChanged(null)
+                            outbox.flush(root, user) { problem ->
+                                onOutboxChanged(problem)
+                                error = if (problem == null) "" else
+                                    "Guardado en el servidor; publicación pendiente en Firebase: ${problem.localizedMessage}"
+                            }
                         } catch (e: Exception) { error = e.message ?: "No se pudo enviar el mensaje" }
                         finally { sending = false }
                     }

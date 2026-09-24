@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 
 /** Compatible con person_cateq/get_users_cateq y message/register_message del cliente original. */
 data class ChatContact(val key: String, val name: String, val picture: String)
@@ -14,7 +15,7 @@ data class ChatContact(val key: String, val name: String, val picture: String)
 class ChatRepository(private val baseUrl: String) {
     suspend fun catechists(user: UserSession, profile: ProfileSettings): List<ChatContact> = withContext(Dispatchers.IO) {
         val response = post("person_cateq/get_users_cateq", user.apiKey,
-            JSONObject().put("gender", profile.gender).put("language", "es"))
+            JSONObject().put("gender", profile.gender).put("language", Locale.getDefault().language), allowEmpty = true)
         val rows = response.optJSONArray("data") ?: return@withContext emptyList()
         (0 until rows.length()).mapNotNull { index ->
             val item = rows.optJSONObject(index) ?: return@mapNotNull null
@@ -34,7 +35,7 @@ class ChatRepository(private val baseUrl: String) {
             ?: throw IllegalStateException("El servidor no devolvió la fecha del mensaje")
     }
 
-    private fun post(path: String, key: String, body: JSONObject): JSONObject {
+    private fun post(path: String, key: String, body: JSONObject, allowEmpty: Boolean = false): JSONObject {
         val url = URL(baseUrl.trimEnd('/') + "/" + path)
         require(url.protocol == "https") { "El chat necesita HTTPS" }
         val connection = (url.openConnection() as HttpURLConnection).apply {
@@ -54,7 +55,7 @@ class ChatRepository(private val baseUrl: String) {
             val result = try { JSONObject(response) } catch (_: Exception) {
                 throw IllegalStateException("Respuesta inválida del servidor")
             }
-            if (result.optString("status") != "1")
+            if (result.optString("status") != "1" && !(allowEmpty && result.optString("status") == "11"))
                 throw IllegalStateException(result.optString("message").ifBlank { "No se completó la operación" })
             result
         } finally { connection.disconnect() }

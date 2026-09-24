@@ -149,6 +149,10 @@ class MainActivity : ComponentActivity() {
                                 "news" -> NewsScreen(profile!!)
                                 "chat" -> if (session == null) AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
                                     session = signedIn
+                                    if (signedIn != null && signedIn.gender in listOf("MALE", "FEMALE") &&
+                                        profile?.gender != signedIn.gender) {
+                                        profile = profile?.copy(gender = signedIn.gender)?.also { it.save(this@MainActivity) }
+                                    }
                                 } else ChatScreen(session!!, profile!!, chatRepository)
                                 "account" -> AccountScreen(session, authRepository, sessionStore, progressStore, syncRepository, { syncVersion++ }) { signedIn ->
                                     session = signedIn

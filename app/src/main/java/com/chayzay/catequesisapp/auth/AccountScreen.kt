@@ -116,7 +116,8 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
                 message = when {
                     !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Escribe un correo válido"
-                    password.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
+                    password.isBlank() -> "Escribe tu contraseña"
+                    registering && password.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
                     registering && (firstName.isBlank() || lastName.isBlank()) -> "Completa el nombre y el apellido"
                     else -> null
                 }

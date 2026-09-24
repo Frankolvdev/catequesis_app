@@ -1,0 +1,17 @@
+MegaZIP 26 — Integración de chat y correcciones de acceso/progreso
+
+Extraer en la raíz de app_2026 y reemplazar. No incluye carpeta app_2026 ni google-services.json. El archivo Firebase se entregó en el MegaZIP 01 y coincide con el de la app antigua; debe seguir en app/google-services.json sin subirlo a GitHub.
+
+Cambios: la lista de catequistas considera vacía la respuesta original status 11; envía idioma del dispositivo como antes. Si PHP guarda un mensaje y Firebase no confirma su copia, el mensaje se conserva en una cola local y puede publicarse de nuevo sin repetir el POST a PHP. Aparece un aviso y botón de reintento en Chat; también se reintenta al abrir Chat. Para las consultas de progreso, status 2 solo se interpreta como lista vacía cuando el servidor dice exactamente "No hay datos"; otras fallas se muestran en Cuenta. Las cuentas existentes pueden iniciar sesión con contraseñas de cualquier longitud no vacía; el mínimo de 8 se exige solo para crear cuentas.
+
+Cómo probar el chat:
+1. Confirma que app/google-services.json está presente, sincroniza Android Studio y compila. Mantén ese archivo fuera del repositorio.
+2. Instala la app en un móvil/emulador con internet. Completa edad y sexo si se solicitan.
+3. En Cuenta inicia sesión con una cuenta de prueba real de alumno. Si entras por Chat sin sesión, también te ofrece Acceder.
+4. Toca Chat > Nuevo chat. Debe cargar catequistas activos con el mismo sexo y el idioma del dispositivo; si no hay ninguno, muestra "No hay catequistas disponibles".
+5. Entra a un catequista y envía un mensaje identificable, p. ej. "Prueba chat 26, 24 septiembre". Debe aparecer en la conversación; vuelve a la lista, cierra y reabre la app: el mensaje debe seguir ahí.
+6. Para verificar entrega extremo a extremo, entra con otra instalación o dispositivo y la cuenta del catequista y confirma que recibió el mensaje; responde desde ella y comprueba que aparece en la cuenta del alumno.
+7. Si sale "pendiente en Firebase", usa Reintentar publicación; no vuelvas a pulsar Enviar para ese mensaje. Copia el error que aparezca. Si sale un error de acceso HTTPS, revisa el certificado del dominio; si aparece Permission denied, revisa las reglas de Realtime Database del mismo proyecto Firebase.
+8. En Cuenta pulsa Sincronizar progreso. Si nunca hubo aprobaciones, debe finalizar sin subir registros. Si aparece cualquier error, envía el texto mostrado.
+
+Limitación de verificación: aquí se comprobó la estructura del ZIP y los contratos en el PHP/Java antiguos; no hay Android SDK ni dos cuentas con acceso a Firebase para ejecutar una prueba real de conversación. La réplica visual pantalla por pantalla continúa después de validar estas pruebas en el móvil.
