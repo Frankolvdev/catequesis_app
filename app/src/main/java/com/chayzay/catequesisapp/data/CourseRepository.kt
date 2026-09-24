@@ -10,8 +10,37 @@ data class Course(val id: Int, val name: String, val imageUrl: String)
 data class CourseClass(val id: Int, val courseId: Int, val number: Int, val name: String)
 data class ClassTheme(val id: Int, val classId: Int, val number: Int, val name: String)
 data class Lesson(val id: Int, val themeId: Int, val number: Int, val name: String, val html: String)
+data class ClassGoal(val id: Int, val number: Int, val content: String)
+data class ClassActivity(val id: Int, val content: String)
+data class OnlineActivity(val id: Int, val title: String, val link: String, val type: String)
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+    fun getGoals(classId: Int): List<ClassGoal> = request("meta_class/all")
+        .filter { it.optInt("id_class_course", -1) == classId }
+        .mapNotNull { item ->
+            val id = item.optInt("id_meta_class", -1)
+            val content = item.optString("content_meta").trim()
+            if (id < 0 || content.isEmpty()) null else ClassGoal(id, item.optInt("number_meta", 0), content)
+        }.sortedWith(compareBy<ClassGoal> { it.number }.thenBy { it.id })
+
+    fun getRealActivities(classId: Int): List<ClassActivity> = request("real_activities/all")
+        .filter { it.optInt("id_class_course", -1) == classId }
+        .mapNotNull { item ->
+            val id = item.optInt("id_real_activities", -1)
+            val content = item.optString("content_activity").trim()
+            if (id < 0 || content.isEmpty()) null else ClassActivity(id, content)
+        }
+
+    fun getOnlineActivities(classId: Int): List<OnlineActivity> = request("activity_online/all")
+        .filter { it.optInt("id_class_course", -1) == classId && it.optString("language") == "es" }
+        .mapNotNull { item ->
+            val id = item.optInt("id_activity_online", -1)
+            val title = item.optString("title").trim()
+            val link = item.optString("link").trim()
+            if (id < 0 || title.isEmpty() || !(link.startsWith("https://") || link.startsWith("http://"))) null
+            else OnlineActivity(id, title, link, item.optString("type_online"))
+        }
+
     fun getCourses(): List<Course> = request("course/all").mapNotNull { item ->
         val id = item.optInt("id_course", -1)
         val name = item.optString("name_course").trim()

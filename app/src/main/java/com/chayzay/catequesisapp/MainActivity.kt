@@ -1,6 +1,9 @@
 package com.chayzay.catequesisapp
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.chayzay.catequesisapp.profile.InitialSetupScreen
@@ -69,6 +72,9 @@ import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.CourseImageRepository
 import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.ClassGoal
+import com.chayzay.catequesisapp.data.ClassActivity
+import com.chayzay.catequesisapp.data.OnlineActivity
 import com.chayzay.catequesisapp.ui.theme.CatequesisTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -169,6 +175,8 @@ private sealed interface CatalogPage {
     data class Themes(val course: Course, val courseClass: CourseClass) : CatalogPage
     data class Lessons(val course: Course, val courseClass: CourseClass, val theme: ClassTheme) : CatalogPage
     data class LessonDetail(val course: Course, val courseClass: CourseClass, val theme: ClassTheme, val lesson: Lesson) : CatalogPage
+    data class Goals(val course: Course, val courseClass: CourseClass) : CatalogPage
+    data class Activities(val course: Course, val courseClass: CourseClass) : CatalogPage
 }
 
 private data class CatalogRow(val id: Int, val label: String)
@@ -187,6 +195,7 @@ private fun CatalogScreen(
     profile: ProfileSettings,
     onRootChanged: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     var page by remember { mutableStateOf<CatalogPage>(CatalogPage.Courses) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -194,6 +203,9 @@ private fun CatalogScreen(
     var classes by remember { mutableStateOf<List<CourseClass>>(emptyList()) }
     var themes by remember { mutableStateOf<List<ClassTheme>>(emptyList()) }
     var lessons by remember { mutableStateOf<List<Lesson>>(emptyList()) }
+    var goals by remember { mutableStateOf<List<ClassGoal>>(emptyList()) }
+    var realActivities by remember { mutableStateOf<List<ClassActivity>>(emptyList()) }
+    var onlineActivities by remember { mutableStateOf<List<OnlineActivity>>(emptyList()) }
     var courseImage by remember { mutableStateOf<Bitmap?>(null) }
     var progressRefresh by remember { mutableStateOf(0) }
     LaunchedEffect(page) { onRootChanged(page == CatalogPage.Courses) }
@@ -212,6 +224,8 @@ private fun CatalogScreen(
             is CatalogPage.Themes -> CatalogPage.Classes(current.course)
             is CatalogPage.Lessons -> CatalogPage.Themes(current.course, current.courseClass)
             is CatalogPage.LessonDetail -> CatalogPage.Lessons(current.course, current.courseClass, current.theme)
+            is CatalogPage.Goals -> CatalogPage.Themes(current.course, current.courseClass)
+            is CatalogPage.Activities -> CatalogPage.Themes(current.course, current.courseClass)
         }
     }
     BackHandler(enabled = page != CatalogPage.Courses) { goBack() }
@@ -237,6 +251,16 @@ private fun CatalogScreen(
                     lessons.map { CatalogRow(it.id, "Lección ${it.number}: ${it.name}") }
                 }
                 is CatalogPage.LessonDetail -> emptyList()
+                is CatalogPage.Goals -> {
+                    goals = withContext(Dispatchers.IO) { repository.getGoals(current.courseClass.id) }
+                    goals.map { CatalogRow(it.id, "${it.number}. ${it.content}") }
+                }
+                is CatalogPage.Activities -> {
+                    realActivities = withContext(Dispatchers.IO) { repository.getRealActivities(current.courseClass.id) }
+                    onlineActivities = withContext(Dispatchers.IO) { repository.getOnlineActivities(current.courseClass.id) }
+                    realActivities.map { CatalogRow(it.id, it.content) } +
+                        onlineActivities.map { CatalogRow(it.id, it.title) }
+                }
             }
             CatalogState.Ready(rows)
         } catch (error: Exception) {
@@ -259,17 +283,22 @@ private fun CatalogScreen(
                     .padding(horizontal = 16.dp), color = Color.White,
                     style = MaterialTheme.typography.headlineMedium)
             }
-            if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail) {
+            if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
+                page is CatalogPage.Goals || page is CatalogPage.Activities) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
                     is CatalogPage.Lessons -> current.courseClass
                     is CatalogPage.LessonDetail -> current.courseClass
+                    is CatalogPage.Goals -> current.courseClass
+                    is CatalogPage.Activities -> current.courseClass
                     else -> null
                 }
                 val selectedCourse = when (val current = page) {
                     is CatalogPage.Themes -> current.course
                     is CatalogPage.Lessons -> current.course
                     is CatalogPage.LessonDetail -> current.course
+                    is CatalogPage.Goals -> current.course
+                    is CatalogPage.Activities -> current.course
                     else -> null
                 }
                 Column(Modifier.align(Alignment.Center).padding(start = 48.dp, end = 12.dp)) {
@@ -285,17 +314,22 @@ private fun CatalogScreen(
             }, modifier = Modifier.align(Alignment.Center), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
         }
-        if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail) {
+        if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
+            page is CatalogPage.Goals || page is CatalogPage.Activities) {
             val currentClass = when (val current = page) {
                 is CatalogPage.Themes -> current.courseClass
                 is CatalogPage.Lessons -> current.courseClass
                 is CatalogPage.LessonDetail -> current.courseClass
+                is CatalogPage.Goals -> current.courseClass
+                is CatalogPage.Activities -> current.courseClass
                 else -> null
             }
             val currentCourse = when (val current = page) {
                 is CatalogPage.Themes -> current.course
                 is CatalogPage.Lessons -> current.course
                 is CatalogPage.LessonDetail -> current.course
+                is CatalogPage.Goals -> current.course
+                is CatalogPage.Activities -> current.course
                 else -> null
             }
             if (currentCourse != null && currentClass != null) {
@@ -307,6 +341,10 @@ private fun CatalogScreen(
                             page = CatalogPage.Lessons(currentCourse, currentClass, theme)
                         }.padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White, maxLines = 1)
                     }
+                    Text("Metas", modifier = Modifier.clickable { page = CatalogPage.Goals(currentCourse, currentClass) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
+                    Text("Actividades", modifier = Modifier.clickable { page = CatalogPage.Activities(currentCourse, currentClass) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
             }
         }
@@ -316,6 +354,8 @@ private fun CatalogScreen(
             is CatalogPage.Themes -> current.courseClass.name
             is CatalogPage.Lessons -> current.theme.name
             is CatalogPage.LessonDetail -> current.lesson.name
+            is CatalogPage.Goals -> "Metas de la clase"
+            is CatalogPage.Activities -> "Actividades de la clase"
         }
         Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
@@ -338,7 +378,47 @@ private fun CatalogScreen(
                 Text("No se pudo cargar: ${result.message}")
                 Button(onClick = { reload++ }) { Text("Reintentar") }
             }
-            is CatalogState.Ready -> if (result.rows.isEmpty()) {
+            is CatalogState.Ready -> if (page is CatalogPage.Goals) {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Las metas para la semana son:", color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium)
+                    if (goals.isEmpty()) Text("No hay metas para esta clase.")
+                    goals.forEach { goal ->
+                        Text("${goal.number}. ${goal.content}", color = Color(0xFF505050),
+                            style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            } else if (page is CatalogPage.Activities) {
+                var showReal by remember(page) { mutableStateOf(true) }
+                var showOnline by remember(page) { mutableStateOf(true) }
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Actividades reales  ${if (showReal) "−" else "+"}",
+                        modifier = Modifier.fillMaxWidth().clickable { showReal = !showReal }.padding(8.dp),
+                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
+                    if (showReal) {
+                        if (realActivities.isEmpty()) Text("No hay actividades reales para esta clase.")
+                        realActivities.forEach { activity ->
+                            Text(activity.content, modifier = Modifier.fillMaxWidth()
+                                .background(Color(0x77FFFFFF)).padding(12.dp), color = Color(0xFF505050))
+                        }
+                    }
+                    Text("Actividades en línea  ${if (showOnline) "−" else "+"}",
+                        modifier = Modifier.fillMaxWidth().clickable { showOnline = !showOnline }.padding(8.dp),
+                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
+                    if (showOnline) {
+                        if (onlineActivities.isEmpty()) Text("No hay actividades en línea para esta clase.")
+                        onlineActivities.forEach { activity ->
+                            Text(activity.title, modifier = Modifier.fillMaxWidth()
+                                .background(Color(0x77FFFFFF)).clickable {
+                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(activity.link))) }
+                                    catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show() }
+                                }.padding(12.dp), color = Color(0xFF505050))
+                        }
+                    }
+                }
+            } else if (result.rows.isEmpty()) {
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
             } else if (page is CatalogPage.Classes) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
