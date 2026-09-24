@@ -1,0 +1,5 @@
+MegaZIP 18 — Enigma con palabras de cada clase
+
+Extrae este ZIP en la raíz de app_2026, reemplazando archivos. Cursos > Clase > Enigma obtiene las palabras del endpoint games_activity_offline/all cuando in_enig=YES para la clase; permite ordenar letras, ver la pista, reiniciar las letras y jugar otra palabra. El tiempo original por ronda es de 60 segundos. Toca las letras para colocarlas; toca una letra colocada para devolverla.
+
+Verifica en Android Studio compilación, palabra con letras repetidas, pista, victoria, agotamiento del tiempo y navegación hacia atrás. Si la clase no tiene palabras para este juego aparece un mensaje. Crucigramas y juegos con imágenes continúan pendientes.
