@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,7 +92,19 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color, onEx
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (resultDismissed) {
-                        TextButton(onClick = { round++ }) { Text("Nuevo juego") }
+                        AndroidView(
+                            factory = { ctx ->
+                                android.widget.Button(ctx).apply {
+                                    setText("Nuevo juego")
+                                    setTextColor(android.graphics.Color.WHITE)
+                                    textSize = 13f
+                                    setBackgroundResource(R.drawable.button_letter_enigma)
+                                    setPadding(10, 10, 10, 10)
+                                    setOnClickListener { round++ }
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
                     } else {
                         listOf(
                             R.drawable.refresh_word to { refresh++ },

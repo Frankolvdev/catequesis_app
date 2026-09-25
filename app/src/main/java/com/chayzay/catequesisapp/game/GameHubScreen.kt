@@ -12,11 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.Course
@@ -105,30 +103,42 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
         }
     }
     downloadGroup?.let { group ->
-        AlertDialog(onDismissRequest = { if (!downloading) downloadGroup = null },
-            title = { Text("Recursos sin conexión") },
-            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Descarga los recursos de ${course.name} para usar estos juegos sin internet.")
-                if (downloading) CircularProgressIndicator()
-                if (downloadError.isNotBlank()) Text(downloadError, color = Color(0xFF8B2626))
-            } },
-            confirmButton = { Button(enabled = !downloading, onClick = {
-                downloading = true
-                downloadError = ""
-                scope.launch {
-                    try {
-                        withContext(Dispatchers.IO) { repository.downloadCourseOffline(course, images) }
-                        prefs.setDownloaded(course.id)
-                        downloadGroup = null
-                        openGroup = group
-                    } catch (error: Exception) {
-                        downloadError = ApiMessages.fromException(error, "No se pudo completar la descarga")
-                    } finally { downloading = false }
+        if (!downloading) {
+            // GameOfflineActivity legacy: AlertDialog.Builder sin título, mensaje exacto y ACEPTAR/CANCELAR.
+            com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+                message = if (downloadError.isBlank())
+                    "Para poder jugar es necesario descargar el contenido de este curso"
+                else downloadError,
+                confirmText = "Aceptar",
+                dismissText = "Cancelar",
+                onDismiss = { downloadGroup = null },
+                onConfirm = {
+                    downloading = true
+                    downloadError = ""
+                    scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) { repository.downloadCourseOffline(course, images) }
+                            prefs.setDownloaded(course.id)
+                            downloadGroup = null
+                            openGroup = group
+                        } catch (error: Exception) {
+                            downloadError = ApiMessages.fromException(error, "No se pudo completar la descarga")
+                        } finally { downloading = false }
+                    }
                 }
-            }) { Text(if (downloading) "Descargando…" else "Descargar") } },
-            dismissButton = { TextButton(enabled = !downloading, onClick = { downloadGroup = null }) {
-                Text("Cancelar")
-            } })
+            )
+        } else {
+            // Image_activity_offline legacy mostraba un ProgressDialog no cancelable con “Descargando contenido”.
+            Dialog(onDismissRequest = {}) {
+                androidx.compose.material3.Surface(color = Color.White, shape = androidx.compose.ui.graphics.RectangleShape) {
+                    Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 3.dp)
+                        Text("Descargando contenido", color = Color(0xFF424242), fontSize = 16.sp)
+                    }
+                }
+            }
+        }
     }
     openGroup?.let { group ->
         androidx.compose.ui.window.Dialog(onDismissRequest = { openGroup = null }) {

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,7 +100,14 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
                 if (finished) {
                     Text(if (won) "¡Ganaste!" else if (resultAcknowledged) "La palabra era $answer"
                         else "Perdiste", color = Color(0xFF653E26))
-                    if (resultAcknowledged) Button(onClick = { round++ }) { Text("Jugar otra vez") }
+                    if (resultAcknowledged) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable { round++ }) {
+                            Image(painterResource(R.drawable.retry_refresh), contentDescription = "Jugar",
+                                modifier = Modifier.size(36.dp))
+                            Text("Jugar", color = Color(0xFF653E26), fontSize = 13.sp)
+                        }
+                    }
                     if (showResult) GameResultDialog(won,
                         if (won) "Has ganado felicidades tu respuesta es correcta."
                         else "Has perdido, toca aceptar para ver la respuesta correcta y comenzar una nueva partida.") {
