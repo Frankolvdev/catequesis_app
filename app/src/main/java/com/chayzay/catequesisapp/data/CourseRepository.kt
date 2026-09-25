@@ -116,6 +116,11 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File,
             else ExamQuestion(id, text, item.optString("type_question"), answers)
         }
     }
+    fun getActiveGames(classId: Int): Map<Int, Boolean> = request("active_game/all")
+        .filter { it.optInt("id_class_course", -1) == classId }
+        .associate { it.optInt("id_game_offline", -1) to (it.optInt("active", 0) == 1) }
+        .filterKeys { it > 0 }
+
     fun getHangmanWords(classId: Int): List<HangmanWord> = request("games_activity_offline/all")
         .filter { it.optInt("id_class_course", -1) == classId && it.optString("in_ahor") == "YES" }
         .mapNotNull { item ->

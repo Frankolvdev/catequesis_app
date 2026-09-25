@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ import kotlinx.coroutines.withContext
 
 /** Reproduce las cinco tarjetas y el selector de juegos de GameOfflineActivity. */
 @Composable
-fun GameHubScreen(course: Course, repository: CourseRepository, images: CourseImageRepository,
+fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, images: CourseImageRepository,
                   accent: Color, onSelect: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = remember(context) { AppPreferences(context) }
@@ -52,30 +53,44 @@ fun GameHubScreen(course: Course, repository: CourseRepository, images: CourseIm
     var downloadGroup by remember(course.id) { mutableStateOf<Int?>(null) }
     var downloading by remember { mutableStateOf(false) }
     var downloadError by remember { mutableStateOf("") }
-    val cards = listOf(
-        Triple(R.drawable.crucigrama, "Juegos con palabras", "El ahorcado, crucigramas, enigma"),
-        Triple(R.drawable.image_adivina, "Imágenes", "Juegos con imágenes"),
-        Triple(R.drawable.course_approved, "Preguntas", "Juegos de trivia"),
-        Triple(R.drawable.pizarra, "Pizarra", "Pizarra para tu clase"),
-        Triple(R.drawable.selfie, "Selfie", "Autoanalizarse")
+    var activeGames by remember(classId) { mutableStateOf<Map<Int, Boolean>?>(null) }
+    LaunchedEffect(classId) {
+        activeGames = try { withContext(Dispatchers.IO) { repository.getActiveGames(classId) } }
+        catch (_: Exception) { emptyMap() }
+    }
+    // Orden y agrupación originales de ActivitiesClassFragment: imágenes, palabras, preguntas, pizarra y selfie.
+    val groups = listOf(
+        Triple(Triple(R.drawable.image_adivina, "Imágenes", "Juegos con imágenes"), listOf(1, 2, 3),
+            listOf("Imágenes" to "IMAGES", "Imagen con texto" to "IMAGES_TEXT", "Juego \"adivina\"" to "GAME_ADIVINA")),
+        Triple(Triple(R.drawable.crucigrama, "Juegos con palabras", "El ahorcado, crucigramas, enigma"), listOf(4, 5, 6),
+            listOf("El ahorcado" to "hangman", "Crucigramas" to "crossword", "Enigma" to "enigma")),
+        Triple(Triple(R.drawable.course_approved, "Preguntas", "Juegos de trivia"), listOf(7, 8, 9),
+            listOf("Preguntados (Quiz)" to "quiz", "Hacer el match" to "match", "Verdadero o Falso" to "truefalse")),
+        Triple(Triple(R.drawable.pizarra, "Pizarra", "Pizarra para tu clase"), listOf(10), listOf("Pizarra" to "board")),
+        Triple(Triple(R.drawable.selfie, "Selfie", "Autoanalizarse"), listOf(11), listOf("Selfie" to "selfie"))
     )
-    val selections = listOf(
-        listOf("El ahorcado" to "hangman", "Crucigramas" to "crossword", "Enigma" to "enigma"),
-        listOf("Imágenes" to "IMAGES", "Imagen con texto" to "IMAGES_TEXT", "Juego \"adivina\"" to "GAME_ADIVINA"),
-        listOf("Preguntados (Quiz)" to "quiz", "Hacer el match" to "match", "Verdadero o Falso" to "truefalse")
-    )
+    val visibleGroups = groups.filter { (_, ids, _) ->
+        val flags = activeGames
+        flags == null || flags.isEmpty() || ids.any { flags[it] == true }
+    }.map { (card, ids, choices) ->
+        val flags = activeGames
+        card to if (flags == null || flags.isEmpty()) choices else choices.filterIndexed { i, _ -> flags[ids[i]] == true }
+    }
     var openGroup by remember { mutableStateOf<Int?>(null) }
     var selected by remember(openGroup) { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        itemsIndexed(cards) { index, (icon, title, summary) ->
+        itemsIndexed(visibleGroups) { index, group ->
+            val (card, choices) = group
+            val (icon, title, summary) = card
             Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp)
                 .clickable {
-                    if (index == 1 || index == 2) {
+                    // La app antigua sólo exigía recursos descargados para los juegos con imágenes.
+                    if (choices.any { it.second in listOf("IMAGES", "IMAGES_TEXT", "GAME_ADIVINA") }) {
                         if (prefs.downloaded(course.id)) openGroup = index else {
                             downloadGroup = index; downloadError = ""
                         }
-                    } else if (index == 0) openGroup = index
-                    else onSelect(if (index == 3) "board" else "selfie")
+                    } else if (choices.size > 1) openGroup = index
+                    else choices.firstOrNull()?.second?.let(onSelect)
                 }) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(48.dp))
@@ -118,7 +133,7 @@ fun GameHubScreen(course: Course, repository: CourseRepository, images: CourseIm
             title = { Text("Seleccione un juego") },
             text = {
                 Column {
-                    selections[group].forEachIndexed { index, (label, _) ->
+                    visibleGroups[group].second.forEachIndexed { index, (label, _) ->
                         Text(label, modifier = Modifier.fillMaxWidth().clickable { selected = index }
                             .padding(12.dp),
                             fontWeight = if (selected == index) FontWeight.Bold else FontWeight.Normal,
@@ -127,7 +142,7 @@ fun GameHubScreen(course: Course, repository: CourseRepository, images: CourseIm
                 }
             },
             confirmButton = {
-                Button(onClick = { val key = selections[group][selected].second; openGroup = null; onSelect(key) }) {
+                Button(onClick = { val key = visibleGroups[group].second[selected].second; openGroup = null; onSelect(key) }) {
                     Text("Comenzar")
                 }
             },

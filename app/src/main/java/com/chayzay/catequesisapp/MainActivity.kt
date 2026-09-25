@@ -647,7 +647,7 @@ private fun CatalogScreen(
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
         if (page is CatalogPage.GameHub) {
             val hub = page as CatalogPage.GameHub
-            GameHubScreen(hub.course, repository, imageRepository, accent) { key ->
+            GameHubScreen(hub.course, hub.courseClass.id, repository, imageRepository, accent) { key ->
                 page = when (key) {
                     "hangman" -> CatalogPage.Hangman(hub.course, hub.courseClass)
                     "crossword" -> CatalogPage.Crossword(hub.course, hub.courseClass)
