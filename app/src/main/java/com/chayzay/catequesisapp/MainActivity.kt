@@ -3,7 +3,6 @@ package com.chayzay.catequesisapp
 import android.os.Bundle
 import android.content.Intent
 import com.chayzay.catequesisapp.auth.SocialAuthManager
-import android.content.Intent
 import android.net.Uri
 import android.content.Context
 import android.net.ConnectivityManager
@@ -839,6 +838,7 @@ private fun CatalogScreen(
                     }
                 }
             } else if (page is CatalogPage.Activities) {
+                val activitiesPage = page as CatalogPage.Activities
                 val activityPreferences = remember(context) { AppPreferences(context) }
                 var showReal by remember(page) { mutableStateOf(activityPreferences.showRealActivities) }
                 var showOffline by remember(page) { mutableStateOf(activityPreferences.showOfflineActivities) }
@@ -862,7 +862,7 @@ private fun CatalogScreen(
                     if (showOffline) {
                         Text("Juegos y actividades que puedes realizar desde la aplicación.",
                             modifier = Modifier.fillMaxWidth().background(Color(0x77FFFFFF)).clickable {
-                                page = CatalogPage.GameHub(summary.course, summary.courseClass)
+                                page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass)
                             }.padding(12.dp), color = Color(0xFF505050))
                     }
                     Text("Actividades en línea  ${if (showOnline) "−" else "+"}",

@@ -168,7 +168,7 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.fillMaxSize()
                                         .pointerInput(current.id) {
-                                            detectTransformGestures { _, change, translation, _ ->
+                                            detectTransformGestures { _, translation, change, _ ->
                                                 zoom = (zoom * change).coerceIn(1f, 5f)
                                                 pan = if (zoom == 1f) Offset.Zero else pan + translation
                                             }
