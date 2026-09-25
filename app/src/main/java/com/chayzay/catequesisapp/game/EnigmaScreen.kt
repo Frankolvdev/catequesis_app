@@ -92,6 +92,7 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     confirmButton = { TextButton(onClick = { showHint = false }) { Text("Aceptar") } })
                 finished?.let { result ->
                     AlertDialog(onDismissRequest = { }, title = { Text(result, color = accent) },
+                        text = { GameCharacterFeedback(result == "¡Ganaste!") },
                         confirmButton = { TextButton(onClick = { round++ }) { Text("Nuevo juego") } },
                         dismissButton = { TextButton(onClick = { refresh++ }) { Text("Reintentar") } })
                 }

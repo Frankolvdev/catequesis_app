@@ -52,6 +52,8 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
     var position by remember(classId) { mutableStateOf(0) }
     var correctCount by remember(classId) { mutableStateOf(0) }
     var wrongCount by remember(classId) { mutableStateOf(0) }
+    var goodStage by remember(classId) { mutableStateOf(0) }
+    var badStage by remember(classId) { mutableStateOf(0) }
     var selected by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var submitted by remember(classId) { mutableStateOf(false) }
     var finished by remember(classId) { mutableStateOf(false) }
@@ -84,6 +86,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                 if (correctCount != 10) Button(onClick = {
                     questions = questions!!.shuffled()
                     position = 0; correctCount = 0; wrongCount = 0
+                    goodStage = 0; badStage = 0
                     selected = emptySet(); submitted = false; finished = false
                 }) { Text("Intentar de nuevo") }
             }
@@ -119,7 +122,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         Text(if (lastCorrect) "Correcto" else "Respuesta incorrecta: revisa las opciones verdes.",
                             color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
                         val image = feedbackImage(profile.gender, lastCorrect,
-                            if (lastCorrect) correctCount else wrongCount)
+                            if (lastCorrect) goodStage else badStage)
                         Image(painterResource(image), contentDescription = null, modifier = Modifier.size(100.dp))
                     }
                 }
@@ -127,7 +130,13 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                     modifier = Modifier.fillMaxWidth(), onClick = {
                         if (!submitted) {
                             lastCorrect = selected == question.answers.filter { it.correct }.map { it.id }.toSet()
-                            if (lastCorrect) correctCount++ else wrongCount++
+                            if (lastCorrect) {
+                                correctCount++
+                                if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
+                            } else {
+                                wrongCount++
+                                if (badStage < 5) { badStage++; if (goodStage > 0) goodStage-- }
+                            }
                             GameFeedback.play(context, lastCorrect)
                             submitted = true
                         } else if (position == 9) {

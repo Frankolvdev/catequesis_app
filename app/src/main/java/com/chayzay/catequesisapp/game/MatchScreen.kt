@@ -104,6 +104,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 if (seconds == 0) Text("Se acabó el tiempo")
                 else if (solved.size == 4) Text("¡Completaste todas las parejas!")
+                if (seconds == 0 || solved.size == 4) GameCharacterFeedback(solved.size == 4)
                 else Button(enabled = selectedQuestion != null && selectedAnswer != null,
                     onClick = {
                         GameFeedback.play(context, selectedQuestion == selectedAnswer)

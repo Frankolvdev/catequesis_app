@@ -111,6 +111,7 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 if (feedback.isNotBlank()) Text(feedback)
                 if (solved.size == list.size) {
                     Text("¡Completaste el crucigrama!")
+                    GameCharacterFeedback(true)
                     Button(onClick = { solved = emptySet(); entries = emptyMap(); feedback = "" }) {
                         Text("Jugar de nuevo")
                     }

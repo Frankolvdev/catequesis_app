@@ -78,6 +78,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
                     Text(if (won) "¡Ganaste!" else "La palabra era $answer", color = Color(0xFF653E26))
+                    GameCharacterFeedback(won)
                     Button(onClick = { round++ }) { Text("Jugar otra vez") }
                 }
                 BoxWithConstraints(Modifier.fillMaxWidth()) {

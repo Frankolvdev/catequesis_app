@@ -41,6 +41,8 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var retry by remember(classId) { mutableIntStateOf(0) }
     var position by remember(classId) { mutableIntStateOf(0) }
     var correct by remember(classId) { mutableIntStateOf(0) }
+    var goodStage by remember(classId) { mutableIntStateOf(0) }
+    var badStage by remember(classId) { mutableIntStateOf(0) }
     var selected by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var submitted by remember(classId) { mutableStateOf(false) }
     var lastCorrect by remember(classId) { mutableStateOf(false) }
@@ -60,7 +62,8 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
             position >= questions!!.size -> {
                 Text("Juego terminado: $correct / ${questions!!.size}", color = accent)
                 Button(onClick = {
-                    position = 0; correct = 0; selected = emptySet(); submitted = false
+                    position = 0; correct = 0; goodStage = 0; badStage = 0
+                    selected = emptySet(); submitted = false
                     questions = questions!!.shuffled()
                 }) { Text("Jugar de nuevo") }
             }
@@ -95,11 +98,19 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 if (submitted) Text(if (lastCorrect) "¡Correcto!" else "Respuesta incorrecta. Las opciones correctas aparecen en verde.",
                     color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
+                if (submitted) GameCharacterFeedback(lastCorrect,
+                    if (lastCorrect) goodStage else badStage)
                 Button(enabled = submitted || selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         if (!submitted) {
                             lastCorrect = selected == correctOptions
-                            if (lastCorrect) correct++
+                            if (lastCorrect) {
+                                correct++
+                                if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
+                            } else if (badStage < 5) {
+                                badStage++
+                                if (goodStage > 0) goodStage--
+                            }
                             GameFeedback.play(context, lastCorrect)
                             submitted = true
                         } else {
