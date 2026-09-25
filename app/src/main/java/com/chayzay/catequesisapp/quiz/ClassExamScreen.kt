@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +42,9 @@ import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamQuestion
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.settings.GameFeedback
+import com.chayzay.catequesisapp.game.LegacyAnswer
+import com.chayzay.catequesisapp.game.LegacyAnswerState
+import com.chayzay.catequesisapp.game.LegacyQuestion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
@@ -125,20 +129,20 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                 }
                 Text(if (question.type == "SIMPLE") "Pregunta simple" else "Pregunta cerrada",
                     color = Color.DarkGray, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.fillMaxWidth().padding(top = 5.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Text(question.text, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 10.dp)
-                    .background(Color(0xFFF2F2F2)).padding(20.dp), fontSize = 14.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = Color.Black)
+                LegacyQuestion(question.text, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 10.dp))
                 Column(Modifier.weight(1f).padding(start = 20.dp, end = 20.dp, top = 5.dp, bottom = 5.dp).verticalScroll(rememberScrollState())) {
                     displayedAnswers.forEach { answer ->
-                        val color = when {
-                            submitted && answer.correct -> Color(0xFFCDECCF)
-                            submitted && answer.id in selected -> Color(0xFFF1C7C7)
-                            else -> Color.White
+                        val answerState = when {
+                            submitted && answer.correct -> LegacyAnswerState.CORRECT_REVEALED
+                            submitted && answer.id in selected -> LegacyAnswerState.WRONG_SELECTED
+                            else -> LegacyAnswerState.NORMAL
                         }
-                        Row(Modifier.fillMaxWidth().legacyCorrectAnswer(submitted, answer.correct).background(color)
-                            .clickable(enabled = !submitted) {
-                                // TestClassFragment legacy calificaba inmediatamente al tocar una respuesta.
-                                // No existían checkboxes ni un paso separado de «Calificar/Siguiente».
+                        LegacyAnswer(
+                            text = answer.text,
+                            state = answerState,
+                            enabled = !submitted,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                            onClick = {
                                 selected = selected + answer.id
                                 lastCorrect = displayedAnswers.filter { it.correct }.all { it.id in selected }
                                 if (lastCorrect) {
@@ -151,9 +155,8 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                                 GameFeedback.play(context, lastCorrect)
                                 feedbackClosing = false
                                 submitted = true
-                            }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(answer.text, color = if (submitted && answer.correct) Color.White else Color(0xFF505050), fontSize = 13.sp)
-                        }
+                            }
+                        )
                     }
                     if (submitted) {
                         Text(if (lastCorrect) "Correcto" else "Respuesta incorrecta: revisa las opciones verdes.",

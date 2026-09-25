@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import com.chayzay.catequesisapp.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
 import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.Course
 import com.chayzay.catequesisapp.data.CourseClass
@@ -145,15 +146,22 @@ fun ApprovedCoursesScreen(
             Text("No se pudo verificar todavía el progreso. Puedes volver a intentar al tocar el certificado.")
     }
     selected?.let { course ->
-        AlertDialog(onDismissRequest = { selected = null },
-            title = { Text(course.name) },
-            text = { Column {
+        // CourseApprovedAdapter legacy: AlertDialog de ancho completo con dialog_list.xml,
+        // título y ListView con divisor #e1e8ed de 1dp. No tenía botón «Cerrar».
+        Dialog(onDismissRequest = { selected = null }) {
+            Column(Modifier.fillMaxWidth().background(Color.White)) {
+                Text(course.name, fontSize = 20.sp, color = Color(0xFF505050),
+                    modifier = Modifier.fillMaxWidth().padding(24.dp, 18.dp, 24.dp, 12.dp))
                 when {
-                    classes == null -> CircularProgressIndicator()
-                    classes!!.isEmpty() -> Text("No se pudieron cargar las clases.")
-                    else -> classes!!.forEach { Text("${it.number}) ${it.name}") }
+                    classes == null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    classes!!.isEmpty() -> Text("No se pudieron cargar las clases.", fontSize = 13.sp, modifier = Modifier.padding(16.dp))
+                    else -> classes!!.forEachIndexed { index, item ->
+                        Text("${item.number}) ${item.name}", fontSize = 13.sp, color = Color(0xFF505050),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp))
+                        if (index != classes!!.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFE1E8ED)))
+                    }
                 }
-            } },
-            confirmButton = { TextButton(onClick = { selected = null }) { Text("Cerrar") } })
+            }
+        }
     }
 }

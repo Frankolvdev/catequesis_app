@@ -1,7 +1,5 @@
 package com.chayzay.catequesisapp.game
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,10 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamQuestion
@@ -105,57 +104,47 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color, on
                     (question.answers.filter { it.correct } + question.answers.filterNot { it.correct })
                         .take(4).shuffled()
                 }
-                val correctOptions = displayedAnswers.filter { it.correct }.map { it.id }.toSet()
-                Text("${position + 1} / ${questions!!.size}  ·  Aciertos: $correct", color = accent)
-                Text(question.text)
-                Text(if (question.type == "SIMPLE") "Elige una respuesta" else "Elige todas las respuestas correctas")
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Mal\n${position - correct}", color = Color(0xFFD23131), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(if (question.type == "SIMPLE") "Pregunta simple" else "Pregunta cerrada", color = Color(0xFF505050), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text("Bien\n$correct", color = Color(0xFF2E7B0B), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                }
+                LegacyQuestion(question.text, Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp))
+                Column(Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 5.dp).verticalScroll(rememberScrollState())) {
                     displayedAnswers.forEach { answer ->
-                        val background = when {
-                            submitted && answer.correct -> Color(0xFFCDECCF)
-                            submitted && answer.id in selected -> Color(0xFFF1C7C7)
-                            else -> Color.White
+                        val answerState = when {
+                            submitted && answer.correct -> LegacyAnswerState.CORRECT_REVEALED
+                            submitted && answer.id in selected -> LegacyAnswerState.WRONG_SELECTED
+                            else -> LegacyAnswerState.NORMAL
                         }
-                        Row(Modifier.fillMaxWidth().legacyCorrectAnswer(submitted, answer.correct).background(background)
-                            .clickable(enabled = !submitted) {
-                                selected = if (question.type == "SIMPLE") setOf(answer.id)
-                                    else if (answer.id in selected) selected - answer.id else selected + answer.id
-                            }.padding(10.dp)) {
-                            Checkbox(checked = answer.id in selected,
-                                onCheckedChange = if (submitted) null else { checked ->
-                                    selected = if (question.type == "SIMPLE") {
-                                        if (checked) setOf(answer.id) else emptySet()
-                                    } else if (checked) selected + answer.id else selected - answer.id
-                                })
-                            Text(answer.text, modifier = Modifier.padding(start = 8.dp), color = Color.DarkGray)
-                        }
+                        LegacyAnswer(
+                            text = answer.text,
+                            state = answerState,
+                            enabled = !submitted,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                            onClick = {
+                                // Legacy: el TextView tocado se marca verde y se califica inmediatamente.
+                                selected = selected + answer.id
+                                val correctOptions = displayedAnswers.filter { it.correct }.map { it.id }.toSet()
+                                lastCorrect = correctOptions.all { it in selected }
+                                if (lastCorrect) {
+                                    correct++
+                                    if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
+                                } else if (badStage < 5) {
+                                    badStage++
+                                    if (goodStage > 0) goodStage--
+                                }
+                                GameFeedback.play(context, lastCorrect)
+                                feedbackClosing = false
+                                submitted = true
+                            }
+                        )
                     }
                 }
-                if (submitted) Text(if (lastCorrect) "¡Correcto!" else "Respuesta incorrecta. Las opciones correctas aparecen en verde.",
-                    color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
                 if (submitted) QuizFeedbackPopup(feedbackClosing) {
                     GameCharacterFeedback(lastCorrect,
                         if (lastCorrect) goodStage else badStage, modifier = Modifier.size(200.dp), animate = false)
                 }
-                Button(enabled = !submitted && selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        if (!submitted) {
-                            // Legacy: bastaba con haber marcado todas las respuestas correctas;
-                            // seleccionar respuestas incorrectas adicionales no anulaba el acierto.
-                            lastCorrect = correctOptions.all { it in selected }
-                            if (lastCorrect) {
-                                correct++
-                                if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
-                            } else if (badStage < 5) {
-                                badStage++
-                                if (goodStage > 0) goodStage--
-                            }
-                            GameFeedback.play(context, lastCorrect)
-                            feedbackClosing = false
-                            submitted = true
-                        }
-                    }) { Text("Calificar") }
             }
         }
     }
