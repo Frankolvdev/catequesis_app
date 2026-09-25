@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -88,8 +88,8 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
         itemsIndexed(visibleGroups) { index, group ->
             val (card, choices) = group
             val (icon, title, summary) = card
-            Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp)
-                .clickable {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp)
+                .background(Color(0x77FFFFFF)).padding(10.dp).clickable {
                     // La app antigua sólo exigía recursos descargados para los juegos con imágenes.
                     if (choices.any { it.second in listOf("IMAGES", "IMAGES_TEXT", "GAME_ADIVINA") }) {
                         if (prefs.downloaded(course.id)) openGroup = index else {
@@ -97,14 +97,10 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
                         }
                     } else if (choices.size > 1) openGroup = index
                     else choices.firstOrNull()?.second?.let(onSelect)
-                }) {
-                Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(48.dp))
-                    Column(Modifier.padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A9989))
-                        Text(summary, fontSize = 12.sp, color = Color(0xFF505050))
-                    }
-                }
+                }, verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(48.dp))
+                Text(if (summary.isBlank()) title else "$title\n$summary", fontSize = 13.sp,
+                    color = Color(0xFF505050), modifier = Modifier.padding(start = 5.dp))
             }
         }
     }
@@ -136,7 +132,7 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
     }
     openGroup?.let { group ->
         AlertDialog(onDismissRequest = { openGroup = null },
-            title = { Text("Seleccione un juego") },
+            title = { Text("Seleccione un juego", fontSize = 13.sp, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     visibleGroups[group].second.forEach { (label, key) ->
@@ -145,11 +141,11 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
                         Text(label, modifier = Modifier.fillMaxWidth().clickable {
                             openGroup = null
                             onSelect(key)
-                        }.padding(12.dp), color = Color(0xFF505050))
+                        }.padding(horizontal = 15.dp, vertical = 12.dp), color = Color.Black, fontSize = 13.sp)
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { openGroup = null }) { Text("Cancelar") } })
+            dismissButton = { TextButton(onClick = { openGroup = null }) { Text("Cancelar", color = Color(0xFF2C7CB1), fontSize = 13.sp, fontWeight = FontWeight.Bold) } })
     }
 }

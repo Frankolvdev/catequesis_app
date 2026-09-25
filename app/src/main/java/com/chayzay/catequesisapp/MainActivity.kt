@@ -846,73 +846,48 @@ private fun CatalogScreen(
                 var showOffline by remember(page) { mutableStateOf(activityPreferences.showOfflineActivities) }
                 var showOnline by remember(page) { mutableStateOf(activityPreferences.showOnlineActivities) }
                 var showInstructions by remember(page) { mutableStateOf(false) }
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Actividades reales  ${if (showReal) "−" else "+"}",
-                        modifier = Modifier.fillMaxWidth().clickable { showReal = !showReal }.padding(8.dp),
-                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
-                    if (showReal) {
-                        if (realActivities.isEmpty()) Text("No hay actividades reales para esta clase.")
-                        realActivities.forEach { activity ->
-                            Text(activity.content, modifier = Modifier.fillMaxWidth()
-                                .background(Color(0x77FFFFFF)).padding(12.dp), color = Color(0xFF505050))
-                        }
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    LegacyActivityHeader("Actividades reales", showReal) { showReal = !showReal }
+                    if (showReal) Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                        realActivities.forEach { activity -> LegacyActivityTextRow(activity.content) }
                     }
-                    Text("Actividades virtuales off-line  ${if (showOffline) "−" else "+"}",
-                        modifier = Modifier.fillMaxWidth().clickable { showOffline = !showOffline }.padding(8.dp),
-                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
-                    if (showOffline) {
-                        Text("Juegos y actividades que puedes realizar desde la aplicación.",
-                            modifier = Modifier.fillMaxWidth().background(Color(0x77FFFFFF)).clickable {
-                                page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass)
-                            }.padding(12.dp), color = Color(0xFF505050))
+                    LegacyActivityHeader("Actividades virtuales off-line", showOffline) { showOffline = !showOffline }
+                    if (showOffline) Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                        LegacyOfflineActivityRow(R.drawable.image_adivina, "Juegos con imágenes") { page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass) }
+                        LegacyOfflineActivityRow(R.drawable.crucigrama, "Juegos con palabras") { page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass) }
+                        LegacyOfflineActivityRow(R.drawable.course_approved, "Juegos de trivia") { page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass) }
+                        LegacyOfflineActivityRow(R.drawable.pizarra, "Pizarra para tu clase") { page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass) }
+                        LegacyOfflineActivityRow(R.drawable.selfie, "Selfie\nAutoanalizarse") { page = CatalogPage.GameHub(activitiesPage.course, activitiesPage.courseClass) }
+                        LegacyOfflineActivityRow(R.drawable.help_game, stringResource(R.string.textExplicacionJuego)) { showInstructions = true }
                     }
-                    Text("Actividades en línea  ${if (showOnline) "−" else "+"}",
-                        modifier = Modifier.fillMaxWidth().clickable { showOnline = !showOnline }.padding(8.dp),
-                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
-                    if (showOnline) {
-                        if (onlineActivities.isEmpty()) Text("No hay actividades en línea para esta clase.")
+                    LegacyActivityHeader("Actividades virtuales on-line", showOnline) { showOnline = !showOnline }
+                    if (showOnline) Column(Modifier.fillMaxWidth().padding(10.dp)) {
                         onlineActivities.forEach { activity ->
-                            Text("${activity.title} · ${activity.type}", modifier = Modifier.fillMaxWidth()
-                                .background(Color(0x77FFFFFF)).clickable {
-                                    val link = HttpsLinks.external(activity.link)
-                                    if (link != null) {
-                                        try { context.startActivity(Intent(Intent.ACTION_VIEW, link)) }
-                                        catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace por HTTPS", Toast.LENGTH_SHORT).show() }
-                                    }
-                                }.padding(12.dp), color = Color(0xFF505050))
+                            Column(Modifier.fillMaxWidth().padding(5.dp).background(Color(0x77000000)).clickable {
+                                val link = HttpsLinks.external(activity.link)
+                                if (link != null) try { context.startActivity(Intent(Intent.ACTION_VIEW, link)) }
+                                catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace por HTTPS", Toast.LENGTH_SHORT).show() }
+                            }.padding(10.dp)) {
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text(activity.title, fontSize = 13.sp, color = Color(0xFF505050), modifier = Modifier.weight(1f))
+                                    Text(activity.type, fontSize = 13.sp, color = Color.Black)
+                                }
+                                Text("Ir a la actividad", fontSize = 13.sp, color = Color(0xFF505050), modifier = Modifier.padding(start = 10.dp))
+                            }
                         }
-                    }
-                    Button(onClick = { showInstructions = true }) {
-                        Text(stringResource(R.string.textExplicacionJuego))
                     }
                 }
                 if (showInstructions) {
                     val instructions = listOf(
-                        R.string.textExpGameOne to R.string.textExpGameOneSummary,
-                        R.string.textExpGameTwo to R.string.textExpGameTwoSummary,
-                        R.string.textExpGameThree to R.string.textExpGameThreeSummary,
-                        R.string.textExpGameFour to R.string.textExpGameFourSummary,
-                        R.string.textExpGameFive to R.string.textExpGameFiveSummary,
-                        R.string.textExpGameSix to R.string.textExpGameSixSummary,
-                        R.string.textExpGameSeven to R.string.textExpGameSevenSummary,
-                        R.string.textExpGameEight to R.string.textExpGameEightSummary,
-                        R.string.textExpGameNine to R.string.textExpGameNineSummary
-                    )
-                    AlertDialog(
-                        onDismissRequest = { showInstructions = false },
-                        title = { Text(stringResource(R.string.textExplicacionJuego)) },
-                        text = {
-                            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                instructions.forEach { (title, summary) ->
-                                    Text(stringResource(title), fontWeight = FontWeight.Bold)
-                                    Text(stringResource(summary))
-                                }
-                            }
-                        },
-                        confirmButton = { TextButton(onClick = { showInstructions = false }) { Text("Cerrar") } }
-                    )
+                        R.string.textExpGameOne to R.string.textExpGameOneSummary, R.string.textExpGameTwo to R.string.textExpGameTwoSummary,
+                        R.string.textExpGameThree to R.string.textExpGameThreeSummary, R.string.textExpGameFour to R.string.textExpGameFourSummary,
+                        R.string.textExpGameFive to R.string.textExpGameFiveSummary, R.string.textExpGameSix to R.string.textExpGameSixSummary,
+                        R.string.textExpGameSeven to R.string.textExpGameSevenSummary, R.string.textExpGameEight to R.string.textExpGameEightSummary,
+                        R.string.textExpGameNine to R.string.textExpGameNineSummary)
+                    AlertDialog(onDismissRequest = { showInstructions = false }, title = { Text(stringResource(R.string.textExplicacionJuego)) },
+                        text = { Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
+                            instructions.forEach { (t, d) -> Text(stringResource(t), fontWeight = FontWeight.Bold, fontSize = 13.sp); Text(stringResource(d), fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp)) }
+                        } }, confirmButton = { TextButton(onClick = { showInstructions = false }) { Text("Aceptar") } })
                 }
             } else if (result.rows.isEmpty()) {
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
@@ -1077,5 +1052,23 @@ private fun CatalogScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LegacyActivityHeader(title: String, expanded: Boolean, onClick: () -> Unit) {
+    Row(Modifier.padding(start = 4.dp, end = 15.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, color = Color.Black, fontSize = 13.sp, modifier = Modifier.width(200.dp))
+        Image(painterResource(if (expanded) R.drawable.close else R.drawable.expand), null, Modifier.padding(start = 10.dp).width(48.dp).height(30.dp).clickable(onClick = onClick))
+    }
+}
+@Composable
+private fun LegacyActivityTextRow(text: String) {
+    Text(text, fontSize = 13.sp, color = Color(0xFF505050), modifier = Modifier.fillMaxWidth().padding(5.dp).background(Color(0x77000000)).padding(10.dp))
+}
+@Composable
+private fun LegacyOfflineActivityRow(icon: Int, text: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(5.dp).background(Color(0x77000000)).clickable(onClick = onClick).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Image(painterResource(icon), null, Modifier.size(48.dp)); Text(text, color = Color(0xFF505050), fontSize = 13.sp, modifier = Modifier.padding(start = 5.dp))
     }
 }

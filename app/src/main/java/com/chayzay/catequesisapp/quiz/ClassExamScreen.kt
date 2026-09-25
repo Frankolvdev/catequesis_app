@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
@@ -88,11 +89,11 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
             }
         }
     }
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp)) {
+    Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Mal\n$wrongCount", color = Color(0xFF9D2626))
-            Text("${position.coerceAtMost(10)}/10", color = Color.DarkGray)
-            Text("Bien\n$correctCount", color = Color(0xFF176C35))
+            Text("Mal\n$wrongCount", color = Color(0xFFD23131), fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(top = 5.dp))
+            Text("${position.coerceAtMost(10)}/10", color = Color.DarkGray, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(top = 5.dp))
+            Text("Bien\n$correctCount", color = Color(0xFF2E7B0B), fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(top = 5.dp))
         }
         when {
             error != null -> {
@@ -123,13 +124,11 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         .take(4).shuffled()
                 }
                 Text(if (question.type == "SIMPLE") "Pregunta simple" else "Pregunta cerrada",
-                    color = Color.DarkGray, modifier = Modifier.padding(top = 12.dp))
-                Card(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-                    Text(question.text, modifier = Modifier.fillMaxWidth().background(Color.White)
-                        .padding(18.dp), style = MaterialTheme.typography.titleMedium, color = Color.Black)
-                }
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    color = Color.DarkGray, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.fillMaxWidth().padding(top = 5.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(question.text, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 10.dp)
+                    .background(Color(0xFFF2F2F2)).padding(20.dp), fontSize = 14.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = Color.Black)
+                Column(Modifier.weight(1f).padding(start = 20.dp, end = 20.dp, top = 5.dp, bottom = 5.dp).verticalScroll(rememberScrollState())) {
                     displayedAnswers.forEach { answer ->
                         val color = when {
                             submitted && answer.correct -> Color(0xFFCDECCF)
@@ -152,8 +151,8 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                                 GameFeedback.play(context, lastCorrect)
                                 feedbackClosing = false
                                 submitted = true
-                            }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(answer.text, color = Color.DarkGray)
+                            }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(answer.text, color = if (submitted && answer.correct) Color.White else Color(0xFF505050), fontSize = 13.sp)
                         }
                     }
                     if (submitted) {
