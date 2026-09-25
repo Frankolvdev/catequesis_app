@@ -22,6 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -31,6 +35,7 @@ import com.chayzay.catequesisapp.data.ExamQuestion
 import com.chayzay.catequesisapp.settings.GameFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 
 /** Preguntados no acredita la clase; admite las respuestas múltiples CLOSED del banco original. */
 @Composable
@@ -46,10 +51,17 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var selected by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var submitted by remember(classId) { mutableStateOf(false) }
     var lastCorrect by remember(classId) { mutableStateOf(false) }
+    var showEndDialog by remember(classId) { mutableStateOf(true) }
     LaunchedEffect(classId, retry) {
         error = null
         try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
+    }
+    LaunchedEffect(classId, position, submitted) {
+        if (submitted) {
+            delay(3000)
+            if (submitted) { position++; selected = emptySet(); submitted = false }
+        }
     }
     Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
@@ -60,9 +72,20 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
             questions == null -> CircularProgressIndicator()
             questions!!.size < 10 -> Text("No hay diez preguntas completas para esta clase.")
             position >= questions!!.size -> {
+                if (showEndDialog) androidx.compose.material3.AlertDialog(onDismissRequest = { },
+                    title = { Text("Preguntados") },
+                    text = { Text("Juego terminado: $correct/${questions!!.size}. ¿Jugar otra vez?") },
+                    confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                        position = 0; correct = 0; goodStage = 0; badStage = 0
+                        selected = emptySet(); submitted = false; showEndDialog = true
+                        questions = questions!!.shuffled()
+                    }) { Text("Jugar otra vez") } },
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = { showEndDialog = false }) {
+                        Text("Cerrar")
+                    } })
                 Text("Juego terminado: $correct / ${questions!!.size}", color = accent)
                 Button(onClick = {
-                    position = 0; correct = 0; goodStage = 0; badStage = 0
+                    position = 0; correct = 0; goodStage = 0; badStage = 0; showEndDialog = true
                     selected = emptySet(); submitted = false
                     questions = questions!!.shuffled()
                 }) { Text("Jugar de nuevo") }
@@ -98,8 +121,10 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 if (submitted) Text(if (lastCorrect) "¡Correcto!" else "Respuesta incorrecta. Las opciones correctas aparecen en verde.",
                     color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
-                if (submitted) GameCharacterFeedback(lastCorrect,
-                    if (lastCorrect) goodStage else badStage)
+                if (submitted) Popup(alignment = Alignment.BottomEnd, offset = IntOffset(-24, -110)) {
+                    Surface { GameCharacterFeedback(lastCorrect,
+                        if (lastCorrect) goodStage else badStage) }
+                }
                 Button(enabled = submitted || selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         if (!submitted) {

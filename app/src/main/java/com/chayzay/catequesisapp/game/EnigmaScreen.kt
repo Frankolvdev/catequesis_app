@@ -39,6 +39,7 @@ import kotlinx.coroutines.withContext
 /** Casillas y botones del layout original con interacción de arrastrar y soltar. */
 @Composable
 fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
@@ -51,6 +52,10 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
     }
     val word = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
+    LaunchedEffect(round, refresh, finished) {
+        if (finished != null) com.chayzay.catequesisapp.settings.GameFeedback.finish(
+            context, finished == "¡Ganaste!")
+    }
     LaunchedEffect(classId, round, refresh, word?.id) {
         if (word != null) repeat(60) {
             delay(1000)

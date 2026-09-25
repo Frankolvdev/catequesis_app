@@ -50,6 +50,7 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var correct by remember(classId) { mutableIntStateOf(0) }
     var wrong by remember(classId) { mutableIntStateOf(0) }
     var seconds by remember(classId) { mutableIntStateOf(20) }
+    var showEndDialog by remember(classId) { mutableStateOf(true) }
     LaunchedEffect(classId) {
         try {
             val questions = withContext(Dispatchers.IO) { repository.getTrueFalseQuestions(classId) }
@@ -70,6 +71,16 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
             source == null -> CircularProgressIndicator()
             source!!.isEmpty() -> Text("Esta clase no tiene preguntas disponibles para el juego.", modifier = Modifier.padding(20.dp))
             index >= rounds.size -> {
+                if (showEndDialog) androidx.compose.material3.AlertDialog(onDismissRequest = { },
+                    title = { Text("Verdadero o Falso") },
+                    text = { Text("Juego terminado: $correct/10. ¿Quieres jugar otra vez?") },
+                    confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                        rounds = List(10) { val question = source!!.random(); question to question.answers.random() }
+                        index = 0; correct = 0; wrong = 0; showEndDialog = true
+                    }) { Text("Jugar otra vez") } },
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = { showEndDialog = false }) {
+                        Text("Cerrar")
+                    } })
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Terminaste: $correct / 10", color = accent, fontWeight = FontWeight.Bold)
                 }
@@ -78,6 +89,7 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     index = 0
                     correct = 0
                     wrong = 0
+                    showEndDialog = true
                 }, modifier = Modifier.fillMaxWidth()) { Text("Jugar de nuevo") }
             }
             else -> {

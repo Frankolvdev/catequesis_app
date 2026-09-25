@@ -41,6 +41,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
+    var showResult by remember(classId, round) { mutableStateOf(false) }
     var pairs by remember(classId) { mutableStateOf<List<ExamQuestion>>(emptyList()) }
     var answerOrder by remember(classId) { mutableStateOf<List<ExamQuestion>>(emptyList()) }
     var solved by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
@@ -71,6 +72,12 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
             delay(1000)
             if (solved.size == 4) return@LaunchedEffect
             seconds--
+        }
+    }
+    LaunchedEffect(solved.size, seconds == 0) {
+        if (pairs.size == 4 && (solved.size == 4 || seconds == 0)) {
+            GameFeedback.finish(context, solved.size == 4)
+            showResult = true
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
@@ -104,7 +111,10 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 if (seconds == 0) Text("Se acabó el tiempo")
                 else if (solved.size == 4) Text("¡Completaste todas las parejas!")
-                if (seconds == 0 || solved.size == 4) GameCharacterFeedback(solved.size == 4)
+                if (showResult) GameResultDialog(solved.size == 4,
+                    if (solved.size == 4) "¡Completaste todas las parejas!" else "Se acabó el tiempo") {
+                    showResult = false
+                }
                 else Button(enabled = selectedQuestion != null && selectedAnswer != null,
                     onClick = {
                         GameFeedback.play(context, selectedQuestion == selectedAnswer)

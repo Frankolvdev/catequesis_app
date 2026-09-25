@@ -7,6 +7,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
 
@@ -15,6 +25,14 @@ import com.chayzay.catequesisapp.profile.ProfileSettings
 fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier = Modifier.size(120.dp)) {
     val male = ProfileSettings.load(LocalContext.current)?.gender == "MALE"
     val index = count.coerceIn(1, 5) - 1
+    val scale = remember(success, index) { Animatable(1f) }
+    val opacity = remember(success, index) { Animatable(1f) }
+    LaunchedEffect(success, index) {
+        coroutineScope {
+            launch { scale.animateTo(1.1f, tween(2500)); scale.animateTo(1f, tween(2500)) }
+            launch { opacity.animateTo(0.3f, tween(2500)); opacity.animateTo(1f, tween(2500)) }
+        }
+    }
     val pictures = when {
         male && success -> intArrayOf(R.drawable.nino_bien1b, R.drawable.nino_bien2b,
             R.drawable.nino_bien3b, R.drawable.nino_bien4b, R.drawable.nino_bien5b)
@@ -27,5 +45,15 @@ fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier =
     }
     Image(painterResource(pictures[index]),
         contentDescription = if (success) "Respuesta correcta" else "Respuesta incorrecta",
-        modifier = modifier)
+        modifier = modifier.graphicsLayer {
+            scaleX = scale.value; scaleY = scale.value; alpha = opacity.value
+        })
+}
+
+@Composable
+fun GameResultDialog(success: Boolean, message: String, onAccept: () -> Unit) {
+    AlertDialog(onDismissRequest = { },
+        title = { Text(message) },
+        text = { GameCharacterFeedback(success) },
+        confirmButton = { TextButton(onClick = onAccept) { Text("Aceptar") } })
 }

@@ -63,6 +63,7 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
     var imageLoaded by remember(classId, type, index) { mutableStateOf(false) }
     var enlarged by remember(classId, type, index) { mutableStateOf(false) }
     var imageAttempt by remember(classId, type, index) { mutableIntStateOf(0) }
+    var showEndDialog by remember(classId, type) { mutableStateOf(true) }
     LaunchedEffect(classId, type) {
         try { images = withContext(Dispatchers.IO) { repository.getImageActivities(classId, type) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las imágenes") }
@@ -123,8 +124,17 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
             images == null -> CircularProgressIndicator()
             images!!.isEmpty() -> Text("Esta clase no tiene contenido de $title.")
             current == null -> {
+                if (showEndDialog) androidx.compose.material3.AlertDialog(onDismissRequest = { },
+                    title = { Text("Terminaste las imágenes") },
+                    text = { Text("¿Quieres empezar de nuevo?") },
+                    confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                        index = 0; showEndDialog = true
+                    }) { Text("Volver a empezar") } },
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = {
+                        showEndDialog = false
+                    }) { Text("Cerrar") } })
                 Text("Terminaste de ver las imágenes de la clase")
-                Button(onClick = { index = 0 }) { Text("Volver a empezar") }
+                Button(onClick = { index = 0; showEndDialog = true }) { Text("Volver a empezar") }
             }
             else -> {
                 Text("${index + 1} / ${images!!.size}" + if (type == "GAME_ADIVINA") "  ·  00:${seconds.toString().padStart(2, '0')}" else "")

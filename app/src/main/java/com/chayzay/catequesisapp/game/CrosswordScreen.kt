@@ -33,6 +33,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.HangmanWord
+import com.chayzay.catequesisapp.settings.GameFeedback
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
@@ -40,12 +42,19 @@ import java.text.Normalizer
 /** Crucigrama horizontal de 15 columnas y pistas por palabra. */
 @Composable
 fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
+    val context = LocalContext.current
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var selectedId by remember(classId) { mutableStateOf<Int?>(null) }
     var entries by remember(classId) { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var solved by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var feedback by remember(classId) { mutableStateOf("") }
+    var showResult by remember(classId) { mutableStateOf(false) }
+    LaunchedEffect(solved.size, words?.size) {
+        if (!words.isNullOrEmpty() && solved.size == words!!.size) {
+            GameFeedback.finish(context, true); showResult = true
+        }
+    }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getCrosswordWords(classId) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudo cargar el crucigrama") }
@@ -111,8 +120,10 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 if (feedback.isNotBlank()) Text(feedback)
                 if (solved.size == list.size) {
                     Text("¡Completaste el crucigrama!")
-                    GameCharacterFeedback(true)
-                    Button(onClick = { solved = emptySet(); entries = emptyMap(); feedback = "" }) {
+                    if (showResult) GameResultDialog(true, "¡Completaste el crucigrama!") {
+                        showResult = false
+                    }
+                    Button(onClick = { solved = emptySet(); entries = emptyMap(); feedback = ""; showResult = false }) {
                         Text("Jugar de nuevo")
                     }
                 }

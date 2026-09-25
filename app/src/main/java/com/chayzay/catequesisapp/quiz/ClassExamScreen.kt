@@ -33,6 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.material3.Surface
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
@@ -41,6 +44,7 @@ import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.settings.GameFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 
 @Composable
 fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProgressStore,
@@ -63,6 +67,22 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
         questions = null
         try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
         catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo cargar el examen") }
+    }
+    LaunchedEffect(classId, position, submitted) {
+        if (submitted) {
+            delay(3000)
+            if (submitted) {
+                if (position == 9) {
+                    if (correctCount == 10) try {
+                        store.markPassed(classId); onPassed()
+                    } catch (cause: Exception) {
+                        error = ApiMessages.fromException(cause, "No se pudo guardar la clase")
+                        return@LaunchedEffect
+                    }
+                    finished = true
+                } else { position++; selected = emptySet(); submitted = false }
+            }
+        }
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -123,7 +143,10 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                             color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
                         val image = feedbackImage(profile.gender, lastCorrect,
                             if (lastCorrect) goodStage else badStage)
-                        Image(painterResource(image), contentDescription = null, modifier = Modifier.size(100.dp))
+                        Popup(alignment = Alignment.BottomEnd, offset = IntOffset(-24, -110)) {
+                            Surface { Image(painterResource(image), contentDescription = null,
+                                modifier = Modifier.size(120.dp)) }
+                        }
                     }
                 }
                 Button(enabled = submitted || selected.isNotEmpty(),

@@ -53,6 +53,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var round by remember(classId) { mutableIntStateOf(0) }
     var selected by remember(classId, round) { mutableStateOf<Set<Char>>(emptySet()) }
     var showHint by remember(classId, round) { mutableStateOf(false) }
+    var showResult by remember(classId, round) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
@@ -69,6 +70,9 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 val mistakes = selected.count { it !in answer }
                 val won = answer.filter { it in 'A'..'Z' }.all { it in selected }
                 val finished = won || mistakes >= 7
+                LaunchedEffect(round, finished) {
+                    if (finished) { GameFeedback.finish(context, won); showResult = true }
+                }
                 Text(answer.map { letter ->
                     if (letter !in 'A'..'Z' || letter in selected || finished) letter.toString() else "_"
                 }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
@@ -78,8 +82,9 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
                     Text(if (won) "¡Ganaste!" else "La palabra era $answer", color = Color(0xFF653E26))
-                    GameCharacterFeedback(won)
                     Button(onClick = { round++ }) { Text("Jugar otra vez") }
+                    if (showResult) GameResultDialog(won,
+                        if (won) "¡Ganaste!" else "Perdiste: $answer") { showResult = false }
                 }
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val keyWidth = (maxWidth / 10).coerceAtMost(32.dp)

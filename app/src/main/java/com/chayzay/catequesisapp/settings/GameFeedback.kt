@@ -9,6 +9,10 @@ object GameFeedback {
         playResource(context, if (correct) R.raw.aplauso_corto else R.raw.risa)
     }
     fun timeout(context: Context) { playResource(context, R.raw.pitar) }
+    /** Los juegos antiguos usaban un aplauso largo al finalizar una ronda ganada. */
+    fun finish(context: Context, success: Boolean) {
+        playResource(context, if (success) R.raw.aplauso else R.raw.risa)
+    }
     private fun playResource(context: Context, resource: Int) {
         if (!AppPreferences(context).sound) return
         try {
