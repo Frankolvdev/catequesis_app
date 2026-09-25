@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +29,7 @@ import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ProgressSyncRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 /** Lista de cursos aprobados y descarga de certificados del perfil original. */
 @Composable
@@ -42,9 +44,11 @@ fun ApprovedCoursesScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var items by remember(user.id) { mutableStateOf<List<Course>?>(null) }
     var error by remember(user.id) { mutableStateOf<String?>(null) }
     var serverReady by remember(user.id) { mutableStateOf(false) }
+    var certificatePending by remember(user.id) { mutableStateOf(false) }
     var selected by remember { mutableStateOf<Course?>(null) }
     var classes by remember(selected?.id) { mutableStateOf<List<CourseClass>?>(null) }
 
@@ -91,18 +95,33 @@ fun ApprovedCoursesScreen(
                 Text(course.name)
                 Text("Felicidades curso aprobado.")
                 Button(modifier = Modifier.fillMaxWidth(),
-                    enabled = !certificates || serverReady,
+                    enabled = !certificatePending,
                     onClick = {
                         if (certificates) {
-                            val uri = certificateUri(apiBaseUrl, user.id, course.id)
-                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                            catch (_: Exception) { error = "No se pudo abrir el certificado." }
+                            // CertificateCourseAdapter legacy volvía a enviar/verificar
+                            // course_approved/manipulate justo al tocar cada certificado.
+                            scope.launch {
+                                certificatePending = true
+                                error = null
+                                try {
+                                    sync.sync(user, progress)
+                                    serverReady = true
+                                    onSynced()
+                                    val uri = certificateUri(apiBaseUrl, user.id, course.id)
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                } catch (_: Exception) {
+                                    error = "No se pudo verificar el curso o abrir el certificado."
+                                } finally {
+                                    certificatePending = false
+                                }
+                            }
                         } else selected = course
                     }) { Text(if (certificates) "Descargar Certificado" else "Ver contenido") }
             }
         }
+        if (certificates && certificatePending) CircularProgressIndicator()
         if (certificates && !serverReady && !items.isNullOrEmpty())
-            Text("Conéctate y sincroniza el progreso para descargar certificados.")
+            Text("No se pudo verificar todavía el progreso. Puedes volver a intentar al tocar el certificado.")
     }
     selected?.let { course ->
         AlertDialog(onDismissRequest = { selected = null },
