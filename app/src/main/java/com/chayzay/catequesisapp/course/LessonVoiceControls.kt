@@ -8,7 +8,9 @@ import android.speech.tts.UtteranceProgressListener
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -20,7 +22,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.chayzay.catequesisapp.R
 import androidx.core.text.HtmlCompat
 import com.chayzay.catequesisapp.data.Lesson
 import com.chayzay.catequesisapp.links.HttpsLinks
@@ -128,21 +132,33 @@ fun LessonVoiceControls(
             if (index >= 0) { consumedRequest = requestNumber; speakAt(index) }
         }
     }
+    // El legacy mostraba estos controles como iconos de acción (play/pause/anterior/siguiente),
+    // no como botones Material con texto. Conservamos la lógica actual y recuperamos sus gráficos.
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Button(enabled = ready && passages.isNotEmpty(), onClick = {
-            val engine = reader ?: return@Button
+        IconButton(enabled = ready && passages.isNotEmpty(), onClick = {
+            val engine = reader ?: return@IconButton
             if (playing) {
                 playing = false; engine.stop(); onFocus(null); message = "Lectura detenida"
             } else speakAt(position.coerceIn(passages.indices))
-        }) { Text(if (playing) "Detener" else "Escuchar") }
-        Button(enabled = ready && passages.isNotEmpty(), onClick = {
+        }) {
+            Image(
+                painter = painterResource(if (playing) R.drawable.ic_action_pause else R.drawable.ic_action_play),
+                contentDescription = if (playing) "Detener" else "Escuchar",
+                modifier = Modifier.size(32.dp)
+            )
+        }
+        IconButton(enabled = ready && passages.isNotEmpty(), onClick = {
             if (!playing) message = "Inicia la lectura para usar anterior/siguiente"
             else if (position > 0) speakAt(position - 1)
-        }) { Text("‹") }
-        Button(enabled = ready && passages.isNotEmpty(), onClick = {
+        }) {
+            Image(painterResource(R.drawable.ic_action_previous), contentDescription = "Anterior", modifier = Modifier.size(32.dp))
+        }
+        IconButton(enabled = ready && passages.isNotEmpty(), onClick = {
             if (!playing) message = "Inicia la lectura para usar anterior/siguiente"
             else if (position < passages.lastIndex) speakAt(position + 1)
-        }) { Text("›") }
+        }) {
+            Image(painterResource(R.drawable.ic_action_next), contentDescription = "Siguiente", modifier = Modifier.size(32.dp))
+        }
     }
     if (message.isNotBlank()) Text(message)
 }

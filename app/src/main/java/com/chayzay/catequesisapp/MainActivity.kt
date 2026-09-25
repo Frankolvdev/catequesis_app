@@ -533,9 +533,15 @@ private fun CatalogScreen(
                 }), contentDescription = null,
                     modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp).size(35.dp))
             } else {
-                Text("‹", modifier = Modifier.align(Alignment.CenterStart).clickable { goBack() }
-                    .padding(horizontal = 16.dp), color = Color.White,
-                    style = MaterialTheme.typography.headlineMedium)
+                Image(
+                    painter = painterResource(R.drawable.ic_baseline_arrow_back_ios_24),
+                    contentDescription = "Volver",
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.align(Alignment.CenterStart)
+                        .padding(horizontal = 16.dp)
+                        .size(24.dp)
+                        .clickable { goBack() }
+                )
             }
             if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
                 page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
