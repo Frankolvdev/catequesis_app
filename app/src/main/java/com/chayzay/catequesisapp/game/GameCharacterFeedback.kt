@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,7 @@ fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier =
     Image(painterResource(pictures[index]),
         contentDescription = if (success) "Respuesta correcta" else "Respuesta incorrecta",
         modifier = modifier.graphicsLayer {
+            transformOrigin = TransformOrigin(0.5f, 0.1f)
             scaleX = scale.value; scaleY = scale.value; alpha = opacity.value
         })
 }
