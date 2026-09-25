@@ -109,6 +109,13 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
             index++
         }
     }
+    LaunchedEffect(images) {
+        if (images?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         val title = when (type) {

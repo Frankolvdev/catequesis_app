@@ -46,7 +46,7 @@ private val gallows = intArrayOf(R.drawable.ahorcado0, R.drawable.ahorcado1,
 
 /** Aspecto del antiguo Ahorcado: horca original y teclado QWERTY de tres filas. */
 @Composable
-fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
+fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onExit: () -> Unit) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
@@ -69,6 +69,13 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
         if (round > 0) current = words?.takeIf { it.isNotEmpty() }?.random()
     }
     val active = current
+    LaunchedEffect(words) {
+        if (words?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {

@@ -70,6 +70,13 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color, on
             }
         }
     }
+    LaunchedEffect(allQuestions) {
+        if (allQuestions?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             error != null -> {

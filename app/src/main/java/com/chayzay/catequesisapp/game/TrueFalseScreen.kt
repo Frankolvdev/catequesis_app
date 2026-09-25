@@ -71,6 +71,13 @@ fun TrueFalseScreen(
             if (index < rounds.size) { GameFeedback.timeout(context); wrong++; index++ }
         }
     }
+    LaunchedEffect(source) {
+        if (source?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
         when {
             error != null -> Text(error!!, modifier = Modifier.padding(20.dp))

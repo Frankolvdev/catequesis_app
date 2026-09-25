@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
 
 /** Casillas y botones del layout original con interacción de arrastrar y soltar. */
 @Composable
-fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
+fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color, onExit: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var word by remember(classId) { mutableStateOf<HangmanWord?>(null) }
@@ -73,6 +73,13 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
         }
     }
     val activeWord = word
+    LaunchedEffect(words) {
+        if (words?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize().padding(horizontal = 5.dp)) {
         when {
             error != null -> Text(error!!)

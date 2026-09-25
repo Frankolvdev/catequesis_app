@@ -681,10 +681,14 @@ private fun CatalogScreen(
             CrosswordScreen(game.courseClass.id, repository, accent)
         } else if (page is CatalogPage.Enigma) {
             val game = page as CatalogPage.Enigma
-            EnigmaScreen(game.courseClass.id, repository, accent)
+            EnigmaScreen(game.courseClass.id, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.Match) {
             val game = page as CatalogPage.Match
-            MatchScreen(game.courseClass.id, repository, accent)
+            MatchScreen(game.courseClass.id, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.TrueFalse) {
             val game = page as CatalogPage.TrueFalse
             TrueFalseScreen(game.courseClass.id, repository, accent) {
@@ -692,7 +696,9 @@ private fun CatalogScreen(
             }
         } else if (page is CatalogPage.Hangman) {
             val game = page as CatalogPage.Hangman
-            HangmanScreen(game.courseClass.id, repository, accent)
+            HangmanScreen(game.courseClass.id, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.Exam) {
             val exam = page as CatalogPage.Exam
             ClassExamScreen(exam.courseClass.id, repository, progressStore, profile) {

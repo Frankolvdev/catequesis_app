@@ -37,7 +37,7 @@ import kotlinx.coroutines.withContext
 
 /** Cuatro parejas SIMPLE, respuesta correcta, verificación explícita y un minuto por ronda. */
 @Composable
-fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
+fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExit: () -> Unit) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
@@ -82,6 +82,13 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
             showResult = true
         }
     }
+    LaunchedEffect(source) {
+        if (source?.isEmpty() == true) {
+            android.widget.Toast.makeText(context, "No hay información", android.widget.Toast.LENGTH_SHORT).show()
+            onExit()
+        }
+    }
+
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Relaciona las respuestas", color = accent, fontWeight = FontWeight.Bold)
