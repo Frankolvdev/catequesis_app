@@ -182,7 +182,9 @@ class MainActivity : ComponentActivity() {
                 }
                 var showBrand by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
-                    delay(900)
+                    // Legacy SplashScreen: MILISECONDS_COUNT = 3000.
+                    // Mantener la portada visible el mismo tiempo que la app original.
+                    delay(3000)
                     showBrand = false
                 }
                 if (showBrand) BrandScreen()
