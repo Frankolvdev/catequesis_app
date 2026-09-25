@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -109,25 +112,51 @@ fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String, onContact: () -> U
 private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: String) {
     var celebrations by remember(year) { mutableStateOf<List<Celebration>?>(null) }
     var error by remember(year) { mutableStateOf<String?>(null) }
-    LaunchedEffect(year, apiBaseUrl) {
+    var retry by remember(year) { mutableIntStateOf(0) }
+    var yearEntry by remember(year) { mutableStateOf(year.toString()) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(year, apiBaseUrl, retry) {
+        error = null
+        celebrations = null
         try {
             celebrations = withContext(Dispatchers.IO) { loadCalendar(apiBaseUrl, year) }
         } catch (e: Exception) {
             error = ApiMessages.fromException(e, "No se pudo cargar el calendario")
         }
     }
+    LaunchedEffect(year, celebrations) {
+        val entries = celebrations.orEmpty()
+        if (entries.isNotEmpty()) {
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
+            val target = if (year == Calendar.getInstance().get(Calendar.YEAR))
+                entries.indexOfFirst { it.date >= today }.takeIf { it >= 0 } ?: 0
+            else 0
+            listState.scrollToItem(target)
+        }
+    }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = { onYearChange(year - 1) }) { Text("‹") }
+            Button(enabled = year > 2002, onClick = { onYearChange(year - 1) }) { Text("‹") }
             Text(year.toString(), style = MaterialTheme.typography.titleLarge)
-            Button(onClick = { onYearChange(year + 1) }) { Text("›") }
+            Button(enabled = year < 2399, onClick = { onYearChange(year + 1) }) { Text("›") }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(yearEntry, onValueChange = { yearEntry = it.filter(Char::isDigit).take(4) },
+                label = { Text("Ir al año (2002–2399)") }, singleLine = true,
+                modifier = Modifier.weight(1f))
+            Button(enabled = yearEntry.toIntOrNull()?.let { it in 2002..2399 } == true,
+                onClick = { yearEntry.toIntOrNull()?.let(onYearChange) }) { Text("Ir") }
         }
         when {
-            error != null -> Text("No se pudo cargar el año $year: $error", Modifier.padding(16.dp))
+            error != null -> Column(Modifier.padding(16.dp)) {
+                Text("No se pudo cargar el año $year: $error")
+                Button(onClick = { retry++ }) { Text("Reintentar") }
+            }
             celebrations == null -> CircularProgressIndicator(Modifier.padding(24.dp))
             celebrations!!.isEmpty() -> Text("No hay celebraciones para $year", Modifier.padding(16.dp))
-            else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(celebrations!!, key = { it.date.toString() }) { item ->
                     Card(Modifier.fillMaxWidth()) {

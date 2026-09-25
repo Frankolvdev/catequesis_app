@@ -55,6 +55,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -92,6 +93,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -695,6 +697,7 @@ private fun CatalogScreen(
             } else if (page is CatalogPage.Activities) {
                 var showReal by remember(page) { mutableStateOf(true) }
                 var showOnline by remember(page) { mutableStateOf(true) }
+                var showInstructions by remember(page) { mutableStateOf(false) }
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Actividades reales  ${if (showReal) "−" else "+"}",
@@ -723,6 +726,36 @@ private fun CatalogScreen(
                                 }.padding(12.dp), color = Color(0xFF505050))
                         }
                     }
+                    Button(onClick = { showInstructions = true }) {
+                        Text(stringResource(R.string.textExplicacionJuego))
+                    }
+                }
+                if (showInstructions) {
+                    val instructions = listOf(
+                        R.string.textExpGameOne to R.string.textExpGameOneSummary,
+                        R.string.textExpGameTwo to R.string.textExpGameTwoSummary,
+                        R.string.textExpGameThree to R.string.textExpGameThreeSummary,
+                        R.string.textExpGameFour to R.string.textExpGameFourSummary,
+                        R.string.textExpGameFive to R.string.textExpGameFiveSummary,
+                        R.string.textExpGameSix to R.string.textExpGameSixSummary,
+                        R.string.textExpGameSeven to R.string.textExpGameSevenSummary,
+                        R.string.textExpGameEight to R.string.textExpGameEightSummary,
+                        R.string.textExpGameNine to R.string.textExpGameNineSummary
+                    )
+                    AlertDialog(
+                        onDismissRequest = { showInstructions = false },
+                        title = { Text(stringResource(R.string.textExplicacionJuego)) },
+                        text = {
+                            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                instructions.forEach { (title, summary) ->
+                                    Text(stringResource(title), fontWeight = FontWeight.Bold)
+                                    Text(stringResource(summary))
+                                }
+                            }
+                        },
+                        confirmButton = { TextButton(onClick = { showInstructions = false }) { Text("Cerrar") } }
+                    )
                 }
             } else if (result.rows.isEmpty()) {
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))

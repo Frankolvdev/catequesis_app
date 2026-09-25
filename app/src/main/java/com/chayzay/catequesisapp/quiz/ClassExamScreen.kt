@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.R
@@ -37,12 +38,14 @@ import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ExamQuestion
 import com.chayzay.catequesisapp.profile.ProfileSettings
+import com.chayzay.catequesisapp.settings.GameFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
 fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProgressStore,
                     profile: ProfileSettings, onPassed: () -> Unit) {
+    val context = LocalContext.current
     var questions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var retryLoad by remember(classId) { mutableStateOf(0) }
@@ -125,6 +128,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         if (!submitted) {
                             lastCorrect = selected == question.answers.filter { it.correct }.map { it.id }.toSet()
                             if (lastCorrect) correctCount++ else wrongCount++
+                            GameFeedback.play(context, lastCorrect)
                             submitted = true
                         } else if (position == 9) {
                             if (correctCount == 10) {

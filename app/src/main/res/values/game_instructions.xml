@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="textExplicacionJuego">Explicación de cómo jugar</string>
+  <string name="textExpGameOne">Juego: Imágenes</string>
+  <string name="textExpGameOneSummary">Se mostrarán algunas imágenes que te enseñarán cosas nuevas relacionadas con la clase. Muchas veces encontrarás varias imágenes a las que puedes pasar deslizando el dedo sobre la pantalla.</string>
+  <string name="textExpGameTwo">Juego: Imagen con texto</string>
+  <string name="textExpGameTwoSummary">Te mostraremos una imagen que tienes que analizar concienzudamente. Abajo te haremos unas preguntas para ver si aciertas a responderlas.</string>
+  <string name="textExpGameThree">Juego: Adivina</string>
+  <string name="textExpGameThreeSummary">Es un juego muy divertido para jugar en clase. Escoge una persona del grupo a quien le pondrás el celular en la frente. Él no puede ver la imagen que aparece en la pantalla, pero el resto del grupo sí. En 20 segundos el grupo tiene que darle pistas a la persona sobre aquello que está en la pantalla, sin mencionar la palabra que ahí aparece, ni dibujar la imagen. Si acierta, puede pasar a la siguiente imagen.</string>
+  <string name="textExpGameFour">Juego: El ahorcado</string>
+  <string name="textExpGameFourSummary">Es el clásico juego de optar por letras hasta adivinar la palabra. Los fallos ponen en aprieto al ahorcado.</string>
+  <string name="textExpGameFive">Juego: Crucigramas</string>
+  <string name="textExpGameFiveSummary">Te damos pistas y tienes que llenar las palabras del crucigrama.</string>
+  <string name="textExpGameSix">Juego: Enigma</string>
+  <string name="textExpGameSixSummary">Tienes un minuto para organizar las letras y descubrir qué palabra hay escondida. Tienes opción a pedir una pista.</string>
+  <string name="textExpGameSeven">Juego: Preguntados (Quiz)</string>
+  <string name="textExpGameSevenSummary">El clásico juego donde te hacen una pregunta y tienes 4 respuestas posibles. Solo una es correcta.</string>
+  <string name="textExpGameEight">Juego: Hacer el match</string>
+  <string name="textExpGameEightSummary">Te mostrarán dos columnas con muchas opciones: debes unir las frases de la izquierda con las que corresponden de la derecha, de forma que la frase final tenga sentido.</string>
+  <string name="textExpGameNine">Juego: Verdadero o Falso</string>
+  <string name="textExpGameNineSummary">Se mostrará una pregunta y una respuesta que puede ser verdadera o falsa. Tienes 20 segundos para responder.</string>
+</resources>
