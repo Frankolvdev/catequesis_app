@@ -1,5 +1,6 @@
 package com.chayzay.catequesisapp.chat
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +62,10 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
     var choosing by remember { mutableStateOf(false) }
     var loading by remember(user.apiKey) { mutableStateOf(true) }
     var error by remember(user.apiKey) { mutableStateOf("") }
+
+    BackHandler(enabled = selected != null || choosing) {
+        if (selected != null) selected = null else choosing = false
+    }
 
     DisposableEffect(root, user.apiKey) {
         val listener = object : ValueEventListener {
@@ -206,8 +211,8 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
             }
         }
         Row(Modifier.fillMaxWidth()) {
-            OutlinedTextField(value = draft, onValueChange = { draft = it.take(1000) },
-                label = { Text("Mensaje") }, modifier = Modifier.weight(1f), maxLines = 4)
+            OutlinedTextField(value = draft, onValueChange = { draft = it.take(500) },
+                label = { Text("Mensaje (${draft.length}/500)") }, modifier = Modifier.weight(1f), maxLines = 4)
             Button(enabled = !sending && !loading && draft.isNotBlank() && thread != null,
                 onClick = {
                     val message = draft.trim()

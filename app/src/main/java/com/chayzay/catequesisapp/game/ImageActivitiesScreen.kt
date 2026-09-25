@@ -10,8 +10,12 @@ import android.hardware.SensorManager
 import android.os.SystemClock
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -34,10 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.ImageActivity
 import com.chayzay.catequesisapp.settings.GameFeedback
@@ -54,13 +62,16 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
     var bitmap by remember(classId, type, index) { mutableStateOf<Bitmap?>(null) }
     var imageLoaded by remember(classId, type, index) { mutableStateOf(false) }
     var enlarged by remember(classId, type, index) { mutableStateOf(false) }
+    var imageAttempt by remember(classId, type, index) { mutableIntStateOf(0) }
     LaunchedEffect(classId, type) {
         try { images = withContext(Dispatchers.IO) { repository.getImageActivities(classId, type) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las imágenes") }
     }
     val current = images?.getOrNull(index)
-    LaunchedEffect(current?.id) {
+    LaunchedEffect(current?.id, imageAttempt) {
         if (current != null) {
+            imageLoaded = false
+            bitmap = null
             bitmap = try { withContext(Dispatchers.IO) { repository.loadImageActivity(current) } }
                 catch (_: Exception) { null }
             imageLoaded = true
@@ -118,20 +129,48 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
             else -> {
                 Text("${index + 1} / ${images!!.size}" + if (type == "GAME_ADIVINA") "  ·  00:${seconds.toString().padStart(2, '0')}" else "")
                 if (!imageLoaded) CircularProgressIndicator()
-                else if (bitmap == null) Text("No se pudo cargar esta imagen del servidor.")
+                else if (bitmap == null) {
+                    Text("No se pudo cargar esta imagen del servidor.")
+                    Button(onClick = { imageAttempt++ }) { Text("Reintentar imagen") }
+                }
                 bitmap?.let { loaded ->
                     Image(loaded.asImageBitmap(), contentDescription = current.text,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp)
                             .clickable { enlarged = true })
-                    if (enlarged) Dialog(onDismissRequest = { enlarged = false }) {
-                        Image(loaded.asImageBitmap(), contentDescription = current.text,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxWidth().clickable { enlarged = false })
+                    if (enlarged) Dialog(onDismissRequest = { enlarged = false },
+                        properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                        var zoom by remember(current.id) { mutableStateOf(1f) }
+                        var pan by remember(current.id) { mutableStateOf(Offset.Zero) }
+                        Column(Modifier.fillMaxSize().background(Color.Black)) {
+                            Button(onClick = { enlarged = false }, modifier = Modifier.padding(12.dp)) {
+                                Text("Cerrar imagen")
+                            }
+                            Box(Modifier.fillMaxWidth().weight(1f)) {
+                                Image(loaded.asImageBitmap(), contentDescription = current.text,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                        .pointerInput(current.id) {
+                                            detectTransformGestures { _, change, translation, _ ->
+                                                zoom = (zoom * change).coerceIn(1f, 5f)
+                                                pan = if (zoom == 1f) Offset.Zero else pan + translation
+                                            }
+                                        }
+                                        .graphicsLayer(scaleX = zoom, scaleY = zoom,
+                                            translationX = pan.x, translationY = pan.y))
+                            }
+                        }
                     }
                 }
                 if (type != "IMAGES" && current.text.isNotBlank()) Text(current.text, color = Color.DarkGray)
-                Button(onClick = { index++ }) { Text(if (type == "GAME_ADIVINA") "Siguiente" else "Siguiente imagen") }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (type != "GAME_ADIVINA") Button(enabled = index > 0,
+                        onClick = { index-- }) { Text("‹ Anterior") }
+                    Button(enabled = type == "GAME_ADIVINA" || index < images!!.lastIndex,
+                        onClick = { index++ }) {
+                        Text(if (type == "GAME_ADIVINA") "Siguiente" else "Siguiente imagen ›")
+                    }
+                }
             }
         }
     }
