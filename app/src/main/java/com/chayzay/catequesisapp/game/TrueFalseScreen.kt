@@ -41,7 +41,12 @@ private val gameGreen = Color(0xFF2E7B0B)
 
 /** Disposición original: fallos/tiempo/aciertos, pregunta al centro, dos botones abajo. */
 @Composable
-fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
+fun TrueFalseScreen(
+    classId: Int,
+    repository: CourseRepository,
+    accent: Color,
+    onExit: () -> Unit
+) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
@@ -79,19 +84,9 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
                         rounds = List(10) { val question = source!!.random(); question to question.answers.random() }
                         index = 0; correct = 0; wrong = 0; showEndDialog = true
                     }) { Text("Jugar otra vez") } },
-                    dismissButton = { androidx.compose.material3.TextButton(onClick = { showEndDialog = false }) {
-                        Text("Cerrar")
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = onExit) {
+                        Text("No")
                     } })
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("Terminaste: $correct / 10", color = accent, fontWeight = FontWeight.Bold)
-                }
-                Button(onClick = {
-                    rounds = List(10) { val question = source!!.random(); question to question.answers.random() }
-                    index = 0
-                    correct = 0
-                    wrong = 0
-                    showEndDialog = true
-                }, modifier = Modifier.fillMaxWidth()) { Text("Jugar de nuevo") }
             }
             else -> {
                 val (question, answer) = rounds[index]

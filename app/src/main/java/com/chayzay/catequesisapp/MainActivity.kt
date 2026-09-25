@@ -685,7 +685,9 @@ private fun CatalogScreen(
             MatchScreen(game.courseClass.id, repository, accent)
         } else if (page is CatalogPage.TrueFalse) {
             val game = page as CatalogPage.TrueFalse
-            TrueFalseScreen(game.courseClass.id, repository, accent)
+            TrueFalseScreen(game.courseClass.id, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.Hangman) {
             val game = page as CatalogPage.Hangman
             HangmanScreen(game.courseClass.id, repository, accent)
