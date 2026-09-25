@@ -43,6 +43,7 @@ private val gameGreen = Color(0xFF2E7B0B)
 @Composable
 fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var rounds by remember(classId) { mutableStateOf<List<Pair<ExamQuestion, ExamAnswer>>>(emptyList()) }

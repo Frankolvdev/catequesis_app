@@ -4,6 +4,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.DisposableEffect
+import com.chayzay.catequesisapp.settings.GameFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 
@@ -27,4 +29,12 @@ internal fun Modifier.legacyCorrectAnswer(submitted: Boolean, correct: Boolean):
         label = "Respuesta correcta"
     )
     return this.alpha(opacity)
+}
+
+/** Igual que onPause() en los juegos antiguos: al salir de un juego no deja audio reproduciéndose. */
+@Composable
+internal fun StopGameAudioOnDispose() {
+    DisposableEffect(Unit) {
+        onDispose { GameFeedback.stop() }
+    }
 }

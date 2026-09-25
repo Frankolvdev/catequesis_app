@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var questions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var retry by remember(classId) { mutableIntStateOf(0) }

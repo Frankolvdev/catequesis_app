@@ -56,6 +56,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var images by remember(classId, type) { mutableStateOf<List<ImageActivity>?>(null) }
     var error by remember(classId, type) { mutableStateOf<String?>(null) }
     var index by remember(classId, type) { mutableIntStateOf(0) }

@@ -51,6 +51,7 @@ import java.text.Normalizer
 @Composable
 fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var selectedId by remember(classId) { mutableStateOf<Int?>(null) }

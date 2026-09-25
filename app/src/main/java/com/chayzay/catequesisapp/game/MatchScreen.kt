@@ -1,4 +1,5 @@
 package com.chayzay.catequesisapp.game
+import android.widget.Toast
 import com.chayzay.catequesisapp.data.ApiMessages
 
 import androidx.compose.foundation.background
@@ -38,6 +39,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var source by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
@@ -120,12 +122,18 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     if (solved.size == 4) "¡Completaste todas las parejas!" else "Se acabó el tiempo") {
                     showResult = false
                 }
-                else Button(enabled = selectedQuestion != null && selectedAnswer != null,
+                else Button(enabled = seconds > 0,
                     onClick = {
-                        if (selectedQuestion == selectedAnswer) solved = solved + selectedQuestion!!
-                        else mistakes++
-                        selectedQuestion = null
-                        selectedAnswer = null
+                        val question = selectedQuestion
+                        val answer = selectedAnswer
+                        if (question == null || answer == null) {
+                            Toast.makeText(context, "Selecciona una pregunta.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            if (question == answer) solved = solved + question
+                            else mistakes++
+                            selectedQuestion = null
+                            selectedAnswer = null
+                        }
                     }) { Text("Comprobar") }
                 if (seconds == 0 || solved.size == 4) Button(onClick = { round++ }) { Text("Jugar de nuevo") }
             }

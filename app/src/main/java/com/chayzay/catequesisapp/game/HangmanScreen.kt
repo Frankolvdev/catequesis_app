@@ -48,6 +48,7 @@ private val gallows = intArrayOf(R.drawable.ahorcado0, R.drawable.ahorcado1,
 @Composable
 fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
+    StopGameAudioOnDispose()
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
