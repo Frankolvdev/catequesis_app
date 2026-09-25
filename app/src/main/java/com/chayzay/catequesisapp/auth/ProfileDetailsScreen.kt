@@ -160,7 +160,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                         onClick = { civil = option.id; civilMenu = false }) }
                 }
                 OutlinedTextField(phone, { phone = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
-                Text("Nacimiento: ${birthDate.ifBlank { "Seleccionar fecha" }}")
+                Text("Nacimiento: ${birthDate.takeIf { it.isNotBlank() }?.let(::isoToLegacyDate) ?: "Seleccionar fecha"}")
                 Button(onClick = {
                     val now = Calendar.getInstance()
                     val parts = birthDate.split("-").mapNotNull { it.toIntOrNull() }
@@ -170,10 +170,12 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                         (parts.getOrNull(1) ?: 1) - 1, parts.getOrNull(2) ?: 1).show()
                 }) { Text("Elegir fecha") }
                 Button(enabled = !busy, onClick = {
-                    val year = birthDate.substringBefore('-').toIntOrNull()
-                    val current = Calendar.getInstance().get(Calendar.YEAR)
-                    if (country <= 0 || civil <= 0 || year == null || year !in 1940..(current - 8)) {
-                        error = "Elige país, estado civil y una fecha válida (edad mínima: 8 años)"
+                    val partsDate = birthDate.split("-")
+                    val year = partsDate.getOrNull(0)?.toIntOrNull()
+                    val month = partsDate.getOrNull(1)?.toIntOrNull()
+                    val day = partsDate.getOrNull(2)?.toIntOrNull()
+                    if (year == null || month !in 1..12 || day !in 1..31) {
+                        error = "Ingresa una fecha válida"
                         return@Button
                     }
                     scope.launch {
@@ -187,7 +189,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                             val parts = birthDate.split("-")
                             onBirthYearChanged(year)
                             context.getSharedPreferences("com.chayzay.catequesisapp_preferences", 0).edit()
-                                .putString("pref_key_birthdate", "${parts[2]}/${parts[1]}/${parts[0]}").apply()
+                                .putString("pref_key_birthdate", "${parts[2].toInt()}/${parts[1].toInt()}/${parts[0]}").apply()
                             error = "Datos personales actualizados"
                         } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron guardar los datos") }
                         finally { busy = false }
@@ -234,4 +236,13 @@ private fun encodePhoto(context: android.content.Context, uri: Uri): String {
     bitmap.recycle()
     if (out.size() > 2_000_000) throw IllegalStateException("Elige una foto más pequeña")
     return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+}
+
+private fun isoToLegacyDate(value: String): String {
+    val parts = value.split("-")
+    if (parts.size != 3) return value
+    val year = parts[0].toIntOrNull() ?: return value
+    val month = parts[1].toIntOrNull() ?: return value
+    val day = parts[2].toIntOrNull() ?: return value
+    return "$day/$month/$year"
 }
