@@ -175,7 +175,7 @@ private fun fontName(font: Int) = listOf("Pequeño", "Mediano", "Grande", "Extra
         Text(text, color = Color.Black, fontSize = 13.sp, modifier = Modifier.weight(1f))
         AndroidView(
             factory = { ctx -> android.widget.Switch(ctx).apply {
-                text = ""
+                setText("")
                 setOnCheckedChangeListener { _, value -> onChecked(value) }
             } },
             update = { view ->

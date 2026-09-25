@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.profile.ProfileSettings
@@ -117,8 +116,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(model = row.picture, contentDescription = null, contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(48.dp).clip(CircleShape))
+                                LegacyChatImage(row.picture, Modifier.size(48.dp).clip(CircleShape))
                                 Column(Modifier.weight(1f).padding(start = 5.dp)) {
                                     Text(row.name, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                                         color = Color(0xFF7A9989), modifier = Modifier.padding(bottom = 5.dp))
@@ -154,8 +152,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                         items(contacts.orEmpty()) { person ->
                             Row(Modifier.fillMaxWidth().padding(5.dp).clickable { selected = person; selecting = false; draft = ""; error = "" },
                                 verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(model = person.picture, contentDescription = null, contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(48.dp))
+                                LegacyChatImage(person.picture, Modifier.size(48.dp))
                                 Text(person.name, fontSize = 14.sp, color = Color.Black,
                                     modifier = Modifier.padding(start = 5.dp, bottom = 15.dp))
                             }

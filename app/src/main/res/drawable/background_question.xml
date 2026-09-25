@@ -9,7 +9,7 @@
                 android:width="5dp"
                 android:color="#838383" >
             </stroke>
-            <corners android:radius="@dimen/_5sdp"/>
+            <corners android:radius="5dp"/>
         </shape>
     </item>
 </layer-list>

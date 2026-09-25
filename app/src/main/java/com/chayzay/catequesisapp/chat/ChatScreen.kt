@@ -4,9 +4,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.res.painterResource
@@ -173,8 +174,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(model = entry.contact.picture, contentDescription = null, contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(48.dp).clip(CircleShape))
+                            LegacyChatImage(entry.contact.picture, Modifier.size(48.dp).clip(CircleShape))
                             Column(Modifier.weight(1f).padding(start = 5.dp)) {
                                 Text(entry.contact.name, color = Color(0xFF7A9989), fontSize = 12.sp,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(bottom = 5.dp))
@@ -215,7 +215,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
                         items(contacts, key = { it.key }) { person ->
                             Row(Modifier.fillMaxWidth().padding(5.dp).clickable { selected = person; choosing = false; error = "" },
                                 verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(model = person.picture, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(48.dp))
+                                LegacyChatImage(person.picture, Modifier.size(48.dp))
                                 Text(person.name, fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(start = 5.dp, bottom = 15.dp))
                             }
                         }
