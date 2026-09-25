@@ -1,8 +1,6 @@
 package com.chayzay.catequesisapp.auth
 
 import android.content.Intent
-import android.net.Uri
-import android.util.Base64
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,14 +90,7 @@ fun ApprovedCoursesScreen(
                     enabled = !certificates || serverReady,
                     onClick = {
                         if (certificates) {
-                            val host = Uri.parse(apiBaseUrl).host ?: "www.catequesis.org"
-                            val uri = Uri.Builder().scheme("https").authority(host)
-                                .appendPath("certificate").appendPath("certificate_course.php")
-                                .appendQueryParameter("user", Base64.encodeToString(
-                                    user.id.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP))
-                                .appendQueryParameter("course", Base64.encodeToString(
-                                    course.id.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP))
-                                .build()
+                            val uri = certificateUri(apiBaseUrl, user.id, course.id)
                             try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                             catch (_: Exception) { error = "No se pudo abrir el certificado." }
                         } else selected = course

@@ -26,6 +26,7 @@ import com.chayzay.catequesisapp.game.WhiteBoardScreen
 import com.chayzay.catequesisapp.auth.AccountScreen
 import com.chayzay.catequesisapp.auth.AuthRepository
 import com.chayzay.catequesisapp.auth.UserSessionStore
+import com.chayzay.catequesisapp.auth.certificateUri
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
 import com.chayzay.catequesisapp.chat.GuestChatScreen
@@ -723,10 +724,34 @@ private fun CatalogScreen(
             } else if (result.rows.isEmpty()) {
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))
             } else if (page is CatalogPage.Classes) {
+                var certificatePending by remember(page) { mutableStateOf(false) }
+                var certificateError by remember(page) { mutableStateOf<String?>(null) }
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
-                    if (courseApproved) Text("¡Felicidades! Curso aprobado.",
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                        color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
+                    if (courseApproved) {
+                        Text("¡Felicidades! Curso aprobado.",
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
+                        Button(enabled = !certificatePending, onClick = {
+                            if (user == null) onOpenAccount() else {
+                                val selectedCourse = (page as? CatalogPage.Classes)?.course ?: return@Button
+                                syncScope.launch {
+                                    certificatePending = true
+                                    certificateError = null
+                                    try {
+                                        syncRepository.sync(user, progressStore)
+                                        onSynced()
+                                        context.startActivity(Intent(Intent.ACTION_VIEW,
+                                            certificateUri(context.getString(R.string.api_base_url), user.id, selectedCourse.id)))
+                                    } catch (error: Exception) {
+                                        certificateError = ApiMessages.fromException(error,
+                                            "No se pudo verificar el curso o abrir el certificado")
+                                    } finally { certificatePending = false }
+                                }
+                            }
+                        }) { Text(if (user == null) "Iniciar sesión para el certificado"
+                            else if (certificatePending) "Verificando curso…" else "Ver certificado digital") }
+                        certificateError?.let { Text(it, color = Color(0xFF8B2626)) }
+                    }
                     // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
                     // filas de 30 unidades para un ancho de 200. Se escala junto con el mapa.
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
