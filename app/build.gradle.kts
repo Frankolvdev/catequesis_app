@@ -18,6 +18,9 @@ android {
         versionCode = 7
         versionName = "2.0-dev"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // X API v2: define X_BEARER_TOKEN in ~/.gradle/gradle.properties or project gradle.properties.
+        // It is intentionally empty until the production X credentials are supplied.
+        buildConfigField("String", "X_BEARER_TOKEN", "\"${project.findProperty("X_BEARER_TOKEN") ?: ""}\"")
     }
     buildTypes {
         release {
@@ -34,6 +37,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

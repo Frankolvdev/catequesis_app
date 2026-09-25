@@ -955,7 +955,7 @@ private fun CatalogScreen(
                                 .clickable {
                                     when (val current = page) {
                                         CatalogPage.Courses -> courses.firstOrNull { it.id == row.id }?.let { course ->
-                                            if (course.id == 6) gloriaTitle = course.name
+                                            if (position == 3) gloriaTitle = course.name
                                             else page = CatalogPage.Classes(course)
                                         }
                                         is CatalogPage.Themes -> themes.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Lessons(current.course, current.courseClass, it) }

@@ -33,8 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.R
+import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.settings.AppPreferences
 import java.io.File
@@ -47,7 +47,9 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
 private const val RSS_URL = "https://www.aciprensa.com/rss/news/mundo"
+private const val PAPA_X = "Pontifex_es"
 private data class Article(val title: String, val description: String, val date: String, val link: String)
+private enum class NewsMode { RSS, X }
 
 @Composable
 fun NewsScreen(profile: ProfileSettings) {
@@ -55,65 +57,93 @@ fun NewsScreen(profile: ProfileSettings) {
     val settings = remember(context) { AppPreferences(context) }
     var newsEnabled by remember { mutableStateOf(settings.news) }
     if (!newsEnabled) {
-        Column(Modifier.fillMaxSize().background(profile.baseColor).padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxSize().background(profile.baseColor).padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("Las noticias están desactivadas en Ajustes.")
             Button(onClick = { settings.news = true; newsEnabled = true }) { Text("Activar noticias") }
         }
         return
     }
+
+    var mode by remember { mutableStateOf(NewsMode.RSS) }
     var refresh by remember { mutableStateOf(0) }
     var articles by remember { mutableStateOf<List<Article>?>(null) }
+    var posts by remember { mutableStateOf<List<XPost>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(refresh) {
+
+    LaunchedEffect(mode, refresh) {
         error = null
-        try {
-            articles = withContext(Dispatchers.IO) { loadNews(File(context.cacheDir, "news_mundo.xml")) }
-        } catch (exception: Exception) {
-            error = exception.localizedMessage ?: "No se pudieron cargar las noticias"
-            articles = emptyList()
+        if (mode == NewsMode.RSS) {
+            try {
+                articles = withContext(Dispatchers.IO) { loadNews(File(context.cacheDir, "news_mundo.xml")) }
+            } catch (exception: Exception) {
+                error = exception.localizedMessage ?: "No se pudieron cargar las noticias"
+                articles = emptyList()
+            }
+        } else {
+            if (!XTimelineRepository.isConfigured()) {
+                posts = emptyList()
+                error = "Falta configurar X_BEARER_TOKEN para activar las publicaciones del Papa."
+            } else {
+                posts = null
+                try {
+                    posts = withContext(Dispatchers.IO) { XTimelineRepository.loadUserTimeline(PAPA_X) }
+                } catch (exception: Exception) {
+                    error = exception.localizedMessage ?: "No se pudieron cargar las publicaciones de X"
+                    posts = emptyList()
+                }
+            }
         }
     }
+
     Column(Modifier.fillMaxSize().background(profile.baseColor)) {
-        Row(Modifier.fillMaxWidth().background(profile.accent).padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().background(profile.accent).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(28.dp))
-            Text("Noticias", color = Color.White, style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 12.dp))
+            Text("Noticias", color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 12.dp))
         }
-        Row(Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("ACI Prensa · Mundo", style = MaterialTheme.typography.titleMedium, color = Color.DarkGray)
+        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(if (mode == NewsMode.RSS) "ACI Prensa · Mundo" else "@$PAPA_X", style = MaterialTheme.typography.titleMedium, color = Color.DarkGray)
             Button(onClick = { refresh++ }) { Text("Actualizar") }
         }
         Button(modifier = Modifier.padding(horizontal = 12.dp), onClick = {
-            try { context.startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://x.com/Pontifex_es"))) }
-            catch (_: Exception) { Toast.makeText(context, "No se pudieron abrir las publicaciones", Toast.LENGTH_SHORT).show() }
-        }) { Text("Publicaciones del Papa en X") }
-        when {
-            articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))
-            else -> {
-                Column {
-                    if (error != null) Text("Mostrando noticias guardadas: $error", Modifier.padding(12.dp))
-                    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(articles!!, key = { it.link }) { article ->
-                            Card(Modifier.fillMaxWidth().clickable {
-                                val uri = HttpsLinks.external(article.link)
-                                if (uri != null) {
-                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                    catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la noticia por HTTPS", Toast.LENGTH_SHORT).show() }
-                                }
-                            }) {
-                                Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp)) {
-                                    Text(article.title, color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
-                                    if (article.date.isNotBlank()) Text(article.date, color = Color.Gray,
-                                        style = MaterialTheme.typography.bodySmall)
-                                    if (article.description.isNotBlank()) Text(article.description, color = Color.DarkGray,
-                                        style = MaterialTheme.typography.bodyMedium)
-                                }
+            mode = if (mode == NewsMode.RSS) NewsMode.X else NewsMode.RSS
+        }) {
+            Text(if (mode == NewsMode.RSS) "Últimos tweets del Papa" else "Volver a las Noticias")
+        }
+
+        if (mode == NewsMode.RSS) {
+            when {
+                articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))
+                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(articles!!, key = { it.link }) { article ->
+                        Card(Modifier.fillMaxWidth().clickable {
+                            HttpsLinks.external(article.link)?.let { uri -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } }
+                        }) {
+                            Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp)) {
+                                Text(article.title, color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
+                                if (article.date.isNotBlank()) Text(article.date, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                                if (article.description.isNotBlank()) Text(article.description, color = Color.DarkGray, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            when {
+                posts == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                posts!!.isEmpty() -> Text(error ?: "No hay publicaciones disponibles.", Modifier.padding(18.dp))
+                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(posts!!, key = { it.id }) { post ->
+                        Card(Modifier.fillMaxWidth().clickable {
+                            val uri = Uri.parse("https://x.com/$PAPA_X/status/${post.id}")
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                            catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la publicación", Toast.LENGTH_SHORT).show() }
+                        }) {
+                            Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("@$PAPA_X", color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
+                                Text(post.text, color = Color.DarkGray, style = MaterialTheme.typography.bodyMedium)
+                                if (post.createdAt.isNotBlank()) Text(post.createdAt, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                                Text("♡ ${post.likeCount}   ↻ ${post.repostCount}   ↩ ${post.replyCount}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -126,8 +156,7 @@ fun NewsScreen(profile: ProfileSettings) {
 private fun loadNews(cache: File): List<Article> {
     val xml = try {
         val connection = (URL(RSS_URL).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 12000
-            readTimeout = 12000
+            connectTimeout = 12000; readTimeout = 12000
             setRequestProperty("Accept", "application/rss+xml, application/xml, text/xml")
         }
         try {
@@ -149,27 +178,16 @@ private fun parseNews(xml: String): List<Article> {
     val parser = XmlPullParserFactory.newInstance().newPullParser()
     parser.setInput(StringReader(xml))
     val result = mutableListOf<Article>()
-    var insideItem = false
-    var title = ""
-    var description = ""
-    var date = ""
-    var link = ""
+    var insideItem = false; var title = ""; var description = ""; var date = ""; var link = ""
     var event = parser.eventType
     while (event != XmlPullParser.END_DOCUMENT) {
         when (event) {
             XmlPullParser.START_TAG -> {
                 val tag = parser.name
-                if (tag == "item") {
-                    insideItem = true
-                    title = ""; description = ""; date = ""; link = ""
-                } else if (insideItem && tag in setOf("title", "description", "pubDate", "link")) {
+                if (tag == "item") { insideItem = true; title = ""; description = ""; date = ""; link = "" }
+                else if (insideItem && tag in setOf("title", "description", "pubDate", "link")) {
                     val value = parser.nextText().trim().replace(Regex("<[^>]+>"), " ")
-                    when (tag) {
-                        "title" -> title = value
-                        "description" -> description = value.take(280)
-                        "pubDate" -> date = value
-                        "link" -> link = value
-                    }
+                    when (tag) { "title" -> title = value; "description" -> description = value.take(280); "pubDate" -> date = value; "link" -> link = value }
                 }
             }
             XmlPullParser.END_TAG -> if (parser.name == "item") {
