@@ -2,4 +2,14 @@
     <string name="app_name">Catequesis</string>
     <!-- La version de lanzamiento usa HTTPS. Se cambia tras instalar un certificado valido. -->
     <string name="api_base_url" translatable="false">https://www.catequesis.org/API/v1/</string>
+    <string name="legacy_textContentPolicyPrivacy">
+        
+        Estas políticas cubren la actividad que se pueda desarrollar a través de la plataforma Catequesis App, que incluye tanto la App para su celular, como el sitio web &lt;a href="http://www.catequesis.org/"&gt;www.catequesis.org&lt;/a&gt;, y sus subdominios.&lt;br/&gt;&lt;br/&gt;
+        Tenemos en alto el gran valor de la privacidad y procuramos tomar medidas razonables para proteger tu información personal. &lt;br/&gt;&lt;br/&gt; En especial, no comercializaremos tu información personal (incluido tu email). Para brindarte un servicio personalizado, ésta información será accesible a los administradores de la plataforma, al igual que a la gente que apoya sus servicios. Así, por ejemplo, cuando solicitas el servicio de chat la persona conocerá algunos datos tuyos para poder ayudarte. Lo mismo si deseas que alguien rece por una intención tuya. Fuera de los propósitos de esta App de Catequesis, para distribuir o compartir información tuya a terceros deberemos pedirte permiso en los términos de ley.&lt;br/&gt;&lt;br/&gt;
+        Puedes conocer más sobre nuestra "Política de datos y privacidad" leyendo los "Términos del servicio" en la Web de Catequesis App.&lt;br/&gt;&lt;br/&gt;
+        Si tienes alguna pregunta, puedes hacérnosla llegar a &lt;a href="mailto:catequesisapp@gmail.com"&gt;catequesisapp@gmail.com&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;
+        
+
+    </string>
+    
 </resources>

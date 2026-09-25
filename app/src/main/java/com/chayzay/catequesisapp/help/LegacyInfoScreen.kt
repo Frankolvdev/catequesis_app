@@ -3,6 +3,8 @@ package com.chayzay.catequesisapp.help
 import android.content.Intent
 import android.net.Uri
 import android.text.Html
+import android.text.method.LinkMovementMethod
+import android.widget.TextView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.CourseRepository
@@ -45,7 +48,8 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
     val approved = plain(stringResource(R.string.legacy_textApprovedCourseContent))
     val certificates = plain(stringResource(R.string.legacy_textCertificateInformationContent))
     val purpose = plain(stringResource(R.string.legacy_textContentHowtoApp))
-    val credits = plain(stringResource(R.string.legacy_textDesarrolladoPor))
+    val credits = stringResource(R.string.legacy_textDesarrolladoPor)
+    val privacy = stringResource(R.string.legacy_textContentPolicyPrivacy)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (help) "Ayuda" else "Información")
@@ -57,13 +61,12 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
             Button(modifier = Modifier.fillMaxWidth(), onClick = {
                 val version = try { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
                     catch (_: Exception) { "" }
-                selected = "Versión e información" to ("Versión $version\n\n" + credits)
+                selected = "Versión e información" to ("Versión $version<br/><br/>" + credits)
             }) { Text("Versión e información de la app") }
             Button(modifier = Modifier.fillMaxWidth(), enabled = !loading,
                 onClick = { confirmUpdate = true }) { Text("Actualizar contenido") }
             Button(modifier = Modifier.fillMaxWidth(), onClick = {
-                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.catequesis.org/policy_privacy/"))) }
-                catch (_: Exception) { problem = "No se pudo abrir la política de privacidad" }
+                selected = "Política de privacidad" to privacy
             }) { Text("Política de privacidad") }
             Button(modifier = Modifier.fillMaxWidth(), onClick = { selected = "Para qué sirve esta App" to purpose }) { Text("Para qué sirve esta App") }
         }
@@ -72,7 +75,20 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
     }
     selected?.let { item -> AlertDialog(onDismissRequest = { selected = null },
         title = { Text(item.first) }, text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) { Text(item.second) }
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                AndroidView(factory = { ctx -> TextView(ctx).apply {
+                    linksClickable = true
+                    movementMethod = LinkMovementMethod.getInstance()
+                } }, update = { view ->
+                    view.text = Html.fromHtml(item.second, Html.FROM_HTML_MODE_LEGACY)
+                }, modifier = Modifier.fillMaxWidth())
+                if (item.first == "Política de privacidad") {
+                    Button(onClick = {
+                        try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.catequesis.org/policy_privacy/"))) }
+                        catch (_: Exception) { problem = "No se pudo abrir la política de privacidad" }
+                    }) { Text("Ir a la web") }
+                }
+            }
         }, confirmButton = { TextButton(onClick = { selected = null }) { Text("Cerrar") } }) }
     if (confirmUpdate) AlertDialog(onDismissRequest = { confirmUpdate = false },
         title = { Text("Actualizar contenido") },
