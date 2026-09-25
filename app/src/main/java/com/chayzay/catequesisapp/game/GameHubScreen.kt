@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,7 +84,6 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
         card to filteredChoices
     }.filter { (_, choices) -> choices.isNotEmpty() }
     var openGroup by remember { mutableStateOf<Int?>(null) }
-    var selected by remember(openGroup) { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         itemsIndexed(visibleGroups) { index, group ->
             val (card, choices) = group
@@ -141,19 +139,17 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
             title = { Text("Seleccione un juego") },
             text = {
                 Column {
-                    visibleGroups[group].second.forEachIndexed { index, (label, _) ->
-                        Text(label, modifier = Modifier.fillMaxWidth().clickable { selected = index }
-                            .padding(12.dp),
-                            fontWeight = if (selected == index) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selected == index) accent else Color(0xFF505050))
+                    visibleGroups[group].second.forEach { (label, key) ->
+                        // ActivitiesClassFragment antiguo iniciaba el juego al tocar la opción;
+                        // no había una segunda confirmación "Comenzar".
+                        Text(label, modifier = Modifier.fillMaxWidth().clickable {
+                            openGroup = null
+                            onSelect(key)
+                        }.padding(12.dp), color = Color(0xFF505050))
                     }
                 }
             },
-            confirmButton = {
-                Button(onClick = { val key = visibleGroups[group].second[selected].second; openGroup = null; onSelect(key) }) {
-                    Text("Comenzar")
-                }
-            },
+            confirmButton = {},
             dismissButton = { TextButton(onClick = { openGroup = null }) { Text("Cancelar") } })
     }
 }
