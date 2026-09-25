@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -32,6 +34,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -118,9 +122,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     modifier = Modifier.fillMaxWidth(), singleLine = true)
                 OutlinedTextField(editLastName, { editLastName = it }, label = { Text("Apellido") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true)
-                TextButton(onClick = { editGender = if (editGender == "MALE") "FEMALE" else "MALE" }) {
-                    Text(if (editGender == "MALE") "Masculino ▾" else "Femenino ▾")
-                }
+                LegacyGenderSpinner(editGender, onGender = { editGender = it })
                 Button(enabled = !loading, onClick = {
                     message = when {
                         !Patterns.EMAIL_ADDRESS.matcher(editEmail).matches() -> "Escribe un correo válido"
@@ -221,10 +223,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     placeholder = { Text("Nombre", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
                 OutlinedTextField(value = lastName, onValueChange = { lastName = it },
                     placeholder = { Text("Apellido", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
-                Text("Sexo")
-                TextButton(onClick = { gender = if (gender == "MALE") "FEMALE" else "MALE" }) {
-                    Text(if (gender == "MALE") "Masculino ▾" else "Femenino ▾")
-                }
+                LegacyGenderSpinner(gender, onGender = { gender = it }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
             }
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
@@ -371,6 +370,24 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
 }
 
+
+@Composable
+private fun LegacyGenderSpinner(value: String, onGender: (String) -> Unit, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth()
+            .border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp))
+            .background(Color.White, RoundedCornerShape(5.dp))
+            .clickable { open = true }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(if (value == "FEMALE") "Femenino" else "Masculino", color = Color.Black, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            Image(painterResource(R.drawable.arrow_down), contentDescription = "Abrir", modifier = Modifier.size(18.dp))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text("Masculino", fontSize = 13.sp) }, onClick = { onGender("MALE"); open = false })
+            DropdownMenuItem(text = { Text("Femenino", fontSize = 13.sp) }, onClick = { onGender("FEMALE"); open = false })
+        }
+    }
+}
 
 @Composable
 private fun LegacyProfileCard(icon: Int, title: String, subtitle: String, onClick: () -> Unit) {

@@ -1,7 +1,10 @@
 package com.chayzay.catequesisapp.game
+
+import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import android.widget.Toast
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -34,9 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.CourseRepository
 import com.chayzay.catequesisapp.data.HangmanWord
@@ -85,8 +91,9 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     verticalAlignment = Alignment.CenterVertically) {
                     Text("Resueltas ${solved.size} / ${list.size}")
                     Box {
-                        Text("⋮", modifier = Modifier.clickable { menuOpen = true }.padding(12.dp),
-                            color = accent, fontWeight = FontWeight.Bold)
+                        Image(painterResource(R.drawable.ic_more_vert_24), contentDescription = "Menú",
+                            colorFilter = ColorFilter.tint(accent),
+                            modifier = Modifier.size(48.dp).clickable { menuOpen = true }.padding(12.dp))
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(text = { Text("Resolver casilla") },
                                 enabled = selected.id !in solved && selectedCell in selectedAnswer.indices,

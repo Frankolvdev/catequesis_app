@@ -274,7 +274,10 @@ class MainActivity : ComponentActivity() {
                                 else -> PrayerScreen(profile!!) { openContact(it) }
                             }
                         }
-                        if (section != "courses" || atCatalogRoot) Row(
+                        if (section != "courses" || atCatalogRoot) {
+                            // BottomNavigationView legacy: seleccionado blanco al 100%; resto blanco al 50%.
+                            fun navAlpha(key: String) = if (section == key) 1f else 0.5f
+                            Row(
                             modifier = Modifier.fillMaxWidth().background(profile!!.accent)
                                 .padding(vertical = 7.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -282,26 +285,27 @@ class MainActivity : ComponentActivity() {
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "news" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.document), contentDescription = null,
-                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
-                                Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                    colorFilter = ColorFilter.tint(Color.White.copy(alpha = navAlpha("news"))), modifier = Modifier.size(25.dp))
+                                Text("Noticias", color = Color.White.copy(alpha = navAlpha("news")), fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "faith" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.vela), contentDescription = null,
-                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
-                                Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                    colorFilter = ColorFilter.tint(Color.White.copy(alpha = navAlpha("faith"))), modifier = Modifier.size(25.dp))
+                                Text("Fe", color = Color.White.copy(alpha = navAlpha("faith")), fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "prayer" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.prayer), contentDescription = null,
-                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
-                                Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                    colorFilter = ColorFilter.tint(Color.White.copy(alpha = navAlpha("prayer"))), modifier = Modifier.size(25.dp))
+                                Text("Oraciones", color = Color.White.copy(alpha = navAlpha("prayer")), fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "chat" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.chat), contentDescription = null,
-                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
-                                Text("Chat", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                    colorFilter = ColorFilter.tint(Color.White.copy(alpha = navAlpha("chat"))), modifier = Modifier.size(25.dp))
+                                Text("Chat", color = Color.White.copy(alpha = navAlpha("chat")), fontSize = 11.sp, maxLines = 1)
+                            }
                             }
                         }
                     }
@@ -601,9 +605,9 @@ private fun CatalogScreen(
             }, modifier = Modifier.align(Alignment.Center), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
             Box(Modifier.align(Alignment.CenterEnd)) {
-                Text("⋮", color = Color.White, fontSize = 24.sp,
-                    modifier = Modifier.clickable { accountMenuOpen = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp))
+                Image(painterResource(R.drawable.ic_more_vert_24), contentDescription = "Menú",
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(48.dp).clickable { accountMenuOpen = true }.padding(12.dp))
                 DropdownMenu(expanded = accountMenuOpen,
                     onDismissRequest = { accountMenuOpen = false }) {
                     if (user == null) {
