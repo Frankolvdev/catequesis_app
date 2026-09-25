@@ -91,9 +91,9 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
             source!!.size < 4 -> Text("Esta clase no tiene cuatro parejas de preguntas para este juego.")
             pairs.size == 4 -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
+                    Text(if (seconds == 0) "Has perdido" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         modifier = Modifier.legacyCountdownWarning(seconds),
-                        color = if (seconds in 1..10) Color(0xFFB71C1C) else Color.DarkGray)
+                        color = if (seconds in 1..10 || seconds == 0) Color(0xFFB71C1C) else Color.DarkGray)
                     Text("·  Aciertos ${solved.size}/4  ·  Fallos $mistakes")
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

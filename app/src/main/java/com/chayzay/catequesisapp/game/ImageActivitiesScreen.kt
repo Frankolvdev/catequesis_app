@@ -174,11 +174,15 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
                 }
                 if (type != "IMAGES" && current.text.isNotBlank()) Text(current.text, color = Color.DarkGray)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (type != "GAME_ADIVINA") Button(enabled = index > 0,
-                        onClick = { index-- }) { Text("‹ Anterior") }
-                    Button(enabled = type == "GAME_ADIVINA" || index < images!!.lastIndex,
-                        onClick = { index++ }) {
-                        Text(if (type == "GAME_ADIVINA") "Siguiente" else "Siguiente imagen ›")
+                    // En SoloImagenActivity/ImagenWithTextActivity legacy las flechas se ocultaban
+                    // por completo al llegar al primer/último elemento; no quedaban deshabilitadas.
+                    if (type != "GAME_ADIVINA" && index > 0) {
+                        Button(onClick = { index-- }) { Text("‹ Anterior") }
+                    }
+                    if (type == "GAME_ADIVINA" || index < images!!.lastIndex) {
+                        Button(onClick = { index++ }) {
+                            Text(if (type == "GAME_ADIVINA") "Siguiente" else "Siguiente imagen ›")
+                        }
                     }
                 }
             }
