@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
+import com.chayzay.catequesisapp.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -168,9 +174,12 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
                 modifier = Modifier.padding(top = 20.dp))
         LazyColumn {
             items(entries, key = { it.contact.key }) { entry ->
-                Column(Modifier.fillMaxWidth().clickable { selected = entry.contact }.padding(vertical = 14.dp)) {
-                    Text(entry.contact.name)
-                    if (entry.last.isNotBlank()) Text(entry.last, maxLines = 1)
+                Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp).clickable { selected = entry.contact }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.boy), contentDescription = null, modifier = Modifier.size(48.dp))
+                    Column(Modifier.weight(1f).padding(start = 5.dp)) {
+                        Text(entry.contact.name, color = Color(0xFF7A9989), fontSize = 12.sp)
+                        if (entry.last.isNotBlank()) Text(entry.last, maxLines = 1, fontSize = 10.sp, modifier = Modifier.padding(start = 5.dp, top = 5.dp))
+                    }
                 }
             }
         }
@@ -224,10 +233,10 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
         onDispose { messages?.removeEventListener(listener) }
     }
 
-    Column(Modifier.fillMaxSize().padding(12.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Column(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().background(Color(0xFF037AD8)).padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = onBack) { Text("Volver") }
-            Text(contact.name, modifier = Modifier.padding(10.dp))
+            Text(contact.name, color = Color.White, modifier = Modifier.padding(10.dp))
         }
         if (loading) CircularProgressIndicator()
         if (error.isNotBlank()) Text(error, color = Color.Red)
@@ -241,7 +250,7 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                 }
             }) { Text("Reintentar publicación") }
         }
-        LazyColumn(Modifier.weight(1f), reverseLayout = true) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().background(Color.White).padding(horizontal = 8.dp), reverseLayout = true) {
             items(lines.asReversed(), key = { it.key }) { line ->
                 val mine = line.sender == user.apiKey
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp),

@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.links.HttpsLinks
 import com.chayzay.catequesisapp.profile.ProfileSettings
@@ -114,15 +116,16 @@ fun NewsScreen(profile: ProfileSettings) {
             when {
                 articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))
-                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                else -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                     items(articles!!, key = { it.link }) { article ->
-                        Card(Modifier.fillMaxWidth().clickable {
+                        Card(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp).clickable {
                             HttpsLinks.external(article.link)?.let { uri -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } }
                         }) {
-                            Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp)) {
-                                Text(article.title, color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
-                                if (article.date.isNotBlank()) Text(article.date, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                                if (article.description.isNotBlank()) Text(article.description, color = Color.DarkGray, style = MaterialTheme.typography.bodyMedium)
+                            Column(Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
+                                Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(16.dp).align(Alignment.End))
+                                Text(article.title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                if (article.description.isNotBlank()) Text(article.description, color = Color(0xFF424242), fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+                                if (article.date.isNotBlank()) Text(article.date, color = Color(0xFF7A9989), fontSize = 10.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                             }
                         }
                     }
