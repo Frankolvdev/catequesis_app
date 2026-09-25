@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,16 +41,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.R
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 /** Adaptación Compose de activity_init_config.xml con sus recursos originales. */
 @Composable
-fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
+fun InitialSetupScreen(onContinue: suspend (ProfileSettings) -> Boolean) {
     val context = LocalContext.current
     val currentYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
     var year by remember { mutableStateOf(currentYear) }
     var gender by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val age = currentYear - year
     val accent = gender?.let { ProfileSettings(year, it).accent } ?: Color(0xFF037AD8)
 
@@ -113,11 +117,21 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
                     age < 8 -> error = "La edad mínima es de 8 años"
                     gender == null -> error = "Selecciona una opción"
                     !hasInternetConnection(context) -> error = "No hay conexión a internet"
-                    else -> onContinue(ProfileSettings(year, gender!!))
+                    else -> {
+                        loading = true
+                        error = null
+                        scope.launch {
+                            val completed = onContinue(ProfileSettings(year, gender!!))
+                            if (!completed) {
+                                loading = false
+                                error = "No fue posible descargar el contenido, inténtalo nuevamente."
+                            }
+                        }
+                    }
                 }
-            }, colors = ButtonDefaults.buttonColors(containerColor = accent),
+            }, enabled = !loading, colors = ButtonDefaults.buttonColors(containerColor = accent),
                 modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                Text("Comenzar", color = Color.White)
+                Text(if (loading) "Descargando contenido…" else "Comenzar", color = Color.White)
             }
         }
     }

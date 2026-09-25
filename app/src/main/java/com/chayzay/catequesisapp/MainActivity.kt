@@ -187,8 +187,16 @@ class MainActivity : ComponentActivity() {
                 }
                 if (showBrand) BrandScreen()
                 else if (profile == null) InitialSetupScreen { selected ->
-                    selected.save(this@MainActivity)
-                    profile = selected
+                    // Legacy: INIT_CONFIG solo se marcaba cuando terminaban correctamente
+                    // las 17 descargas iniciales. No entrar al catálogo con una descarga fallida.
+                    try {
+                        withContext(Dispatchers.IO) { repository.refreshContent() }
+                        selected.save(this@MainActivity)
+                        profile = selected
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
                 }
                 else {
                     var section by remember { mutableStateOf("courses") }
