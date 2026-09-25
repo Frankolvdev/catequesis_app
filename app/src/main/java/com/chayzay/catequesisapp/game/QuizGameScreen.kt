@@ -35,7 +35,7 @@ import kotlinx.coroutines.delay
 
 /** Preguntados no acredita la clase; admite las respuestas múltiples CLOSED del banco original. */
 @Composable
-fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
+fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color, onExit: () -> Unit) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var allQuestions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
@@ -87,15 +87,10 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                         selected = emptySet(); submitted = false; showEndDialog = true
                         questions = allQuestions.orEmpty().shuffled().take(10)
                     }) { Text("Jugar otra vez") } },
-                    dismissButton = { androidx.compose.material3.TextButton(onClick = { showEndDialog = false }) {
-                        Text("Cerrar")
-                    } })
-                Text("Juego terminado: $correct / ${questions!!.size}", color = accent)
-                Button(onClick = {
-                    position = 0; correct = 0; goodStage = 0; badStage = 0; showEndDialog = true
-                    selected = emptySet(); submitted = false
-                    questions = allQuestions.orEmpty().shuffled().take(10)
-                }) { Text("Jugar de nuevo") }
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = {
+                        showEndDialog = false
+                        onExit()
+                    }) { Text("No") } })
             }
             else -> {
                 val question = questions!![position]
@@ -138,10 +133,12 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     GameCharacterFeedback(lastCorrect,
                         if (lastCorrect) goodStage else badStage, animate = false)
                 }
-                Button(enabled = submitted || selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
+                Button(enabled = !submitted && selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         if (!submitted) {
-                            lastCorrect = selected == correctOptions
+                            // Legacy: bastaba con haber marcado todas las respuestas correctas;
+                            // seleccionar respuestas incorrectas adicionales no anulaba el acierto.
+                            lastCorrect = correctOptions.all { it in selected }
                             if (lastCorrect) {
                                 correct++
                                 if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
@@ -152,13 +149,8 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                             GameFeedback.play(context, lastCorrect)
                             feedbackClosing = false
                             submitted = true
-                        } else {
-                            position++
-                            selected = emptySet()
-                            submitted = false
-                            feedbackClosing = false
                         }
-                    }) { Text(if (submitted) "Siguiente" else "Calificar") }
+                    }) { Text("Calificar") }
             }
         }
     }

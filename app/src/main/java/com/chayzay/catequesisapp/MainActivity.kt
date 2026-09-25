@@ -666,7 +666,9 @@ private fun CatalogScreen(
             }
         } else if (page is CatalogPage.QuizGame) {
             val game = page as CatalogPage.QuizGame
-            QuizGameScreen(game.courseClass.id, repository, accent)
+            QuizGameScreen(game.courseClass.id, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.Board) {
             WhiteBoardScreen()
         } else if (page is CatalogPage.ImageGame) {
