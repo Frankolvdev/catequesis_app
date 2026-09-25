@@ -1,11 +1,13 @@
 package com.chayzay.catequesisapp.contact
 
 import android.util.Patterns
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,9 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.auth.UserSession
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.profile.ProfileSettings
@@ -76,8 +80,8 @@ fun ContactScreen(
         // activity_contacts.xml: toolbar azul y formulario con 10dp laterales.
         Row(Modifier.fillMaxWidth().background(Color(0xFF037AD8)).padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Text("‹", color = Color.White, fontSize = 26.sp, modifier = Modifier.padding(end = 16.dp)
-                .clickable { onBack() })
+            Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), contentDescription = "Volver",
+                modifier = Modifier.size(40.dp).padding(end = 16.dp).clickable { onBack() })
             Text("Contactar", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium)
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp, top = 10.dp),

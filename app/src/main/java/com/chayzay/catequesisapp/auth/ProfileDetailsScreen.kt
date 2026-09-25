@@ -7,6 +7,7 @@ import android.net.Uri
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -125,7 +127,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth().height(56.dp).background(Color(0xFF037AD8)).padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onBack) { Text("‹", color = Color.White, fontSize = 28.sp) }
+            Icon(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), contentDescription = "Volver", tint = Color.White, modifier = Modifier.size(40.dp).padding(8.dp).clickable { onBack() })
             Text("Datos del usuario", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
         Row(Modifier.fillMaxWidth().background(Color(0xFF8A65E4)), horizontalArrangement = Arrangement.SpaceEvenly) {

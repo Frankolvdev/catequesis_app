@@ -105,7 +105,7 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, user: UserSess
 
 @Composable private fun LegacyInfoToolbar(title: String, accent: Color, back: Boolean, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(56.dp).background(accent).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (back) Text("‹", color = Color.White, fontSize = 38.sp, modifier = Modifier.width(44.dp).clickable { onBack() }, maxLines = 1)
+        if (back) Icon(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), contentDescription = "Volver", tint = Color.White, modifier = Modifier.size(44.dp).padding(10.dp).clickable { onBack() })
         Text(title, color = Color.White, fontSize = 20.sp, maxLines = 1, modifier = Modifier.weight(1f))
     }
 }

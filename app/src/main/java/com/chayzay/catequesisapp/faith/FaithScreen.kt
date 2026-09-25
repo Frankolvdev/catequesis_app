@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -64,9 +65,8 @@ fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String, onContact: () -> U
     Column(Modifier.fillMaxSize().background(profile.baseColor)) {
         Row(Modifier.fillMaxWidth().background(profile.accent).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            if (page == "calendar") Text("‹", color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.clickable { page = "menu" }.padding(end = 20.dp))
+            if (page == "calendar") Icon(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), contentDescription = "Volver", tint = Color.White,
+                modifier = Modifier.size(24.dp).clickable { page = "menu" }.padding(end = 4.dp))
             Text(if (page == "calendar") "Calendario litúrgico" else "Fe",
                 color = Color.White, style = MaterialTheme.typography.titleLarge)
         }

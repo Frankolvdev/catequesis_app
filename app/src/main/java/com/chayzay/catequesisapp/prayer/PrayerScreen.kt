@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,10 +76,10 @@ fun PrayerScreen(profile: ProfileSettings, onContact: (Int) -> Unit) {
         Row(Modifier.fillMaxWidth().background(profile.accent).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (page != "menu") {
-                Text("‹", modifier = Modifier.clickable {
-                    page = if (page == "devotional_page") "devotionals" else "menu"
-                }.padding(end = 20.dp), color = Color.White,
-                    style = MaterialTheme.typography.headlineMedium)
+                Icon(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), contentDescription = "Volver", tint = Color.White,
+                    modifier = Modifier.size(24.dp).clickable {
+                        page = if (page == "devotional_page") "devotionals" else "menu"
+                    }.padding(end = 4.dp))
             }
             Text(when (page) {
                 "links" -> "Textos para orar"
