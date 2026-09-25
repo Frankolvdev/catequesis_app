@@ -757,6 +757,7 @@ private fun CatalogScreen(
             } else if (page is CatalogPage.Activities) {
                 val activityPreferences = remember(context) { AppPreferences(context) }
                 var showReal by remember(page) { mutableStateOf(activityPreferences.showRealActivities) }
+                var showOffline by remember(page) { mutableStateOf(activityPreferences.showOfflineActivities) }
                 var showOnline by remember(page) { mutableStateOf(activityPreferences.showOnlineActivities) }
                 var showInstructions by remember(page) { mutableStateOf(false) }
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -770,6 +771,15 @@ private fun CatalogScreen(
                             Text(activity.content, modifier = Modifier.fillMaxWidth()
                                 .background(Color(0x77FFFFFF)).padding(12.dp), color = Color(0xFF505050))
                         }
+                    }
+                    Text("Actividades virtuales off-line  ${if (showOffline) "−" else "+"}",
+                        modifier = Modifier.fillMaxWidth().clickable { showOffline = !showOffline }.padding(8.dp),
+                        color = Color.Black, style = MaterialTheme.typography.titleMedium)
+                    if (showOffline) {
+                        Text("Juegos y actividades que puedes realizar desde la aplicación.",
+                            modifier = Modifier.fillMaxWidth().background(Color(0x77FFFFFF)).clickable {
+                                page = CatalogPage.GameHub(summary.course, summary.courseClass)
+                            }.padding(12.dp), color = Color(0xFF505050))
                     }
                     Text("Actividades en línea  ${if (showOnline) "−" else "+"}",
                         modifier = Modifier.fillMaxWidth().clickable { showOnline = !showOnline }.padding(8.dp),
