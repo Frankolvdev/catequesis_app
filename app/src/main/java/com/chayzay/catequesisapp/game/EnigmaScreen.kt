@@ -46,6 +46,7 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var refresh by remember(classId, round) { mutableIntStateOf(0) }
     var seconds by remember(classId, round, refresh) { mutableIntStateOf(60) }
     var finished by remember(classId, round, refresh) { mutableStateOf<String?>(null) }
+    var resultDismissed by remember(classId, round, refresh) { mutableStateOf(false) }
     var showHint by remember(classId, round, refresh) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getEnigmaWords(classId) } }
@@ -77,16 +78,20 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 Row(Modifier.fillMaxWidth().padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    listOf(
-                        R.drawable.refresh_word to { refresh++ },
-                        R.drawable.resolver_word to { round++ },
-                        R.drawable.bombillo_word to { showHint = true }
-                    ).forEach { (icon, action) ->
-                        Image(painterResource(icon), contentDescription = when (icon) {
-                            R.drawable.refresh_word -> "Reiniciar palabra"
-                            R.drawable.resolver_word -> "Otra palabra"
-                            else -> "Ver pista"
-                        }, modifier = Modifier.size(32.dp).clickable { action() })
+                    if (resultDismissed) {
+                        TextButton(onClick = { round++ }) { Text("Nuevo juego") }
+                    } else {
+                        listOf(
+                            R.drawable.refresh_word to { refresh++ },
+                            R.drawable.resolver_word to { round++ },
+                            R.drawable.bombillo_word to { showHint = true }
+                        ).forEach { (icon, action) ->
+                            Image(painterResource(icon), contentDescription = when (icon) {
+                                R.drawable.refresh_word -> "Reiniciar palabra"
+                                R.drawable.resolver_word -> "Otra palabra"
+                                else -> "Ver pista"
+                            }, modifier = Modifier.size(32.dp).clickable { action() })
+                        }
                     }
                     Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         modifier = Modifier.weight(1f).legacyCountdownWarning(seconds), textAlign = androidx.compose.ui.text.style.TextAlign.End,
@@ -95,11 +100,16 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 if (showHint) AlertDialog(onDismissRequest = { showHint = false },
                     text = { Text(word.clue.ifBlank { "No hay pista disponible" }) },
                     confirmButton = { TextButton(onClick = { showHint = false }) { Text("Aceptar") } })
-                finished?.let { result ->
+                finished?.takeUnless { resultDismissed }?.let { result ->
                     AlertDialog(onDismissRequest = { }, title = { Text(result, color = accent) },
-                        text = { GameCharacterFeedback(result == "¡Ganaste!") },
-                        confirmButton = { TextButton(onClick = { round++ }) { Text("Nuevo juego") } },
-                        dismissButton = { TextButton(onClick = { refresh++ }) { Text("Reintentar") } })
+                        text = {
+                            Column {
+                                Text(if (result == "¡Ganaste!") "Has ganado felicidades tu respuesta es correcta."
+                                    else "Has perdido la respuesta correcta era: ${word.word}")
+                                GameCharacterFeedback(result == "¡Ganaste!")
+                            }
+                        },
+                        confirmButton = { TextButton(onClick = { resultDismissed = true }) { Text("Aceptar") } })
                 }
             }
         }

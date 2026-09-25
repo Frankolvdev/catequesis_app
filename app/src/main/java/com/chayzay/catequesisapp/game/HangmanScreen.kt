@@ -54,6 +54,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var selected by remember(classId, round) { mutableStateOf<Set<Char>>(emptySet()) }
     var showHint by remember(classId, round) { mutableStateOf(false) }
     var showResult by remember(classId, round) { mutableStateOf(false) }
+    var resultAcknowledged by remember(classId, round) { mutableStateOf(false) }
     LaunchedEffect(classId) {
         try { words = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) } }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
@@ -74,17 +75,22 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     if (finished) { GameFeedback.finish(context, won); showResult = true }
                 }
                 Text(answer.map { letter ->
-                    if (letter !in 'A'..'Z' || letter in selected || finished) letter.toString() else "_"
+                    if (letter !in 'A'..'Z' || letter in selected || (finished && resultAcknowledged)) letter.toString() else "_"
                 }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
                 Image(painterResource(gallows[if (won) 8 else mistakes.coerceIn(0, 7)]),
                     contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.size(130.dp))
                 if (showHint) Text(current.clue.ifBlank { "Sin pista disponible" })
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
-                    Text(if (won) "¡Ganaste!" else "La palabra era $answer", color = Color(0xFF653E26))
-                    Button(onClick = { round++ }) { Text("Jugar otra vez") }
+                    Text(if (won) "¡Ganaste!" else if (resultAcknowledged) "La palabra era $answer"
+                        else "Perdiste", color = Color(0xFF653E26))
+                    if (resultAcknowledged) Button(onClick = { round++ }) { Text("Jugar otra vez") }
                     if (showResult) GameResultDialog(won,
-                        if (won) "¡Ganaste!" else "Perdiste: $answer") { showResult = false }
+                        if (won) "Has ganado felicidades tu respuesta es correcta."
+                        else "Has perdido, toca aceptar para ver la respuesta correcta y comenzar una nueva partida.") {
+                        showResult = false
+                        resultAcknowledged = true
+                    }
                 }
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val keyWidth = (maxWidth / 10).coerceAtMost(32.dp)
