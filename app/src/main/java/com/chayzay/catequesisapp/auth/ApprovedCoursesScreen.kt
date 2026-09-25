@@ -86,6 +86,10 @@ fun ApprovedCoursesScreen(
                 "No tienes cursos aprobados para obtener un certificado."
                 else "Todavía no tienes cursos aprobados.")
             else -> items!!.forEach { course ->
+                // CourseApprovedActivity / CertificateCourseActivity legacy muestran
+                // nombre + subtítulo de felicitación + una acción separada.
+                Text(course.name)
+                Text("Felicidades curso aprobado.")
                 Button(modifier = Modifier.fillMaxWidth(),
                     enabled = !certificates || serverReady,
                     onClick = {
@@ -94,7 +98,7 @@ fun ApprovedCoursesScreen(
                             try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                             catch (_: Exception) { error = "No se pudo abrir el certificado." }
                         } else selected = course
-                    }) { Text(if (certificates) "Descargar certificado: ${course.name}" else course.name) }
+                    }) { Text(if (certificates) "Descargar Certificado" else "Ver contenido") }
             }
         }
         if (certificates && !serverReady && !items.isNullOrEmpty())
@@ -107,7 +111,7 @@ fun ApprovedCoursesScreen(
                 when {
                     classes == null -> CircularProgressIndicator()
                     classes!!.isEmpty() -> Text("No se pudieron cargar las clases.")
-                    else -> classes!!.forEach { Text("Clase ${it.number}: ${it.name}") }
+                    else -> classes!!.forEach { Text("${it.number}) ${it.name}") }
                 }
             } },
             confirmButton = { TextButton(onClick = { selected = null }) { Text("Cerrar") } })
