@@ -1,37 +1,34 @@
 package com.chayzay.catequesisapp.chat
 
+import android.widget.EditText
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.clickable
-import com.chayzay.catequesisapp.R
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.profile.ProfileSettings
 
-/** ChatListFragmentNoUser/ChatFragmentNoUser: lista pública y notas locales del invitado. */
+/** ChatListFragmentNoUser/ChatFragmentNoUser: apariencia legacy con almacenamiento local del invitado. */
 @Composable
 fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpenAccount: () -> Unit) {
     val context = LocalContext.current
@@ -43,6 +40,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
     var retry by remember { mutableStateOf(0) }
     var error by remember { mutableStateOf("") }
     var draft by remember { mutableStateOf("") }
+
     BackHandler(enabled = selected != null || selecting) {
         if (selected != null) selected = null else selecting = false
     }
@@ -55,61 +53,96 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
             }
         }
     }
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        when {
-            selected != null -> {
-                val contact = selected!!
-                TextButton(onClick = { selected = null }) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Conversaciones", Modifier.size(24.dp)) }
-                Text(contact.name)
-                Text("Como invitado se guardan en tu teléfono. Al iniciar sesión se enviarán al catequista.")
-                LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+    Box(Modifier.fillMaxSize().background(profile.baseColor)) {
+        if (selected != null) {
+            val contact = selected!!
+            Column(Modifier.fillMaxSize().background(Color.White)) {
+                LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 5.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     items(history.filter { it.recipient == contact.key }) { row ->
-                        Text("${row.text}\n${row.time}")
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Text(row.text, fontSize = 13.sp, color = Color.Black,
+                                modifier = Modifier.widthIn(max = 200.dp)
+                                    .background(Color(0xFFD9F3C7)).padding(8.dp))
+                        }
                     }
                 }
-                OutlinedTextField(draft, { if (it.length <= 500) draft = it },
-                    label = { Text("Mensaje local (${draft.length}/500)") },
-                    modifier = Modifier.fillMaxWidth())
-                Button(enabled = draft.isNotBlank(), onClick = {
-                    try {
-                        store.add(contact, draft)
-                        history = store.all()
-                        draft = ""
-                        error = "Mensaje guardado en este teléfono."
-                    } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudo guardar") }
-                }) { Text("Guardar mensaje") }
-            }
-            selecting -> {
-                TextButton(onClick = { selecting = false }) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Conversaciones", Modifier.size(24.dp)) }
-                Text("Elegir catequista")
-                if (contacts == null) CircularProgressIndicator()
-                if (error.isNotBlank()) TextButton(onClick = {
-                    contacts = null; error = ""; retry++
-                }) { Text("Reintentar") }
-                if (contacts?.isEmpty() == true && error.isBlank()) Text("No hay catequistas disponibles.")
-                contacts.orEmpty().forEach { person ->
-                    Text(person.name, modifier = Modifier.fillMaxWidth().clickable {
-                        selected = person; selecting = false; draft = ""; error = ""
-                    }.padding(12.dp))
+                Text("${draft.length}/500", fontSize = 9.sp, color = Color.DarkGray,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                Row(Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    AndroidView(
+                        factory = { ctx -> EditText(ctx).apply { hint = "Escribe un mensaje"; textSize = 13f; maxLines = 4 } },
+                        update = { view ->
+                            if (view.text.toString() != draft) { view.setText(draft); view.setSelection(view.text.length) }
+                            view.setOnFocusChangeListener { _, _ -> }
+                            view.addTextChangedListener(object : android.text.TextWatcher {
+                                override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) = Unit
+                                override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
+                                    val value = s?.toString().orEmpty().take(500)
+                                    if (value != draft) draft = value
+                                }
+                                override fun afterTextChanged(s: android.text.Editable?) = Unit
+                            })
+                        }, modifier = Modifier.weight(1f))
+                    Image(painterResource(if (draft.isBlank()) R.drawable.ic_action_send1 else R.drawable.ic_action_send_2), "Enviar",
+                        modifier = Modifier.size(42.dp).padding(5.dp).clickable(enabled = draft.isNotBlank()) {
+                            try { store.add(contact, draft); history = store.all(); draft = ""; error = "" }
+                            catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudo guardar") }
+                        })
                 }
+                if (error.isNotBlank()) Text(error, fontSize = 12.sp, color = Color.Red, modifier = Modifier.padding(10.dp))
             }
-            else -> {
-                Text("Mensajes")
-                Text("Como invitado puedes guardar mensajes aquí. Para chatear en vivo, inicia sesión.")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { selecting = true; error = "" }) { Text("Nuevo mensaje") }
-                    Button(onClick = onOpenAccount) { Text("Iniciar sesión") }
-                }
+        } else {
+            Column(Modifier.fillMaxSize()) {
+                Text("Regístrate o inicia sesión para recibir respuestas de los catequistas.", fontSize = 12.sp, color = Color.Black,
+                    modifier = Modifier.fillMaxWidth().padding(10.dp))
                 val last = history.groupBy { it.recipient }.values.mapNotNull { it.lastOrNull() }
-                if (last.isEmpty()) Text("No hay mensajes locales todavía.")
-                last.forEach { row ->
-                    Text("${row.name}\n${row.text}", modifier = Modifier.fillMaxWidth().clickable {
-                        selected = ChatContact(row.recipient, row.name, row.picture)
-                        error = ""
-                    }.padding(12.dp))
+                LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                    items(last) { row ->
+                        Row(Modifier.fillMaxWidth().background(Color.White).clickable {
+                            selected = ChatContact(row.recipient, row.name, row.picture); error = ""
+                        }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(model = row.picture, contentDescription = null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(48.dp).clip(CircleShape))
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(row.name, fontSize = 12.sp, color = Color(0xFF7A9989))
+                                Text(row.text, fontSize = 10.sp, color = Color.DarkGray, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+            Box(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 14.dp).size(56.dp).clip(CircleShape)
+                .background(profile.accent).clickable { selecting = true; error = "" }, contentAlignment = Alignment.Center) {
+                Image(painterResource(R.drawable.plus__64), "Nuevo mensaje", Modifier.size(32.dp))
+            }
+        }
+    }
+
+    if (selecting) {
+        Dialog(onDismissRequest = { selecting = false }) {
+            Column(Modifier.fillMaxWidth().background(Color.White)) {
+                Text("Selecciona un catequista", color = Color.White, fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth().background(profile.accent).padding(10.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                when {
+                    contacts == null -> Column(Modifier.fillMaxWidth().height(260.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center) { CircularProgressIndicator(); Spacer(Modifier.height(10.dp)); Text("Buscando catequistas", fontSize = 13.sp) }
+                    error.isNotBlank() -> Text(error, color = Color.Red, fontSize = 12.sp,
+                        modifier = Modifier.fillMaxWidth().clickable { contacts = null; error = ""; retry++ }.padding(16.dp))
+                    else -> LazyColumn(Modifier.fillMaxWidth().heightIn(max = 500.dp)) {
+                        items(contacts.orEmpty()) { person ->
+                            Row(Modifier.fillMaxWidth().clickable { selected = person; selecting = false; draft = ""; error = "" }.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(model = person.picture, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(48.dp).clip(CircleShape))
+                                Spacer(Modifier.width(10.dp)); Text(person.name, fontSize = 13.sp, color = Color.DarkGray)
+                            }
+                        }
+                    }
                 }
             }
         }
-        if (error.isNotBlank()) Text(error)
     }
 }
