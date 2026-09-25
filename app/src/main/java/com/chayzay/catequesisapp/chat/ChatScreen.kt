@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import android.app.ProgressDialog
 import android.widget.Toast
@@ -37,7 +36,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -54,6 +52,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 
 private data class Conversation(val contact: ChatContact, val last: String, val datetime: String = "")
 private data class ChatLine(val key: String, val sender: String, val text: String)
@@ -63,34 +62,15 @@ private data class ChatLine(val key: String, val sender: String, val text: Strin
 fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepository) {
     val root = remember { FirebaseDatabase.getInstance().getReference("Conversations") }
     val context = LocalContext.current
-    val outbox = remember(context) { PendingRealtimeStore(context) }
     val guestStore = remember(context) { GuestChatStore(context) }
     val scope = rememberCoroutineScope()
-    var guestPending by remember(user.apiKey) { mutableIntStateOf(guestStore.pendingFor(user).size) }
-    var guestSending by remember(user.apiKey) { mutableStateOf(false) }
-    var guestError by remember(user.apiKey) { mutableStateOf("") }
-    var pendingCount by remember(user.apiKey) { mutableStateOf(outbox.forUser(user).size) }
-    var pendingError by remember(user.apiKey) { mutableStateOf("") }
-    fun retryPending() {
-        pendingError = ""
-        outbox.flush(root, user) { problem ->
-            pendingCount = outbox.forUser(user).size
-            if (problem != null) pendingError = problem.localizedMessage ?: "Firebase no confirmó el mensaje"
-        }
-    }
+    // El legacy transfería silenciosamente los mensajes de invitado al iniciar sesión;
+    // no añadía banners ni controles extra dentro de la lista de conversaciones.
     LaunchedEffect(user.apiKey) {
-        retryPending()
         if (guestStore.pendingFor(user).isNotEmpty()) {
-            guestSending = true
             try { GuestChatTransfer.sendPending(context, user, repository) }
-            catch (cause: Exception) {
-                if (cause is CancellationException) throw cause
-                guestError = ApiMessages.fromException(cause,
-                    "No se pudieron enviar los mensajes de invitado. Reinténtalo.")
-            } finally { guestSending = false }
+            catch (cause: Exception) { if (cause is CancellationException) throw cause }
         }
-        guestPending = guestStore.pendingFor(user).size
-        pendingCount = outbox.forUser(user).size
     }
     var conversations by remember(user.apiKey) { mutableStateOf<List<Conversation>>(emptyList()) }
     var selected by remember(user.apiKey) { mutableStateOf<ChatContact?>(null) }
@@ -128,6 +108,19 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
         onDispose { root.removeEventListener(listener) }
     }
 
+    // Una lectura de Realtime Database puede quedar esperando indefinidamente si el
+    // Firebase antiguo está inaccesible. El legacy podía dejar el ProgressDialog abierto
+    // para siempre; aquí liberamos la UI sin impedir abrir el selector de catequistas.
+    LaunchedEffect(root, user.apiKey, loading, choosing) {
+        if (loading && !choosing) {
+            delay(10_000)
+            if (loading && !choosing) {
+                loading = false
+                error = "El chat en tiempo real no respondió. Puedes intentar de nuevo o elegir un catequista."
+            }
+        }
+    }
+
     LaunchedEffect(choosing, user.apiKey) {
         if (choosing) {
             loading = true
@@ -139,33 +132,11 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
 
     if (selected != null) {
         val contact = selected!!
-        ConversationScreen(user, contact, root, repository, outbox,
-            onOutboxChanged = { problem ->
-                pendingCount = outbox.forUser(user).size
-                if (problem != null) pendingError = "No se pudo actualizar el chat en tiempo real."
-            }, onBack = { selected = null })
+        ConversationScreen(user, contact, root, repository, onBack = { selected = null })
         return
     }
     Box(Modifier.fillMaxSize().background(profile.baseColor)) {
         Column(Modifier.fillMaxSize()) {
-            if (guestPending > 0) {
-                Text("Hay $guestPending mensaje(s) escritos como invitado pendientes de enviar.", fontSize = 12.sp,
-                    modifier = Modifier.padding(10.dp))
-                Button(enabled = !guestSending, onClick = {
-                    guestSending = true; guestError = ""
-                    scope.launch {
-                        try { GuestChatTransfer.sendPending(context, user, repository); pendingCount = outbox.forUser(user).size }
-                        catch (cause: Exception) { if (cause is CancellationException) throw cause; guestError = ApiMessages.fromException(cause, "No se pudieron enviar los mensajes de invitado. Reinténtalo.") }
-                        finally { guestPending = guestStore.pendingFor(user).size; guestSending = false }
-                    }
-                }) { Text(if (guestSending) "Enviando…" else "Enviar mensajes de invitado") }
-            }
-            if (guestError.isNotBlank()) Text(guestError, color = Color.Red, modifier = Modifier.padding(horizontal = 10.dp))
-            if (pendingCount > 0) {
-                Text("$pendingCount mensaje(s) guardado(s) en el servidor y pendiente(s) en Firebase", fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp))
-                Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
-            }
-            if (pendingError.isNotBlank()) Text(pendingError, color = Color.Red, modifier = Modifier.padding(horizontal = 10.dp))
             LegacyChatProgressDialog(show = loading && !choosing, message = "Cargando datos")
             if (error.isNotBlank() && !choosing) Text(error, color = Color.Red, modifier = Modifier.padding(10.dp))
             LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
@@ -244,8 +215,7 @@ private fun LegacyChatProgressDialog(show: Boolean, message: String) {
 
 @Composable
 private fun ConversationScreen(user: UserSession, contact: ChatContact, root: DatabaseReference,
-                               repository: ChatRepository, outbox: PendingRealtimeStore,
-                               onOutboxChanged: (Throwable?) -> Unit, onBack: () -> Unit) {
+                               repository: ChatRepository, onBack: () -> Unit) {
     var thread by remember(user.apiKey, contact.key) { mutableStateOf<DatabaseReference?>(null) }
     var lines by remember(user.apiKey, contact.key) { mutableStateOf<List<ChatLine>>(emptyList()) }
     var loading by remember(user.apiKey, contact.key) { mutableStateOf(true) }
@@ -283,6 +253,21 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
         }
         root.addListenerForSingleValueEvent(listener)
         onDispose { thread = null }
+    }
+
+    // Firebase no ofrece timeout para este listener. Tras 10 s usamos el mismo token
+    // determinista del legacy para que la pantalla no quede bloqueada en “Cargando datos”.
+    // El POST message/register_message sigue funcionando y setValue queda en cola si
+    // Firebase recupera conexión posteriormente.
+    LaunchedEffect(user.apiKey, contact.key, loading) {
+        if (loading) {
+            delay(10_000)
+            if (loading) {
+                thread = root.child(user.apiKey + contact.key)
+                loading = false
+                error = "El chat en tiempo real no respondió. Puedes enviar; Firebase sincronizará cuando vuelva a estar disponible."
+            }
+        }
     }
     DisposableEffect(thread) {
         val messages = thread?.child("Messages")
@@ -370,7 +355,6 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                                 mapOf("user_send" to user.apiKey, "message" to message, "read" to false)
                             )
                             draft = ""
-                            onOutboxChanged(null)
                             Toast.makeText(context, "Mensaje enviado", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo enviar el mensaje") }
                         finally { sending = false }

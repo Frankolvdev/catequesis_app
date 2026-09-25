@@ -7,6 +7,7 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -25,7 +26,10 @@ object GuestChatTransfer {
             if (note.text.isBlank()) return@forEach
             // Coincide con la preferencia por conversaciones inversas del chat antiguo.
             val conversation = note.conversation.ifBlank {
-                conversationFor(root, user.apiKey, note.recipient)
+                // El Firebase legacy puede estar desconectado o con reglas antiguas.
+                // No bloqueamos indefinidamente el traspaso al iniciar sesión.
+                withTimeoutOrNull(10_000) { conversationFor(root, user.apiKey, note.recipient) }
+                    ?: (user.apiKey + note.recipient)
             }
             val datetime = note.serverDatetime.ifBlank {
                 repository.send(user, note.recipient, note.text)
