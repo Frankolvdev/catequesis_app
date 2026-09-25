@@ -30,6 +30,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.CourseRepository
+import com.chayzay.catequesisapp.data.ClassProgressStore
+import com.chayzay.catequesisapp.data.ProgressSyncRepository
+import com.chayzay.catequesisapp.auth.UserSession
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,17 +40,19 @@ import kotlinx.coroutines.withContext
 
 /** Textos recuperados de los recursos de la aplicación original. */
 @Composable
-fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () -> Unit) {
+fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, user: UserSession? = null,
+                     progressStore: ClassProgressStore? = null, syncRepository: ProgressSyncRepository? = null,
+                     onUpdated: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var selected by remember(help) { mutableStateOf<Pair<String, String>?>(null) }
     var confirmUpdate by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
-    val how = plain(stringResource(R.string.legacy_textFuncAppContent))
-    val approved = plain(stringResource(R.string.legacy_textApprovedCourseContent))
-    val certificates = plain(stringResource(R.string.legacy_textCertificateInformationContent))
-    val purpose = plain(stringResource(R.string.legacy_textContentHowtoApp))
+    val how = stringResource(R.string.legacy_textFuncAppContent)
+    val approved = stringResource(R.string.legacy_textApprovedCourseContent)
+    val certificates = stringResource(R.string.legacy_textCertificateInformationContent)
+    val purpose = stringResource(R.string.legacy_textContentHowtoApp)
     val credits = stringResource(R.string.legacy_textDesarrolladoPor)
     val privacy = stringResource(R.string.legacy_textContentPolicyPrivacy)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
@@ -99,7 +104,12 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
                 loading = true
                 problem = null
                 try {
-                    withContext(Dispatchers.IO) { repository.refreshContent() }
+                    withContext(Dispatchers.IO) {
+                        repository.refreshContent()
+                        if (user != null && progressStore != null && syncRepository != null) {
+                            syncRepository.sync(user, progressStore)
+                        }
+                    }
                     onUpdated()
                 } catch (cause: Exception) {
                     problem = ApiMessages.fromException(cause, "No se pudo actualizar el contenido")
@@ -109,4 +119,3 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
         dismissButton = { TextButton(onClick = { confirmUpdate = false }) { Text("Cancelar") } })
 }
 
-private fun plain(html: String): String = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString().trim()

@@ -229,8 +229,10 @@ class MainActivity : ComponentActivity() {
                                     section = "courses"
                                 }
                                 "help" -> LegacyInfoScreen(help = true, repository = repository) { section = "courses" }
-                                "information" -> LegacyInfoScreen(help = false, repository = repository) {
+                                "information" -> LegacyInfoScreen(help = false, repository = repository,
+                                    user = session, progressStore = progressStore, syncRepository = syncRepository) {
                                     catalogContentVersion++
+                                    syncVersion++
                                     section = "courses"
                                 }
                                 "settings" -> SettingsScreen(repository, imageRepository) { fontOption = it }
