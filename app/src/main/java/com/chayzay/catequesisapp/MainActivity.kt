@@ -897,7 +897,7 @@ private fun CatalogScreen(
                     result.rows.forEach { entry ->
                         val flags = remember(entry.id, progressRefresh) { progressStore.flags(entry.id) }
                         Text(entry.label, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-                            .background(Color(0xFFF0F0F0)).clickable {
+                            .background(Color(0xFFF0F0F0)).combinedClickable(onClick = {
                                 val selected = classes.firstOrNull { it.id == entry.id }
                                 val current = page as? CatalogPage.Classes
                                 if (selected != null && current != null) {
@@ -905,7 +905,10 @@ private fun CatalogScreen(
                                     progressRefresh++
                                     page = CatalogPage.Themes(current.course, selected)
                                 }
-                            }.padding(12.dp), color = if (flags.visited) Color.Black else Color(0xFF777777),
+                            }, onLongClick = {
+                                progressStore.setVisited(entry.id, false)
+                                progressRefresh++
+                            }).padding(12.dp), color = if (flags.visited) Color.Black else Color(0xFF777777),
                             fontWeight = if (flags.visited) FontWeight.Bold else FontWeight.Normal)
                     }
                 }

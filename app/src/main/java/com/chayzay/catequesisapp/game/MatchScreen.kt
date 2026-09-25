@@ -122,8 +122,11 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     if (solved.size == 4) "¡Completaste todas las parejas!" else "Se acabó el tiempo") {
                     showResult = false
                 }
-                else Button(enabled = seconds > 0,
-                    onClick = {
+                Button(onClick = {
+                    if (seconds == 0 || solved.size == 4) {
+                        showResult = false
+                        round++
+                    } else {
                         val question = selectedQuestion
                         val answer = selectedAnswer
                         if (question == null || answer == null) {
@@ -134,8 +137,8 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                             selectedQuestion = null
                             selectedAnswer = null
                         }
-                    }) { Text("Comprobar") }
-                if (seconds == 0 || solved.size == 4) Button(onClick = { round++ }) { Text("Jugar de nuevo") }
+                    }
+                }) { Text(if (seconds == 0 || solved.size == 4) "Reiniciar" else "Comprobar") }
             }
         }
     }
