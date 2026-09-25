@@ -96,18 +96,18 @@ fun TrueFalseScreen(
             else -> {
                 val (question, answer) = rounds[index]
                 Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Text("Mal\n$wrong", color = gameRed, fontWeight = FontWeight.Bold)
+                    Text("Mal\n$wrong", color = gameRed, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Text("00:${seconds.toString().padStart(2, '0')}", modifier = Modifier.legacyCountdownWarning(seconds),
-                        color = if (seconds <= 10) gameRed else Color(0xFF505050), fontWeight = FontWeight.Bold)
-                    Text("Bien\n$correct", color = gameGreen, fontWeight = FontWeight.Bold)
+                        color = if (seconds <= 10) gameRed else Color(0xFF505050), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Bien\n$correct", color = gameGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     Column(Modifier.fillMaxWidth().padding(20.dp)
                         .background(Color(0xFFE1E1E1), RoundedCornerShape(5.dp))
                         .border(5.dp, Color(0xFF838383), RoundedCornerShape(5.dp)).padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(question.text, fontWeight = FontWeight.Bold)
-                        Text(answer.text)
+                        Text(question.text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(answer.text, modifier = Modifier.padding(5.dp), fontSize = 13.sp)
                     }
                 }
                 Row(Modifier.fillMaxWidth()) {

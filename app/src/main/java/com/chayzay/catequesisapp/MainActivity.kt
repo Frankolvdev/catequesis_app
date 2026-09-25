@@ -962,7 +962,7 @@ private fun CatalogScreen(
                                         row.forEach { selected ->
                                             val flags = remember(selected.id, progressRefresh) { progressStore.flags(selected.id) }
                                             Box(modifier = Modifier.width(mapWidth / 5).height(mapHeight / rowCount.coerceAtLeast(1))
-                                                .background(if (flags.completed) Color(0x55FFFFFF) else Color(0xFFE1E1E1))
+                                                .background(Color(0xFFE1E1E1))
                                                 .border(1.dp, Color(0xFF0A0A0A))
                                                 .combinedClickable(onClick = {
                                                     val current = page as? CatalogPage.Classes
