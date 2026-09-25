@@ -13,12 +13,23 @@ import com.chayzay.catequesisapp.chat.PendingRealtimeStore
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.chayzay.catequesisapp.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
@@ -80,13 +97,20 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             apiBaseUrl, approvedPage!!, onSynced) { approvedPage = null }
         return
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val legacyLoginGreen = Color(0xFF7A9989)
+    val screenModifier = if (session == null && !registering)
+        Modifier.fillMaxSize().background(legacyLoginGreen).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)
+    else Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState()).padding(10.dp)
+    Column(screenModifier, horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (session != null) {
-            Text("Sesión iniciada: ${session.displayName}")
-            Text(session.email)
-            Button(onClick = { editing = !editing; message = null }) { Text("Editar perfil") }
-            Button(onClick = { detailsPage = true }) { Text("Foto, datos personales y contactos") }
+            Text("Perfil", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF505050),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
+            LegacyProfileCard(R.drawable.user_profile, "Datos del usuario",
+                "Edita tus datos: correo, nombres, apellidos y más.") { editing = !editing; message = null }
+            if (!editing) TextButton(onClick = { detailsPage = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Foto, datos personales y contactos", fontSize = 13.sp)
+            }
             if (editing) {
                 OutlinedTextField(editEmail, { editEmail = it.trim() }, label = { Text("Correo electrónico") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -125,18 +149,22 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             }
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
-            Button(onClick = {
+            LegacyProfileCard(R.drawable.course_profile, "Tus cursos aprobados",
+                "Visualiza la información de tus cursos aprobados.") {
                 if (progressStore.approvedCourses().isEmpty()) {
                     message = "Aún no tienes aprobado ningún curso. Para aprobarlos, debes completar todos los test sacando 10/10. Puedes intentarlo las veces que quieras. Al aprobarlos la Universidad de Los Hemisferios te enviará un diploma digital a tu email y, si quieres, podrás pedir uno físico."
                 } else approvedPage = false
-            }) { Text("Mis cursos aprobados") }
-            Button(onClick = {
+            }
+            LegacyProfileCard(R.drawable.certificate_profile, "Petición de certificado",
+                "Pide tu certificado digital, una vez aprobada toda la carga.") {
                 if (progressStore.approvedCourses().isEmpty()) {
                     message = "No podemos darte un certificado porque aún no tienes aprobado ningún curso. Para aprobarlos, debes completar todos los test sacando 10/10. Puedes intentarlo las veces que quieras. Al aprobarlos la Universidad de Los Hemisferios te emitirá un diploma digital o físico."
                 } else approvedPage = true
-            }) { Text("Mis certificados") }
-            Button(onClick = { confirmReset = true }) { Text("Reiniciar cursos") }
-            Button(onClick = { confirmDelete = true }) { Text("Borrar cuenta") }
+            }
+            LegacyProfileCard(R.drawable.reset_course_profile, "Reiniciar cursos",
+                "Reiniciar toda la información de los cursos.") { confirmReset = true }
+            LegacyProfileCard(R.drawable.delete_user_profile, "Borrar cuenta",
+                "Borrar los datos de la cuenta incluyendo los cursos.") { confirmDelete = true }
             Button(enabled = !syncing, onClick = {
                 syncing = true
                 syncMessage = null
@@ -173,21 +201,26 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             syncMessage?.let { Text(it) }
             Button(onClick = { confirmLogout = true }) { Text("Cerrar sesión") }
         } else {
-            Text(if (registering) "Registrar usuario" else "Iniciar sesión")
+            if (!registering) Image(painterResource(R.drawable.logo), contentDescription = null,
+                modifier = Modifier.size(148.dp).padding(bottom = 4.dp))
+            else Text("Registrar usuario", fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                color = Color(0xFF505050), modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
             OutlinedTextField(value = email, onValueChange = { email = it.trim() },
-                label = { Text("Correo electrónico") },
+                placeholder = { Text("Correo electrónico", fontSize = 13.sp) },
+                trailingIcon = { Image(painterResource(R.drawable.user), null, Modifier.size(24.dp)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true, modifier = Modifier.fillMaxWidth())
+                singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
             OutlinedTextField(value = password, onValueChange = { password = it },
-                label = { Text("Contraseña") }, singleLine = true,
+                placeholder = { Text("Contraseña", fontSize = 13.sp) }, singleLine = true,
+                trailingIcon = { Image(painterResource(R.drawable.pass), null, Modifier.size(24.dp)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
             if (registering) {
                 OutlinedTextField(value = firstName, onValueChange = { firstName = it },
-                    label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+                    placeholder = { Text("Nombre", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
                 OutlinedTextField(value = lastName, onValueChange = { lastName = it },
-                    label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth())
+                    placeholder = { Text("Apellido", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
                 Text("Sexo")
                 TextButton(onClick = { gender = if (gender == "MALE") "FEMALE" else "MALE" }) {
                     Text(if (gender == "MALE") "Masculino ▾" else "Femenino ▾")
@@ -195,7 +228,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             }
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
-            Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+            Button(enabled = !loading, onClick = {
                 // LoginActivity legacy: correo + contraseña vacíos abre directamente el registro.
                 if (!registering && email.isBlank() && password.isBlank()) {
                     registering = true
@@ -231,9 +264,12 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         message = ApiMessages.fromException(cause, "No fue posible conectar con el servidor")
                     } finally { loading = false }
                 }
-            }) { Text(if (registering) "Crear cuenta" else "Iniciar sesión") }
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
+                Text(if (registering) "Registrar" else "Iniciar sesión o Registrar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
             if (!registering) {
-                Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                Button(enabled = !loading, onClick = {
                     val activity = context as? Activity
                     if (activity == null) { message = "No se pudo abrir Google"; return@Button }
                     scope.launch {
@@ -247,8 +283,12 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                             message = ApiMessages.fromException(cause, "No se pudo iniciar sesión con Google")
                         } finally { loading = false }
                     }
-                }) { Text("Iniciar sesión con Google") }
-                Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF505050)),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
+                    Image(painterResource(R.drawable.icon_google), null, Modifier.height(42.dp));
+                    Text("Iniciar sesión con Google", fontSize = 13.sp, modifier = Modifier.weight(1f))
+                }
+                Button(enabled = !loading, onClick = {
                     val activity = context as? Activity
                     if (activity == null) { message = "No se pudo abrir Facebook"; return@Button }
                     loading = true; message = null
@@ -266,7 +306,11 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                             }
                         }, { error -> loading = false; message = error })
                     } catch (cause: Exception) { loading = false; message = cause.message ?: "No se pudo iniciar sesión con Facebook" }
-                }) { Text("Iniciar sesión con Facebook") }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475A96), contentColor = Color.White),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
+                    Image(painterResource(R.drawable.icon_facebook), null, Modifier.height(42.dp));
+                    Text("Iniciar sesión con Facebook", fontSize = 13.sp, modifier = Modifier.weight(1f))
+                }
             }
             TextButton(onClick = { registering = !registering; message = null }) {
                 Text(if (registering) "Ya tengo cuenta" else "Crear una cuenta")
@@ -325,4 +369,19 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             }
         }) { Text("Borrar cuenta") } },
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
+}
+
+
+@Composable
+private fun LegacyProfileCard(icon: Int, title: String, subtitle: String, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp).clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
+        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(48.dp))
+            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                Text(title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = Color(0xFF424242), fontSize = 12.sp)
+            }
+        }
+    }
 }

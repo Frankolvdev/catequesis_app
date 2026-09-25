@@ -12,6 +12,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.chayzay.catequesisapp.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.ApiMessages
@@ -108,21 +121,34 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
         }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TextButton(onClick = onBack) { Text("← Perfil") }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("Foto", "Datos", "Contactos").forEachIndexed { index, title ->
-                TextButton(onClick = { tab = index; error = null }) { Text(title) }
+    Column(Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().height(56.dp).background(Color(0xFF037AD8)).padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) { Text("‹", color = Color.White, fontSize = 28.sp) }
+            Text("Datos del usuario", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+        Row(Modifier.fillMaxWidth().background(Color(0xFF8A65E4)), horizontalArrangement = Arrangement.SpaceEvenly) {
+            listOf("Usuario", "Datos", "Contactos").forEachIndexed { index, title ->
+                TextButton(onClick = { tab = index; error = null }, modifier = Modifier.weight(1f)) {
+                    Text(title, color = Color.White, fontSize = 13.sp, fontWeight = if (tab == index) FontWeight.Bold else FontWeight.Normal)
+                }
             }
         }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp), horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (busy) CircularProgressIndicator()
         error?.let { Text(it) }
         when (tab) {
             0 -> {
-                Text("Foto del perfil")
-                Text(if (selectedPhoto == null) "Selecciona una foto de tu dispositivo" else "Foto seleccionada")
-                Button(onClick = { choosePhoto.launch("image/*") }) { Text("Elegir foto") }
+                Box(contentAlignment = Alignment.BottomStart, modifier = Modifier.padding(top = 10.dp)) {
+                    Image(painterResource(R.drawable.background_splash_screen), null,
+                        Modifier.size(120.dp).clip(CircleShape))
+                    Image(painterResource(R.drawable.camera), "Cambiar foto", Modifier.size(32.dp).clip(CircleShape))
+                }
+                Text(if (selectedPhoto == null) "Pulsa la cámara para cambiar tu foto" else "Foto seleccionada",
+                    fontSize = 13.sp)
+                Button(onClick = { choosePhoto.launch("image/*") }) { Text("Elegir foto", fontSize = 13.sp) }
                 Button(enabled = !busy && selectedPhoto != null, onClick = {
                     val chosen = selectedPhoto ?: return@Button
                     scope.launch {
@@ -216,6 +242,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                     }
                 }) { Text("Guardar contactos") }
             }
+        }
         }
     }
 }

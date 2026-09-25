@@ -3,11 +3,16 @@ package com.chayzay.catequesisapp.auth
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -20,6 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.chayzay.catequesisapp.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.data.ClassProgressStore
@@ -90,13 +101,19 @@ fun ApprovedCoursesScreen(
                 "No tienes cursos aprobados para obtener un certificado."
                 else "Todavía no tienes cursos aprobados.")
             else -> items!!.forEach { course ->
-                // CourseApprovedActivity / CertificateCourseActivity legacy muestran
-                // nombre + subtítulo de felicitación + una acción separada.
-                Text(course.name)
-                Text("Felicidades curso aprobado.")
-                Button(modifier = Modifier.fillMaxWidth(),
-                    enabled = !certificatePending,
-                    onClick = {
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Box(Modifier.fillMaxWidth()) {
+                            Image(painterResource(R.drawable.approve_class), null, Modifier.size(32.dp).align(Alignment.TopEnd))
+                            Image(painterResource(R.drawable.ave), null, Modifier.size(96.dp).align(Alignment.Center))
+                        }
+                        Text(course.name, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Curso aprobado en todas sus lecciones", color = Color(0xFF424242), fontSize = 12.sp)
+                        Button(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                            enabled = !certificatePending,
+                            onClick = {
                         if (certificates) {
                             // CertificateCourseAdapter legacy volvía a enviar/verificar
                             // course_approved/manipulate justo al tocar cada certificado.
@@ -116,7 +133,9 @@ fun ApprovedCoursesScreen(
                                 }
                             }
                         } else selected = course
-                    }) { Text(if (certificates) "Descargar Certificado" else "Ver contenido") }
+                    }) { Text(if (certificates) "Descargar Certificado" else "Ver contenido", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                    }
+                }
             }
         }
         if (certificates && certificatePending) CircularProgressIndicator()
