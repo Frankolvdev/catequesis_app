@@ -65,7 +65,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
     LaunchedEffect(classId, retryLoad) {
         error = null
         questions = null
-        try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
+        try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) }.shuffled() }
         catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo cargar el examen") }
     }
     LaunchedEffect(classId, position, submitted) {
@@ -117,6 +117,12 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
             }
             else -> {
                 val question = questions!![position]
+                // La app original limita cada pregunta a 4 respuestas: primero toma las
+                // correctas, completa con incorrectas y finalmente mezcla las cuatro.
+                val displayedAnswers = remember(question.id, position) {
+                    (question.answers.filter { it.correct } + question.answers.filter { !it.correct })
+                        .take(4).shuffled()
+                }
                 Text(if (question.type == "SIMPLE") "Pregunta simple" else "Pregunta cerrada",
                     color = Color.DarkGray, modifier = Modifier.padding(top = 12.dp))
                 Card(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
@@ -125,7 +131,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                 }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    question.answers.forEach { answer ->
+                    displayedAnswers.forEach { answer ->
                         val color = when {
                             submitted && answer.correct -> Color(0xFFCDECCF)
                             submitted && answer.id in selected -> Color(0xFFF1C7C7)
@@ -157,7 +163,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                 Button(enabled = submitted || selected.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(), onClick = {
                         if (!submitted) {
-                            lastCorrect = selected == question.answers.filter { it.correct }.map { it.id }.toSet()
+                            lastCorrect = selected == displayedAnswers.filter { it.correct }.map { it.id }.toSet()
                             if (lastCorrect) {
                                 correctCount++
                                 if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }

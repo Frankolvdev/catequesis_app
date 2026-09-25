@@ -54,9 +54,12 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
     var downloading by remember { mutableStateOf(false) }
     var downloadError by remember { mutableStateOf("") }
     var activeGames by remember(classId) { mutableStateOf<Map<Int, Boolean>?>(null) }
+    var availableImageTypes by remember(classId) { mutableStateOf<Set<String>?>(null) }
     LaunchedEffect(classId) {
         activeGames = try { withContext(Dispatchers.IO) { repository.getActiveGames(classId) } }
         catch (_: Exception) { emptyMap() }
+        availableImageTypes = try { withContext(Dispatchers.IO) { repository.getAvailableImageGameTypes(classId) } }
+        catch (_: Exception) { null }
     }
     // Orden y agrupación originales de ActivitiesClassFragment: imágenes, palabras, preguntas, pizarra y selfie.
     val groups = listOf(
@@ -74,8 +77,13 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
         flags == null || flags.isEmpty() || ids.any { flags[it] == true }
     }.map { (card, ids, choices) ->
         val flags = activeGames
-        card to if (flags == null || flags.isEmpty()) choices else choices.filterIndexed { i, _ -> flags[ids[i]] == true }
-    }
+        val activeChoices = if (flags == null || flags.isEmpty()) choices
+            else choices.filterIndexed { i, _ -> flags[ids[i]] == true }
+        // Igual que onImageGameDialog() antiguo: un juego de imágenes activo no se ofrece si no tiene contenido.
+        val filteredChoices = if (ids == listOf(1, 2, 3) && availableImageTypes != null)
+            activeChoices.filter { it.second in availableImageTypes!! } else activeChoices
+        card to filteredChoices
+    }.filter { (_, choices) -> choices.isNotEmpty() }
     var openGroup by remember { mutableStateOf<Int?>(null) }
     var selected by remember(openGroup) { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {

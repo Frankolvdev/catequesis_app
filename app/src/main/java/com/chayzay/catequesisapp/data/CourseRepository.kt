@@ -54,6 +54,14 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File,
             "catechism_lesson", "extension_lesson", "country", "civil_status", "activity_online",
             "question", "response", "active_game").forEach { request("$it/all", allowOfflineCache = false) }
     }
+    /** Tipos de actividades con imágenes que realmente tienen contenido para la clase.
+     * La app antigua ocultaba del selector los juegos de imágenes vacíos. */
+    fun getAvailableImageGameTypes(classId: Int): Set<String> =
+        request("image_activity_offline/all").mapNotNull { item ->
+            if (item.optInt("id_class_course", -1) != classId) null
+            else item.optString("type_game").takeIf { it in setOf("IMAGES", "IMAGES_TEXT", "GAME_ADIVINA") }
+        }.toSet()
+
     fun getImageActivities(classId: Int, type: String): List<ImageActivity> =
         request("image_activity_offline/all").mapNotNull { item ->
             val id = item.optInt("id_image_activity_offline", -1)
