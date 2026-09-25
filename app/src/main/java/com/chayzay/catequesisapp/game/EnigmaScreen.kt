@@ -108,7 +108,7 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color, onEx
                             }, modifier = Modifier.size(32.dp).clickable { action() })
                         }
                     }
-                    Text(if (seconds == 0) "Has perdido" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
+                    Text(if (seconds == 0) "Has perdido :(" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         modifier = Modifier.weight(1f).legacyCountdownWarning(seconds), textAlign = androidx.compose.ui.text.style.TextAlign.End,
                         fontSize = 28.sp, color = if (seconds <= 10) Color(0xFFB71C1C) else Color(0xFF505050))
                 }

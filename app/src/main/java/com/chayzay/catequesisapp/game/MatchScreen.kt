@@ -98,7 +98,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
             source!!.size < 4 -> Text("Esta clase no tiene cuatro parejas de preguntas para este juego.")
             pairs.size == 4 -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(if (seconds == 0) "Has perdido" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
+                    Text(if (seconds == 0) "Has perdido :(" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         modifier = Modifier.legacyCountdownWarning(seconds),
                         color = if (seconds in 1..10 || seconds == 0) Color(0xFFB71C1C) else Color.DarkGray)
                     Text("·  Aciertos ${solved.size}/4  ·  Fallos $mistakes")
@@ -123,10 +123,8 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
                         }
                     }
                 }
-                if (seconds == 0) Text("Se acabó el tiempo")
-                else if (solved.size == 4) Text("¡Completaste todas las parejas!")
                 if (showResult) GameResultDialog(solved.size == 4,
-                    if (solved.size == 4) "¡Completaste todas las parejas!" else "Se acabó el tiempo") {
+                    if (solved.size == 4) "Has ganado felicidades." else "Has perdido :(") {
                     showResult = false
                 }
                 Button(onClick = {
