@@ -194,33 +194,37 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
             Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                // Flujo legacy: pulsar acceso con ambos campos vacíos abre el registro.
+                if (!registering && email.isBlank() && password.isBlank()) {
+                    registering = true
+                    message = null
+                    return@Button
+                }
                 message = when {
                     !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Escribe un correo válido"
-                    password.isBlank() -> "Escribe tu contraseña"
-                    registering && password.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
+                    password.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
                     registering && (firstName.isBlank() || lastName.isBlank()) -> "Completa el nombre y el apellido"
                     else -> null
                 }
                 if (message == null) scope.launch {
                     loading = true
-                    var accountCreated = false
                     try {
-                        val user = withContext(Dispatchers.IO) {
-                            if (registering) {
+                        if (registering) {
+                            // UserRegistration legacy registra y vuelve al login; no inicia sesión automáticamente.
+                            withContext(Dispatchers.IO) {
                                 repository.register(email, password, firstName.trim(), lastName.trim(), gender)
-                                accountCreated = true
                             }
-                            repository.login(email, password)
-                        }
-                        store.save(user)
-                        password = ""
-                        onSessionChanged(user)
-                    } catch (cause: Exception) {
-                        if (accountCreated) {
                             registering = false
-                            message = "La cuenta se creó, pero no pudimos iniciar sesión automáticamente. Intenta iniciar sesión."
-                        } else message = ApiMessages.fromException(cause,
-                            "No fue posible conectar con el servidor")
+                            password = ""
+                            message = null
+                        } else {
+                            val user = withContext(Dispatchers.IO) { repository.login(email, password) }
+                            store.save(user)
+                            password = ""
+                            onSessionChanged(user)
+                        }
+                    } catch (cause: Exception) {
+                        message = ApiMessages.fromException(cause, "No fue posible conectar con el servidor")
                     } finally { loading = false }
                 }
             }) { Text(if (registering) "Crear cuenta" else "Iniciar sesión") }
