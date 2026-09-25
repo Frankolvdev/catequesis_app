@@ -1,5 +1,6 @@
 package com.chayzay.catequesisapp.course
 
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
@@ -81,7 +82,12 @@ fun LessonVoiceControls(
         val engine = TextToSpeech(context.applicationContext) { status ->
             handler.post {
                 ready = status == TextToSpeech.SUCCESS
-                if (!ready) message = "La lectura en voz alta no está disponible en este dispositivo"
+                if (!ready) {
+                    message = "La lectura en voz alta no está disponible en este dispositivo"
+                    try {
+                        context.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
+                    } catch (_: Exception) { }
+                }
             }
         }
         reader = engine

@@ -91,7 +91,7 @@ fun SettingsScreen(repository: CourseRepository, images: CourseImageRepository,
             if (courses == null) scope.launch {
                 loading = true
                 message = ""
-                try { courses = withContext(Dispatchers.IO) { repository.getCourses() } }
+                try { courses = withContext(Dispatchers.IO) { repository.getCourses().filter { it.id == 1 || it.id == 5 } } }
                 catch (cause: Exception) { message = ApiMessages.fromException(cause,
                     "No se pudieron cargar los cursos") }
                 finally { loading = false }

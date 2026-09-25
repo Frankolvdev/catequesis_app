@@ -123,8 +123,16 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             }
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
-            Button(onClick = { approvedPage = false }) { Text("Mis cursos aprobados") }
-            Button(onClick = { approvedPage = true }) { Text("Mis certificados") }
+            Button(onClick = {
+                if (progressStore.approvedCourses().isEmpty()) {
+                    message = "Aún no tienes aprobado ningún curso. Para aprobarlos, debes completar todos los test sacando 10/10. Puedes intentarlo las veces que quieras. Al aprobarlos la Universidad de Los Hemisferios te enviará un diploma digital a tu email y, si quieres, podrás pedir uno físico."
+                } else approvedPage = false
+            }) { Text("Mis cursos aprobados") }
+            Button(onClick = {
+                if (progressStore.approvedCourses().isEmpty()) {
+                    message = "No podemos darte un certificado porque aún no tienes aprobado ningún curso. Para aprobarlos, debes completar todos los test sacando 10/10. Puedes intentarlo las veces que quieras. Al aprobarlos la Universidad de Los Hemisferios te emitirá un diploma digital o físico."
+                } else approvedPage = true
+            }) { Text("Mis certificados") }
             Button(onClick = { confirmReset = true }) { Text("Reiniciar progreso local") }
             Button(onClick = { confirmDelete = true }) { Text("Borrar cuenta") }
             Button(enabled = !syncing, onClick = {
