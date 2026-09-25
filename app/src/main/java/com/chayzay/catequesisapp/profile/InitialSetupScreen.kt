@@ -1,5 +1,8 @@
 package com.chayzay.catequesisapp.profile
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chayzay.catequesisapp.R
@@ -40,6 +44,7 @@ import java.util.Calendar
 /** Adaptación Compose de activity_init_config.xml con sus recursos originales. */
 @Composable
 fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
+    val context = LocalContext.current
     val currentYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
     var year by remember { mutableStateOf(currentYear) }
     var gender by remember { mutableStateOf<String?>(null) }
@@ -107,6 +112,7 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
                 when {
                     age < 8 -> error = "La edad mínima es de 8 años"
                     gender == null -> error = "Selecciona una opción"
+                    !hasInternetConnection(context) -> error = "No hay conexión a internet"
                     else -> onContinue(ProfileSettings(year, gender!!))
                 }
             }, colors = ButtonDefaults.buttonColors(containerColor = accent),
@@ -115,4 +121,13 @@ fun InitialSetupScreen(onContinue: (ProfileSettings) -> Unit) {
             }
         }
     }
+}
+
+
+/** InitConfig.java comprobaba NetworkConnection antes de guardar la configuración inicial. */
+private fun hasInternetConnection(context: Context): Boolean {
+    val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+    val network = manager.activeNetwork ?: return false
+    val capabilities = manager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }
