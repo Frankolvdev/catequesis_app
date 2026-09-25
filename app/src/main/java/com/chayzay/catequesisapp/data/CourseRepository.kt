@@ -24,21 +24,20 @@ data class ImageActivity(val id: Int, val classId: Int, val text: String, val im
 
 class CourseRepository(private val baseUrl: String, private val cacheDir: File,
                        private val previousCacheDir: File? = null) {
-    /** Guarda JSON y recursos gráficos del curso para abrirlo sin conexión. */
+    /** Descarga los recursos gráficos del curso como hacía SettingDownloadActivity legacy.
+     * No vuelve a descargar los 17 catálogos ni exige la portada del curso: el endpoint
+     * original recibe id_course y devuelve únicamente image_activity_offline. */
     fun downloadCourseOffline(course: Course, images: CourseImageRepository): Int {
-        refreshContent()
-        val ids = getClasses(course.id).map { it.id }.toSet()
-        if (ids.isEmpty()) throw IllegalStateException("El curso no tiene clases para descargar")
-        if (course.imageUrl.isNotBlank() && images.load(course) == null)
-            throw IllegalStateException("No se pudo descargar la imagen del curso")
-        val rows = request("image_activity_offline/all")
+        val rows = requestOfflineImagesForCourse(course.id)
         var saved = 0
         rows.forEach { row ->
             val id = row.optInt("id_image_activity_offline", -1)
+            if (id <= 0) return@forEach
             val classId = row.optInt("id_class_course", -1)
-            if (id <= 0 || classId !in ids) return@forEach
-            val url = row.optString("path_image").replaceFirst("http://", "https://")
-            if (!url.startsWith("https://")) return@forEach
+            val url = row.optString("path_image").trim().let {
+                if (baseUrl.startsWith("https://")) it.replaceFirst("http://", "https://") else it
+            }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) return@forEach
             val item = ImageActivity(id, classId, row.optString("text_image"), url,
                 row.optString("type_game"))
             if (loadImageActivity(item) == null)
@@ -46,6 +45,33 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File,
             saved++
         }
         return saved
+    }
+
+    private fun requestOfflineImagesForCourse(courseId: Int): List<JSONObject> {
+        val connection = (URL(baseUrl + "image_activity_offline/downloadImagesOffline")
+            .openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 10000
+            readTimeout = 10000
+            doOutput = true
+            setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            setRequestProperty("Accept", "application/json")
+        }
+        val payload = JSONObject().put("id_course", courseId).toString()
+        try {
+            connection.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
+            if (connection.responseCode !in 200..299)
+                throw IllegalStateException("El servidor respondió ${connection.responseCode}")
+            val response = JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+            if (response.optString("status") != "1")
+                throw IllegalStateException(ApiMessages.fromServer(response.optString("message"),
+                    "No se pudieron descargar las imágenes"))
+            val data = response.optJSONArray("data")
+                ?: throw IllegalStateException("La respuesta no contiene imágenes")
+            return (0 until data.length()).mapNotNull { data.optJSONObject(it) }
+        } finally {
+            connection.disconnect()
+        }
     }
     /** Lista descargada al iniciar y al actualizar contenido en la aplicación antigua. */
     fun refreshContent() {
