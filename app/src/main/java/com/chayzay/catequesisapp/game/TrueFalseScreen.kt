@@ -96,7 +96,7 @@ fun TrueFalseScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 val (question, answer) = rounds[index]
                 Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Text("Mal\n$wrong", color = gameRed, fontWeight = FontWeight.Bold)
-                    Text("00:${seconds.toString().padStart(2, '0')}",
+                    Text("00:${seconds.toString().padStart(2, '0')}", modifier = Modifier.legacyCountdownWarning(seconds),
                         color = if (seconds <= 10) gameRed else Color(0xFF505050), fontWeight = FontWeight.Bold)
                     Text("Bien\n$correct", color = gameGreen, fontWeight = FontWeight.Bold)
                 }

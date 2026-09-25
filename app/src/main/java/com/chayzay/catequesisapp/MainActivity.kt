@@ -43,6 +43,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -95,6 +97,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -943,14 +946,24 @@ private fun CatalogScreen(
         }
     }
     gloriaTitle?.let { title ->
+        val reveal = remember(title) { Animatable(0f) }
+        LaunchedEffect(title) { reveal.animateTo(1f, tween(durationMillis = 3000)) }
         AlertDialog(
             onDismissRequest = { gloriaTitle = null },
-            title = { Text(title, color = accent) },
+            title = { if (reveal.value >= 1f) Text(title, color = accent) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(R.drawable.destello), contentDescription = null,
-                        modifier = Modifier.size(96.dp))
-                    Text("ATENCIÓN: A este curso sólo se puede acceder después de muerto. Lo dictará el mismo Dios a los que hayan aprobado los cursos anteriores. Inténtelo más tarde, una vez que hayas cumplido tu misión en la vida.")
+                    if (reveal.value < 1f) {
+                        Image(painterResource(R.drawable.destello), contentDescription = null,
+                            modifier = Modifier.size(96.dp).graphicsLayer {
+                                rotationZ = 360f * reveal.value
+                                scaleX = 1f + 49f * reveal.value
+                                scaleY = 1f + 49f * reveal.value
+                                alpha = 1f - reveal.value
+                            })
+                    } else {
+                        Text("ATENCIÓN: A este curso sólo se puede acceder después de muerto. Lo dictará el mismo Dios a los que hayan aprobado los cursos anteriores. Inténtelo más tarde, una vez que hayas cumplido tu misión en la vida.")
+                    }
                 }
             },
             confirmButton = { TextButton(onClick = { gloriaTitle = null }) { Text("Cerrar") } }

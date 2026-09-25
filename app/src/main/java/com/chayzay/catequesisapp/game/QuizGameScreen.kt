@@ -104,7 +104,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                             submitted && answer.id in selected -> Color(0xFFF1C7C7)
                             else -> Color.White
                         }
-                        Row(Modifier.fillMaxWidth().background(background)
+                        Row(Modifier.fillMaxWidth().legacyCorrectAnswer(submitted, answer.correct).background(background)
                             .clickable(enabled = !submitted) {
                                 selected = if (question.type == "SIMPLE") setOf(answer.id)
                                     else if (answer.id in selected) selected - answer.id else selected + answer.id

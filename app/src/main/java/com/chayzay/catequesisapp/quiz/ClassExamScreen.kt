@@ -1,5 +1,6 @@
 package com.chayzay.catequesisapp.quiz
 import com.chayzay.catequesisapp.data.ApiMessages
+import com.chayzay.catequesisapp.game.legacyCorrectAnswer
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -126,7 +127,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                             submitted && answer.id in selected -> Color(0xFFF1C7C7)
                             else -> Color.White
                         }
-                        Row(Modifier.fillMaxWidth().background(color)
+                        Row(Modifier.fillMaxWidth().legacyCorrectAnswer(submitted, answer.correct).background(color)
                             .clickable(enabled = !submitted) {
                                 selected = if (answer.id in selected) selected - answer.id else selected + answer.id
                             }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {

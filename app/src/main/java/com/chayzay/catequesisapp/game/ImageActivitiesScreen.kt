@@ -137,7 +137,12 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
                 Button(onClick = { index = 0; showEndDialog = true }) { Text("Volver a empezar") }
             }
             else -> {
-                Text("${index + 1} / ${images!!.size}" + if (type == "GAME_ADIVINA") "  ·  00:${seconds.toString().padStart(2, '0')}" else "")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${index + 1} / ${images!!.size}")
+                    if (type == "GAME_ADIVINA") Text("·  00:${seconds.toString().padStart(2, '0')}",
+                        modifier = Modifier.legacyCountdownWarning(seconds),
+                        color = if (seconds in 1..10) Color(0xFFB71C1C) else Color.DarkGray)
+                }
                 if (!imageLoaded) CircularProgressIndicator()
                 else if (bitmap == null) {
                     Text("No se pudo cargar esta imagen del servidor.")

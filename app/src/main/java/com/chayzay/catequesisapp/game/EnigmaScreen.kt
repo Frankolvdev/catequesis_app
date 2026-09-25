@@ -89,7 +89,7 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                         }, modifier = Modifier.size(32.dp).clickable { action() })
                     }
                     Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
-                        modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.weight(1f).legacyCountdownWarning(seconds), textAlign = androidx.compose.ui.text.style.TextAlign.End,
                         fontSize = 28.sp, color = if (seconds <= 10) Color(0xFFB71C1C) else Color(0xFF505050))
                 }
                 if (showHint) AlertDialog(onDismissRequest = { showHint = false },
