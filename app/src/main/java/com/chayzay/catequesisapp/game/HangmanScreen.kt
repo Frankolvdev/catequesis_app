@@ -79,14 +79,14 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 val answer = normalize(active.word)
                 val mistakes = selected.count { it !in answer }
                 val won = answer.filter { it in 'A'..'Z' }.all { it in selected }
-                val finished = won || mistakes >= 7
+                val finished = won || mistakes >= 6
                 LaunchedEffect(round, finished) {
                     if (finished) { GameFeedback.finish(context, won); showResult = true }
                 }
                 Text(answer.map { letter ->
                     if (letter !in 'A'..'Z' || letter in selected || (finished && resultAcknowledged)) letter.toString() else "_"
                 }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
-                Image(painterResource(gallows[if (won) 8 else mistakes.coerceIn(0, 7)]),
+                Image(painterResource(gallows[if (won) 8 else (mistakes + 1).coerceIn(1, 7)]),
                     contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.size(130.dp))
                 if (showHint) Text(active.clue.ifBlank { "Sin pista disponible" })
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)

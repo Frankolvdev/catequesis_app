@@ -175,14 +175,8 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     } else feedback = "Revisa la respuesta e inténtalo otra vez"
                 }, enabled = selected.id !in solved) { Text("Comprobar") }
                 if (feedback.isNotBlank()) Text(feedback)
-                if (solved.size == list.size) {
-                    Text("¡Completaste el crucigrama!")
-                    if (showResult) GameResultDialog(true, "¡Completaste el crucigrama!") {
-                        showResult = false
-                    }
-                    Button(onClick = { solved = emptySet(); entries = emptyMap(); revealed = emptyMap(); feedback = ""; showResult = false }) {
-                        Text("Jugar de nuevo")
-                    }
+                if (showResult) GameResultDialog(true, "¡Completaste el crucigrama!") {
+                    showResult = false
                 }
             }
         }
