@@ -671,7 +671,9 @@ private fun CatalogScreen(
             WhiteBoardScreen()
         } else if (page is CatalogPage.ImageGame) {
             val game = page as CatalogPage.ImageGame
-            ImageActivitiesScreen(game.courseClass.id, game.type, repository, accent)
+            ImageActivitiesScreen(game.courseClass.id, game.type, repository, accent) {
+                page = CatalogPage.GameHub(game.course, game.courseClass)
+            }
         } else if (page is CatalogPage.Crossword) {
             val game = page as CatalogPage.Crossword
             CrosswordScreen(game.courseClass.id, repository, accent)

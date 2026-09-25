@@ -53,7 +53,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseRepository, accent: Color) {
+fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseRepository, accent: Color, onExit: () -> Unit) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var images by remember(classId, type) { mutableStateOf<List<ImageActivity>?>(null) }
@@ -128,11 +128,8 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
                     confirmButton = { androidx.compose.material3.TextButton(onClick = {
                         index = 0; showEndDialog = true
                     }) { Text("Volver a empezar") } },
-                    dismissButton = { androidx.compose.material3.TextButton(onClick = {
-                        showEndDialog = false
-                    }) { Text("Cerrar") } })
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = onExit) { Text("No") } })
                 Text("Terminaste de ver las imágenes de la clase")
-                Button(onClick = { index = 0; showEndDialog = true }) { Text("Volver a empezar") }
             }
             else -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
