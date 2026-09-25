@@ -2,6 +2,8 @@ package com.chayzay.catequesisapp
 
 import android.os.Bundle
 import android.content.Intent
+import com.chayzay.catequesisapp.auth.SocialAuthManager
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import android.graphics.Bitmap
@@ -124,6 +126,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    @Deprecated("Facebook SDK callback bridge")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        SocialAuthManager.onActivityResult(requestCode, resultCode, data)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)

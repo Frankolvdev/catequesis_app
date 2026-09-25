@@ -21,6 +21,21 @@ class AuthRepository(private val baseUrl: String) {
         return session
     }
 
+    fun loginSocial(profile: SocialProfile, gender: String): UserSession {
+        val response = post("auth/auth_user", JSONObject()
+            .put("auth_uid", profile.uid).put("auth_provider", profile.provider)
+            .put("email", profile.email).put("first_name", profile.firstName)
+            .put("last_name", profile.lastName).put("url_picture", profile.picture)
+            .put("locale", "es").put("gender", gender))
+        val user = response.optJSONObject("usuario")
+            ?: throw IllegalStateException("El servidor no devolvió los datos del usuario")
+        val session = UserSession(user.optInt("id_user", -1), user.optString("email"),
+            user.optString("first_name"), user.optString("last_name"), user.optString("api_key"),
+            user.optString("picture"), user.optString("gender"))
+        if (session.id <= 0 || session.apiKey.isBlank()) throw IllegalStateException("La respuesta de acceso social está incompleta")
+        return session
+    }
+
     fun register(email: String, password: String, firstName: String, lastName: String, gender: String) {
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         val base = baseUrl.substringBefore("/API/").trimEnd('/')

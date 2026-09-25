@@ -1,6 +1,8 @@
 package com.chayzay.catequesisapp.auth
 
 import android.util.Patterns
+import android.app.Activity
+import com.chayzay.catequesisapp.profile.ProfileSettings
 import androidx.activity.compose.BackHandler
 import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
@@ -230,6 +232,42 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     } finally { loading = false }
                 }
             }) { Text(if (registering) "Crear cuenta" else "Iniciar sesión") }
+            if (!registering) {
+                Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                    val activity = context as? Activity
+                    if (activity == null) { message = "No se pudo abrir Google"; return@Button }
+                    scope.launch {
+                        loading = true; message = null
+                        try {
+                            val profile = SocialAuthManager.google(activity)
+                            val selectedGender = ProfileSettings.load(context)?.gender ?: "MALE"
+                            val user = withContext(Dispatchers.IO) { repository.loginSocial(profile, selectedGender) }
+                            store.save(user); onSessionChanged(user)
+                        } catch (cause: Exception) {
+                            message = ApiMessages.fromException(cause, "No se pudo iniciar sesión con Google")
+                        } finally { loading = false }
+                    }
+                }) { Text("Iniciar sesión con Google") }
+                Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                    val activity = context as? Activity
+                    if (activity == null) { message = "No se pudo abrir Facebook"; return@Button }
+                    loading = true; message = null
+                    try {
+                        SocialAuthManager.facebook(activity, { profile ->
+                            scope.launch {
+                                try {
+                                    val selectedGender = ProfileSettings.load(context)?.gender ?: "MALE"
+                                    val user = withContext(Dispatchers.IO) { repository.loginSocial(profile, selectedGender) }
+                                    store.save(user); onSessionChanged(user)
+                                } catch (cause: Exception) {
+                                    SocialAuthManager.facebookLogout()
+                                    message = ApiMessages.fromException(cause, "No se pudo iniciar sesión con Facebook")
+                                } finally { loading = false }
+                            }
+                        }, { error -> loading = false; message = error })
+                    } catch (cause: Exception) { loading = false; message = cause.message ?: "No se pudo iniciar sesión con Facebook" }
+                }) { Text("Iniciar sesión con Facebook") }
+            }
             TextButton(onClick = { registering = !registering; message = null }) {
                 Text(if (registering) "Ya tengo cuenta" else "Crear una cuenta")
             }
@@ -243,6 +281,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             try { progressStore.clearLocalProgress() } catch (_: Exception) { }
             store.clear()
             onSessionChanged(null)
+            scope.launch { (context as? Activity)?.let { SocialAuthManager.signOut(it) } }
             confirmLogout = false
         }) { Text("Cerrar sesión") } },
         dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } })

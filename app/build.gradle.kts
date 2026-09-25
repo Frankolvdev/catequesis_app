@@ -21,6 +21,10 @@ android {
         // X API v2: define X_BEARER_TOKEN in ~/.gradle/gradle.properties or project gradle.properties.
         // It is intentionally empty until the production X credentials are supplied.
         buildConfigField("String", "X_BEARER_TOKEN", "\"${project.findProperty("X_BEARER_TOKEN") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "FACEBOOK_APP_ID", "\"${project.findProperty("FACEBOOK_APP_ID") ?: ""}\"")
+        resValue("string", "facebook_app_id", "${project.findProperty("FACEBOOK_APP_ID") ?: "0"}")
+        resValue("string", "facebook_client_token", "${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: "0"}")
     }
     buildTypes {
         release {
@@ -52,6 +56,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation("androidx.core:core-splashscreen:1.0.0")
+    implementation("androidx.credentials:credentials:1.6.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.1")
+    implementation("com.facebook.android:facebook-login:18.3.0")
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-database")
     testImplementation(libs.junit)
