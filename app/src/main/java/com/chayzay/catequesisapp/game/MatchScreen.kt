@@ -96,30 +96,23 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
             source == null -> CircularProgressIndicator()
             source!!.size < 4 -> Text("Esta clase no tiene cuatro parejas de preguntas para este juego.")
             pairs.size == 4 -> {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(if (seconds == 0) "Has perdido :(" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
-                        modifier = Modifier.legacyCountdownWarning(seconds),
-                        color = if (seconds in 1..10 || seconds == 0) Color(0xFFB71C1C) else Color.DarkGray)
-                    Text("Aciertos ${solved.size}/4", color = Color(0xFF2E7B0B), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("Fallos $mistakes", color = Color(0xFFD23131), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
                 Row(Modifier.fillMaxWidth()) {
                     Column(Modifier.weight(1f)) {
                         Text("Preguntas", modifier = Modifier.fillMaxWidth().background(accent).padding(5.dp), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         pairs.filter { it.id !in solved }.forEach { question ->
                             Text(question.text, modifier = Modifier.fillMaxWidth()
-                                .background(if (selectedQuestion == question.id) accent else Color.White)
+                                .background(if (selectedQuestion == question.id) Color(0xFF96BC85) else Color.White)
                                 .clickable(enabled = seconds > 0) { selectedQuestion = question.id }
-                                .padding(5.dp), color = if (selectedQuestion == question.id) Color.White else Color.DarkGray, fontSize = 13.sp)
+                                .padding(5.dp), color = Color(0xFF505050), fontSize = 13.sp)
                         }
                     }
                     Column(Modifier.weight(1f)) {
                         Text("Respuestas", modifier = Modifier.fillMaxWidth().background(accent).padding(5.dp), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         answerOrder.filter { it.id !in solved }.forEach { question ->
                             Text(question.answers.first { it.correct }.text, modifier = Modifier.fillMaxWidth()
-                                .background(if (selectedAnswer == question.id) accent else Color.White)
+                                .background(if (selectedAnswer == question.id) Color(0xFFD48656) else Color.White)
                                 .clickable(enabled = seconds > 0) { selectedAnswer = question.id }
-                                .padding(5.dp), color = if (selectedAnswer == question.id) Color.White else Color.DarkGray, fontSize = 13.sp)
+                                .padding(5.dp), color = Color(0xFF505050), fontSize = 13.sp)
                         }
                     }
                 }
@@ -127,23 +120,35 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
                     if (solved.size == 4) "Has ganado felicidades." else "Has perdido :(") {
                     showResult = false
                 }
-                Button(onClick = {
-                    if (seconds == 0 || solved.size == 4) {
-                        showResult = false
-                        round++
-                    } else {
-                        val question = selectedQuestion
-                        val answer = selectedAnswer
-                        if (question == null || answer == null) {
-                            Toast.makeText(context, "Selecciona una pregunta.", Toast.LENGTH_SHORT).show()
+                // Pie original de activity_game_match.xml: temporizador a la izquierda,
+                // aciertos/fallos al centro y Comprobar a la derecha.
+                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (seconds == 0) "Has perdido :(" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
+                        modifier = Modifier.legacyCountdownWarning(seconds).weight(1f),
+                        color = if (seconds in 1..10 || seconds == 0) Color(0xFFB71C1C) else Color(0xFF505050),
+                        fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("Aciertos ${solved.size}/4", modifier = Modifier.padding(5.dp), color = Color(0xFF2E7B0B), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Fallos $mistakes", modifier = Modifier.padding(5.dp), color = Color(0xFFD23131), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Button(onClick = {
+                        if (seconds == 0 || solved.size == 4) {
+                            showResult = false
+                            round++
                         } else {
-                            if (question == answer) solved = solved + question
-                            else mistakes++
-                            selectedQuestion = null
-                            selectedAnswer = null
+                            val question = selectedQuestion
+                            val answer = selectedAnswer
+                            if (question == null || answer == null) {
+                                Toast.makeText(context, "Selecciona una pregunta.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                if (question == answer) solved = solved + question
+                                else mistakes++
+                                selectedQuestion = null
+                                selectedAnswer = null
+                            }
                         }
+                    }, modifier = Modifier.padding(start = 5.dp)) {
+                        Text(if (seconds == 0 || solved.size == 4) "Reiniciar" else "Comprobar", fontSize = 13.sp)
                     }
-                }, modifier = Modifier.align(Alignment.End).padding(5.dp)) { Text(if (seconds == 0 || solved.size == 4) "Reiniciar" else "Comprobar", fontSize = 13.sp) }
+                }
             }
         }
     }
