@@ -109,7 +109,10 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                                 GameCharacterFeedback(result == "¡Ganaste!")
                             }
                         },
-                        confirmButton = { TextButton(onClick = { resultDismissed = true }) { Text("Aceptar") } })
+                        confirmButton = { TextButton(onClick = {
+                            com.chayzay.catequesisapp.settings.GameFeedback.stop()
+                            resultDismissed = true
+                        }) { Text("Aceptar") } })
                 }
             }
         }

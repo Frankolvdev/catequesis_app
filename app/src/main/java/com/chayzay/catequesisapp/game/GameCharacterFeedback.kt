@@ -59,5 +59,7 @@ fun GameResultDialog(success: Boolean, message: String, onAccept: () -> Unit) {
     AlertDialog(onDismissRequest = { },
         title = { Text(message) },
         text = { GameCharacterFeedback(success) },
-        confirmButton = { TextButton(onClick = onAccept) { Text("Aceptar") } })
+        confirmButton = { TextButton(onClick = { com.chayzay.catequesisapp.settings.GameFeedback.stop(); onAccept() }) {
+            Text("Aceptar")
+        } })
 }
