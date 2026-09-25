@@ -86,6 +86,11 @@ fun NewsScreen(profile: ProfileSettings) {
             Text("ACI Prensa · Mundo", style = MaterialTheme.typography.titleMedium, color = Color.DarkGray)
             Button(onClick = { refresh++ }) { Text("Actualizar") }
         }
+        Button(modifier = Modifier.padding(horizontal = 12.dp), onClick = {
+            try { context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://x.com/Pontifex_es"))) }
+            catch (_: Exception) { Toast.makeText(context, "No se pudieron abrir las publicaciones", Toast.LENGTH_SHORT).show() }
+        }) { Text("Publicaciones del Papa en X") }
         when {
             articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))

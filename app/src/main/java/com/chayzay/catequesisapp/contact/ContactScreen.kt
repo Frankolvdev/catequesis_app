@@ -59,6 +59,8 @@ fun ContactScreen(
     var content by remember { mutableStateOf("") }
     var subject by remember(initialSubject) { mutableStateOf(initialSubject.coerceIn(subjects.indices)) }
     var menuOpen by remember { mutableStateOf(false) }
+    // Los accesos desde Fe y Oraciones fijaban el asunto en ContactsActivity.
+    val subjectLocked = initialSubject != 6
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -70,13 +72,15 @@ fun ContactScreen(
             label = { Text("Correo electrónico") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(value = name, onValueChange = { name = it },
             label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-        TextButton(onClick = { menuOpen = true }) { Text("Asunto: ${subjects[subject]} ▾") }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            subjects.forEachIndexed { index, value ->
-                DropdownMenuItem(text = { Text(value) }, onClick = {
-                    subject = index
-                    menuOpen = false
-                })
+        if (subjectLocked) Text("Asunto: ${subjects[subject]}") else {
+            TextButton(onClick = { menuOpen = true }) { Text("Asunto: ${subjects[subject]} ▾") }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                subjects.forEachIndexed { index, value ->
+                    DropdownMenuItem(text = { Text(value) }, onClick = {
+                        subject = index
+                        menuOpen = false
+                    })
+                }
             }
         }
         OutlinedTextField(value = content, onValueChange = { content = it },

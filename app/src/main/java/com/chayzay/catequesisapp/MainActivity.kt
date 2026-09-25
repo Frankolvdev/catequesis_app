@@ -615,7 +615,7 @@ private fun CatalogScreen(
             style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
         if (page is CatalogPage.GameHub) {
             val hub = page as CatalogPage.GameHub
-            GameHubScreen(accent) { key ->
+            GameHubScreen(hub.course, repository, imageRepository, accent) { key ->
                 page = when (key) {
                     "hangman" -> CatalogPage.Hangman(hub.course, hub.courseClass)
                     "crossword" -> CatalogPage.Crossword(hub.course, hub.courseClass)
@@ -710,7 +710,7 @@ private fun CatalogScreen(
                     if (showOnline) {
                         if (onlineActivities.isEmpty()) Text("No hay actividades en línea para esta clase.")
                         onlineActivities.forEach { activity ->
-                            Text(activity.title, modifier = Modifier.fillMaxWidth()
+                            Text("${activity.title} · ${activity.type}", modifier = Modifier.fillMaxWidth()
                                 .background(Color(0x77FFFFFF)).clickable {
                                     val link = HttpsLinks.external(activity.link)
                                     if (link != null) {
