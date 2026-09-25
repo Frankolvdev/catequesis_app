@@ -141,6 +141,12 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(session?.id) {
                     val current = session ?: return@LaunchedEffect
                     try {
+                        // La app original enviaba las aprobaciones hechas como invitado al iniciar sesión.
+                        // Conservar primero una copia por cuenta permite reintentar si falla la red.
+                        withContext(Dispatchers.IO) {
+                            val guest = ClassProgressStore(this@MainActivity)
+                            progressStore.mergeApprovals(guest.approvedTests(), guest.approvedCourses())
+                        }
                         syncRepository.sync(current, progressStore)
                         syncVersion++
                     } catch (_: Exception) { /* Reintentar en Cuenta sin perder datos locales. */ }
