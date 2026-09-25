@@ -638,14 +638,10 @@ private fun CatalogScreen(
                 }
             }
         }
-        if (confirmLogout) AlertDialog(
-            onDismissRequest = { confirmLogout = false },
-            text = { Text("¿Deseas cerrar la sesión?") },
-            confirmButton = { TextButton(onClick = {
-                confirmLogout = false
-                onLogout()
-            }) { Text("Aceptar") } },
-            dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } }
+        if (confirmLogout) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+            message = "¿Deseas cerrar la sesión?",
+            onConfirm = { confirmLogout = false; onLogout() },
+            onDismiss = { confirmLogout = false }
         )
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
             page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {

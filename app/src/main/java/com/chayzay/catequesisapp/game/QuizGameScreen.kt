@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -135,7 +136,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color, on
                     color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
                 if (submitted) QuizFeedbackPopup(feedbackClosing) {
                     GameCharacterFeedback(lastCorrect,
-                        if (lastCorrect) goodStage else badStage, animate = false)
+                        if (lastCorrect) goodStage else badStage, modifier = Modifier.size(200.dp), animate = false)
                 }
                 Button(enabled = !submitted && selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
                     onClick = {

@@ -100,10 +100,11 @@ fun HelpUsScreen(user: UserSession?, store: ClassProgressStore, courses: CourseR
         if (loading) CircularProgressIndicator(Modifier.padding(16.dp))
         message?.let { Text(it, Modifier.padding(16.dp)) }
     }
-    if (askToSubmit && user != null) AlertDialog(onDismissRequest = { askToSubmit = false },
-        title = { Text("Solicitud de catequista") },
-        text = { Text("Felicidades cumples con los requisitos para ser catequista. ¿Deseas enviar una solicitud?") },
-        confirmButton = { TextButton(onClick = {
+    if (askToSubmit && user != null) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+        title = "Solicitud de catequista",
+        message = "Felicidades cumples con los requisitos para ser catequista. ¿Deseas enviar una solicitud?",
+        confirmText = "Enviar",
+        onConfirm = {
             askToSubmit = false
             loading = true
             scope.launch {
@@ -113,8 +114,9 @@ fun HelpUsScreen(user: UserSession?, store: ClassProgressStore, courses: CourseR
                     message = ApiMessages.fromException(error, "No se pudo enviar la solicitud")
                 } finally { loading = false }
             }
-        }) { Text("Enviar") } },
-        dismissButton = { TextButton(onClick = { askToSubmit = false }) { Text("Cancelar") } })
+        },
+        onDismiss = { askToSubmit = false }
+    )
 }
 
 private fun sendRequest(base: String, user: UserSession): String {

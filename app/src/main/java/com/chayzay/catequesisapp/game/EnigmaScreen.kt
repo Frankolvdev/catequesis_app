@@ -112,9 +112,10 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color, onEx
                         modifier = Modifier.weight(1f).legacyCountdownWarning(seconds), textAlign = androidx.compose.ui.text.style.TextAlign.End,
                         fontSize = 28.sp, color = if (seconds <= 10) Color(0xFFB71C1C) else Color(0xFF505050))
                 }
-                if (showHint) AlertDialog(onDismissRequest = { showHint = false },
-                    text = { Text(activeWord.clue.ifBlank { "No hay pista disponible" }) },
-                    confirmButton = { TextButton(onClick = { showHint = false }) { Text("Aceptar") } })
+                if (showHint) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+                    message = activeWord.clue.ifBlank { "No hay pista disponible" },
+                    onConfirm = { showHint = false }
+                )
                 finished?.takeUnless { resultDismissed }?.let { result ->
                     val won = result == "¡Ganaste!"
                     GameResultDialog(

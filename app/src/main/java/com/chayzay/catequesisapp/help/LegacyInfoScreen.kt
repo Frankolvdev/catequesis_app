@@ -84,9 +84,9 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, user: UserSess
         }
     }
 
-    if (confirmUpdate) AlertDialog(onDismissRequest = { confirmUpdate = false },
-        text = { Text("¿Desea descargar nuevamente la información?") },
-        confirmButton = { TextButton(onClick = {
+    if (confirmUpdate) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+        message = "¿Desea descargar nuevamente la información?",
+        onConfirm = {
             confirmUpdate = false
             scope.launch {
                 loading = true; problem = null
@@ -99,8 +99,9 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, user: UserSess
                 } catch (cause: Exception) { problem = ApiMessages.fromException(cause, "No se pudo actualizar el contenido") }
                 finally { loading = false }
             }
-        }) { Text("Aceptar") } },
-        dismissButton = { TextButton(onClick = { confirmUpdate = false }) { Text("Cancelar") } })
+        },
+        onDismiss = { confirmUpdate = false }
+    )
 }
 
 @Composable private fun LegacyInfoToolbar(title: String, accent: Color, back: Boolean, onBack: () -> Unit) {

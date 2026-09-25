@@ -162,7 +162,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                             if (lastCorrect) goodStage else badStage)
                         QuizFeedbackPopup(feedbackClosing) {
                             Image(painterResource(image), contentDescription = null,
-                                modifier = Modifier.size(120.dp))
+                                modifier = Modifier.size(200.dp))
                         }
                     }
                 }

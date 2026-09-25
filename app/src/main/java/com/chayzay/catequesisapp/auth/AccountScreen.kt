@@ -319,22 +319,23 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             }
         }
     }
-    if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false },
-        title = { Text("¿Deseas cerrar la sesión?") },
-        confirmButton = { TextButton(onClick = {
-            // La app legacy elimina también el progreso local al cerrar sesión
-            // (clases, tests y cursos aprobados), para no mezclar usuarios.
+    if (confirmLogout) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+        message = "¿Deseas cerrar la sesión?",
+        confirmText = "Cerrar sesión",
+        onConfirm = {
             try { progressStore.clearLocalProgress() } catch (_: Exception) { }
             store.clear()
             onSessionChanged(null)
             scope.launch { (context as? Activity)?.let { SocialAuthManager.signOut(it) } }
             confirmLogout = false
-        }) { Text("Cerrar sesión") } },
-        dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } })
-    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false },
-        title = { Text("Reiniciar cursos") },
-        text = { Text("Se resetearán todas las lecciones y cursos que hayas aprobado. (Solo en este dispositivo)\n ¿Deseas continuar?") },
-        confirmButton = { TextButton(onClick = {
+        },
+        onDismiss = { confirmLogout = false }
+    )
+    if (confirmReset) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+        title = "Reiniciar cursos",
+        message = "Se resetearán todas las lecciones y cursos que hayas aprobado. (Solo en este dispositivo)\n ¿Deseas continuar?",
+        confirmText = "Reiniciar",
+        onConfirm = {
             try {
                 val hadProgress = progressStore.hasLocalProgressFiles()
                 progressStore.clearLocalProgress()
@@ -344,12 +345,15 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                 message = ApiMessages.fromException(cause, "No se pudo reiniciar el progreso")
             }
             confirmReset = false
-        }) { Text("Reiniciar") } },
-        dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancelar") } })
-    if (confirmDelete && session != null) AlertDialog(onDismissRequest = { confirmDelete = false },
-        title = { Text("¿Borrar la cuenta?") },
-        text = { Text("Esta acción elimina tu cuenta del servidor. No podrás volver a entrar con ella.") },
-        confirmButton = { TextButton(enabled = !loading, onClick = {
+        },
+        onDismiss = { confirmReset = false }
+    )
+    if (confirmDelete && session != null) com.chayzay.catequesisapp.ui.LegacyConfirmDialog(
+        title = "¿Borrar la cuenta?",
+        message = "Esta acción elimina tu cuenta del servidor. No podrás volver a entrar con ella.",
+        confirmText = "Borrar cuenta",
+        confirmEnabled = !loading,
+        onConfirm = {
             confirmDelete = false
             scope.launch {
                 loading = true
@@ -369,8 +373,9 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     message = ApiMessages.fromException(cause, "No se pudo borrar la cuenta")
                 } finally { loading = false }
             }
-        }) { Text("Borrar cuenta") } },
-        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
+        },
+        onDismiss = { confirmDelete = false }
+    )
 }
 
 

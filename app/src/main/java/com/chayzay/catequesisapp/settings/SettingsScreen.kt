@@ -18,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.data.Course
@@ -140,7 +141,8 @@ fun SettingsScreen(repository: CourseRepository, images: CourseImageRepository,
                         Row(Modifier.fillMaxWidth().clickable {
                             font = i + 1; prefs.font = font; onFontChanged(font); fontDialog = false
                         }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = font == i + 1, onClick = null)
+                            AndroidView(factory = { ctx -> android.widget.RadioButton(ctx) },
+                                update = { it.isChecked = font == i + 1 }, modifier = Modifier.size(48.dp))
                             Text(name, color = Color(0xFF333333), fontSize = 13.sp)
                         }
                     }
@@ -171,7 +173,16 @@ private fun fontName(font: Int) = listOf("Pequeño", "Mediano", "Grande", "Extra
 @Composable private fun LegacySwitchRow(text: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text, color = Color.Black, fontSize = 13.sp, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChecked, modifier = Modifier.height(32.dp))
+        AndroidView(
+            factory = { ctx -> android.widget.Switch(ctx).apply {
+                text = ""
+                setOnCheckedChangeListener { _, value -> onChecked(value) }
+            } },
+            update = { view ->
+                if (view.isChecked != checked) view.isChecked = checked
+            },
+            modifier = Modifier.wrapContentSize()
+        )
     }
     HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
 }

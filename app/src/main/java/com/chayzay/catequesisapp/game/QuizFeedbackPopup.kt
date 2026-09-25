@@ -3,7 +3,6 @@ package com.chayzay.catequesisapp.game
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -37,11 +36,11 @@ fun QuizFeedbackPopup(closing: Boolean, content: @Composable () -> Unit) {
         }
     }
     Popup(alignment = Alignment.BottomEnd, offset = IntOffset(-24, -110)) {
-        Surface(modifier = Modifier.graphicsLayer {
+        Box(modifier = Modifier.graphicsLayer {
             transformOrigin = TransformOrigin(0.5f, if (closing) 0.7f else 0.4f)
             scaleX = scale.value
             scaleY = scale.value
             translationY = slide.value * size.height
-        }) { Box { content() } }
+        }) { content() }
     }
 }
