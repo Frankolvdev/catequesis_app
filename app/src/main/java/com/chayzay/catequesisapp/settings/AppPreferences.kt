@@ -16,6 +16,15 @@ class AppPreferences(context: Context) {
         set(value) { prefs.edit().putInt("pref_key_size_font_app", value.coerceIn(1, 4)).apply() }
     fun extra(title: String): Boolean = prefs.getBoolean(key(title), false)
     fun setExtra(title: String, enabled: Boolean) { prefs.edit().putBoolean(key(title), enabled).apply() }
+    var showRealActivities: Boolean
+        get() = prefs.getBoolean("pref_key_real_activity_theme", false)
+        set(value) { prefs.edit().putBoolean("pref_key_real_activity_theme", value).apply() }
+    var showOnlineActivities: Boolean
+        get() = prefs.getBoolean("pref_key_virtual_online_theme", false)
+        set(value) { prefs.edit().putBoolean("pref_key_virtual_online_theme", value).apply() }
+    var showOfflineActivities: Boolean
+        get() = prefs.getBoolean("pref_key_virtual_offline_theme", false)
+        set(value) { prefs.edit().putBoolean("pref_key_virtual_offline_theme", value).apply() }
     private fun key(title: String): String = when (title) {
         "Ampliación" -> "pref_key_extension_theme"
         "Anécdotas" -> "pref_key_anecdote_theme"

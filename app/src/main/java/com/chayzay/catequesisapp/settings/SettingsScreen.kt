@@ -43,6 +43,9 @@ fun SettingsScreen(repository: CourseRepository, images: CourseImageRepository,
     var font by remember { mutableIntStateOf(prefs.font) }
     var extras by remember { mutableStateOf(listOf("Ampliación", "Anécdotas", "Catecismo")
         .associateWith { prefs.extra(it) }) }
+    var showRealActivities by remember { mutableStateOf(prefs.showRealActivities) }
+    var showOnlineActivities by remember { mutableStateOf(prefs.showOnlineActivities) }
+    var showOfflineActivities by remember { mutableStateOf(prefs.showOfflineActivities) }
     var courses by remember { mutableStateOf<List<Course>?>(null) }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -70,6 +73,18 @@ fun SettingsScreen(repository: CourseRepository, images: CourseImageRepository,
                 extras = extras + (name to checked)
             })
         }
+        Text("Actividades reales")
+        Switch(showRealActivities, onCheckedChange = {
+            showRealActivities = it; prefs.showRealActivities = it
+        })
+        Text("Actividades virtuales off-line")
+        Switch(showOfflineActivities, onCheckedChange = {
+            showOfflineActivities = it; prefs.showOfflineActivities = it
+        })
+        Text("Actividades virtuales on-line")
+        Switch(showOnlineActivities, onCheckedChange = {
+            showOnlineActivities = it; prefs.showOnlineActivities = it
+        })
         Text("Sonido en los juegos")
         Switch(sound, onCheckedChange = { sound = it; prefs.sound = it })
         Button(enabled = !loading, onClick = {

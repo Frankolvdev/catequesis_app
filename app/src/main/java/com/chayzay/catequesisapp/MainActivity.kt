@@ -755,8 +755,9 @@ private fun CatalogScreen(
                     }
                 }
             } else if (page is CatalogPage.Activities) {
-                var showReal by remember(page) { mutableStateOf(true) }
-                var showOnline by remember(page) { mutableStateOf(true) }
+                val activityPreferences = remember(context) { AppPreferences(context) }
+                var showReal by remember(page) { mutableStateOf(activityPreferences.showRealActivities) }
+                var showOnline by remember(page) { mutableStateOf(activityPreferences.showOnlineActivities) }
                 var showInstructions by remember(page) { mutableStateOf(false) }
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
