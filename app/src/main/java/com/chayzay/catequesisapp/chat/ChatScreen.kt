@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -274,8 +273,31 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
             modifier = Modifier.fillMaxWidth().padding(start = 5.dp, end = 15.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.End)
         Row(Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = draft, onValueChange = { draft = it.take(500) },
-                placeholder = { Text("Escribe un mensaje", fontSize = 13.sp) }, modifier = Modifier.weight(0.8f), maxLines = 4)
+            AndroidView(
+                factory = { ctx ->
+                    android.widget.EditText(ctx).apply {
+                        hint = "Escribe un mensaje"
+                        setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+                        inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PERSON_NAME
+                        filters = arrayOf(android.text.InputFilter.LengthFilter(500))
+                        addTextChangedListener(object : android.text.TextWatcher {
+                            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                                val value = s?.toString().orEmpty()
+                                if (draft != value) draft = value
+                            }
+                            override fun afterTextChanged(s: android.text.Editable?) = Unit
+                        })
+                    }
+                },
+                update = { view ->
+                    if (view.text.toString() != draft) {
+                        view.setText(draft)
+                        view.setSelection(view.text.length)
+                    }
+                },
+                modifier = Modifier.weight(0.8f)
+            )
             Image(painterResource(if (draft.isNotBlank()) R.drawable.ic_action_send_2 else R.drawable.ic_action_send1),
                 contentDescription = "Enviar", modifier = Modifier.weight(0.2f).size(48.dp)
                     .clickable(enabled = !sending && !loading && draft.isNotBlank() && thread != null) {
