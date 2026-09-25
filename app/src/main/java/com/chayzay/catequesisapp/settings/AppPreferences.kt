@@ -31,6 +31,18 @@ class AppPreferences(context: Context) {
         "Catecismo" -> "pref_key_catechism_theme"
         else -> throw IllegalArgumentException("Anexo desconocido")
     }
-    fun downloaded(courseId: Int): Boolean = prefs.getBoolean("pref_key_dw_course_$courseId", false)
-    fun setDownloaded(courseId: Int) { prefs.edit().putBoolean("pref_key_dw_course_$courseId", true).apply() }
+    // Conserva exactamente las claves usadas por PreferencesStorage.java en la app publicada.
+    // Esto permite reconocer recursos que el usuario ya había descargado antes de actualizar.
+    private fun downloadKey(courseId: Int): String? = when (courseId) {
+        1 -> "pref_key_dw_primera_comunion"
+        2 -> "pref_key_dw_confirmacion"
+        3 -> "pref_key_dw_prematrimonial"
+        4 -> "pref_key_dw_matrimonio"
+        5 -> "pref_key_dw_formacion_profesional"
+        else -> null
+    }
+    fun downloaded(courseId: Int): Boolean = downloadKey(courseId)?.let { prefs.getBoolean(it, false) } ?: false
+    fun setDownloaded(courseId: Int) {
+        downloadKey(courseId)?.let { prefs.edit().putBoolean(it, true).apply() }
+    }
 }
