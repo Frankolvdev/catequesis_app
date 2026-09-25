@@ -7,7 +7,6 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.SystemClock
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -86,7 +85,6 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
         var acceleration = 0f
         var current = SensorManager.GRAVITY_EARTH
         var last = SensorManager.GRAVITY_EARTH
-        var lastShake = 0L
         val listener = object : SensorEventListener {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
             override fun onSensorChanged(event: SensorEvent) {
@@ -96,11 +94,8 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
                 last = current
                 current = kotlin.math.sqrt(x * x + y * y + z * z)
                 acceleration = acceleration * 0.9f + (current - last)
-                val now = SystemClock.elapsedRealtime()
-                if (acceleration > 7f && now - lastShake > 900L) {
-                    lastShake = now
-                    index++
-                }
+                // La actividad antigua cambia de imagen en cuanto supera el mismo umbral (> 7).
+                if (acceleration > 7f) index++
             }
         }
         if (sensor != null) manager?.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)

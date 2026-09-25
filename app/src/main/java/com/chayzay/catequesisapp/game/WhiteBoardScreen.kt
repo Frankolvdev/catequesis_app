@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -38,9 +40,17 @@ fun WhiteBoardScreen() {
                 if (points.size > 1) {
                     val path = Path().apply {
                         moveTo(points[0].x, points[0].y)
-                        points.drop(1).forEach { lineTo(it.x, it.y) }
+                        var previous = points[0]
+                        points.drop(1).forEach { point ->
+                            // CanvasView antiguo usaba quadTo al punto medio para suavizar el trazo.
+                            quadraticTo(previous.x, previous.y,
+                                (point.x + previous.x) / 2f, (point.y + previous.y) / 2f)
+                            previous = point
+                        }
+                        lineTo(previous.x, previous.y)
                     }
-                    drawPath(path, Color.Black, style = Stroke(width = 5f))
+                    drawPath(path, Color.Black, style = Stroke(width = 4f,
+                        cap = StrokeCap.Round, join = StrokeJoin.Round))
                 }
             }
         }
