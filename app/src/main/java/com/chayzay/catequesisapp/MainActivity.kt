@@ -5,6 +5,9 @@ import android.content.Intent
 import com.chayzay.catequesisapp.auth.SocialAuthManager
 import android.content.Intent
 import android.net.Uri
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.widget.Toast
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -209,7 +212,11 @@ class MainActivity : ComponentActivity() {
                                 "courses" -> key(session?.id, catalogContentVersion) {
                                     CatalogScreen(repository, imageRepository, progressStore, profile!!,
                                         session, syncRepository, syncVersion, catalogPage, { syncVersion++ },
-                                        { section = "account" }, { openContact(6) },
+                                        {
+                                            if (session != null && !hasLegacyInternet(this@MainActivity))
+                                                Toast.makeText(this@MainActivity, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+                                            else section = "account"
+                                        }, { openContact(6) },
                                         { section = "help_us" }, { section = "help" },
                                         { section = "information" }, { section = "settings" },
                                         { section = "chat" }) { atCatalogRoot = it }
@@ -252,25 +259,25 @@ class MainActivity : ComponentActivity() {
                                 .padding(vertical = 7.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Column(Modifier.weight(1f).clickable { section = "news" }.padding(3.dp),
+                            Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "news" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.document), contentDescription = null,
                                     modifier = Modifier.size(25.dp))
                                 Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
-                            Column(Modifier.weight(1f).clickable { section = "faith" }.padding(3.dp),
+                            Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "faith" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.vela), contentDescription = null,
                                     modifier = Modifier.size(25.dp))
                                 Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
-                            Column(Modifier.weight(1f).clickable { section = "prayer" }.padding(3.dp),
+                            Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "prayer" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.prayer), contentDescription = null,
                                     modifier = Modifier.size(25.dp))
                                 Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
-                            Column(Modifier.weight(1f).clickable { section = "chat" }.padding(3.dp),
+                            Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "chat" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.chat), contentDescription = null,
                                     modifier = Modifier.size(25.dp))
@@ -282,6 +289,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+private fun hasLegacyInternet(context: Context): Boolean {
+    val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+    val network = manager.activeNetwork ?: return false
+    val capabilities = manager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
+
+private fun openLegacyOnlineSection(context: Context, open: () -> Unit) {
+    if (hasLegacyInternet(context)) open()
+    else Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
 }
 
 @Composable
