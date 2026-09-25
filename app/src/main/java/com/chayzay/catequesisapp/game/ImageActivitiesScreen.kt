@@ -79,7 +79,7 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
         }
     }
     var seconds by remember(classId, type, index) { mutableIntStateOf(20) }
-    DisposableEffect(classId, type) {
+    DisposableEffect(classId, type, index, imageLoaded, bitmap) {
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         val sensor = manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         var acceleration = 0f
@@ -89,7 +89,8 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
         val listener = object : SensorEventListener {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
             override fun onSensorChanged(event: SensorEvent) {
-                if (type != "GAME_ADIVINA" || images.isNullOrEmpty() || index >= images!!.size) return
+                if (type != "GAME_ADIVINA" || !imageLoaded || bitmap == null ||
+                    images.isNullOrEmpty() || index >= images!!.size) return
                 val (x, y, z) = event.values
                 last = current
                 current = kotlin.math.sqrt(x * x + y * y + z * z)
@@ -104,8 +105,9 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
         if (sensor != null) manager?.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
         onDispose { if (sensor != null) manager?.unregisterListener(listener) }
     }
-    LaunchedEffect(classId, type, index, images) {
-        if (type == "GAME_ADIVINA" && current != null) {
+    LaunchedEffect(classId, type, index, current?.id, imageLoaded, bitmap) {
+        if (type == "GAME_ADIVINA" && current != null && imageLoaded && bitmap != null) {
+            seconds = 20
             repeat(20) { delay(1000); seconds-- }
             GameFeedback.timeout(context)
             index++
