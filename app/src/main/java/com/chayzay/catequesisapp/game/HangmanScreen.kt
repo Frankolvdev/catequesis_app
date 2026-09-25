@@ -50,6 +50,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
+    var current by remember(classId) { mutableStateOf<HangmanWord?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
     var selected by remember(classId, round) { mutableStateOf<Set<Char>>(emptySet()) }
@@ -57,18 +58,25 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var showResult by remember(classId, round) { mutableStateOf(false) }
     var resultAcknowledged by remember(classId, round) { mutableStateOf(false) }
     LaunchedEffect(classId) {
-        try { words = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) } }
+        try {
+            val loaded = withContext(Dispatchers.IO) { repository.getHangmanWords(classId) }
+            words = loaded
+            current = loaded.takeIf { it.isNotEmpty() }?.random()
+        }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
     }
-    val current = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
+    LaunchedEffect(round) {
+        if (round > 0) current = words?.takeIf { it.isNotEmpty() }?.random()
+    }
+    val active = current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             error != null -> Text(error!!)
             words == null -> CircularProgressIndicator()
-            current == null -> Text("Esta clase no tiene palabras para el ahorcado.")
+            active == null -> Text("Esta clase no tiene palabras para el ahorcado.")
             else -> {
-                val answer = normalize(current.word)
+                val answer = normalize(active.word)
                 val mistakes = selected.count { it !in answer }
                 val won = answer.filter { it in 'A'..'Z' }.all { it in selected }
                 val finished = won || mistakes >= 7
@@ -80,7 +88,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
                 Image(painterResource(gallows[if (won) 8 else mistakes.coerceIn(0, 7)]),
                     contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.size(130.dp))
-                if (showHint) Text(current.clue.ifBlank { "Sin pista disponible" })
+                if (showHint) Text(active.clue.ifBlank { "Sin pista disponible" })
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
                     Text(if (won) "¡Ganaste!" else if (resultAcknowledged) "La palabra era $answer"

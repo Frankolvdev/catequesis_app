@@ -52,7 +52,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var showEndDialog by remember(classId) { mutableStateOf(true) }
     LaunchedEffect(classId, retry) {
         error = null
-        try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) } }
+        try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) }.shuffled().take(10) }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
     }
     LaunchedEffect(classId, position, submitted) {

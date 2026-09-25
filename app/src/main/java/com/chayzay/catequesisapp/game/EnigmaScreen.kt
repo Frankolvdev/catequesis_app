@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var words by remember(classId) { mutableStateOf<List<HangmanWord>?>(null) }
+    var word by remember(classId) { mutableStateOf<HangmanWord?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var round by remember(classId) { mutableIntStateOf(0) }
     var refresh by remember(classId, round) { mutableIntStateOf(0) }
@@ -49,10 +50,16 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var resultDismissed by remember(classId, round, refresh) { mutableStateOf(false) }
     var showHint by remember(classId, round, refresh) { mutableStateOf(false) }
     LaunchedEffect(classId) {
-        try { words = withContext(Dispatchers.IO) { repository.getEnigmaWords(classId) } }
+        try {
+            val loaded = withContext(Dispatchers.IO) { repository.getEnigmaWords(classId) }
+            words = loaded
+            word = loaded.takeIf { it.isNotEmpty() }?.random()
+        }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las palabras") }
     }
-    val word = words?.takeIf { it.isNotEmpty() }?.let { it[round % it.size] }
+    LaunchedEffect(round) {
+        if (round > 0) word = words?.takeIf { it.isNotEmpty() }?.random()
+    }
     LaunchedEffect(round, refresh, finished) {
         if (finished != null) com.chayzay.catequesisapp.settings.GameFeedback.finish(
             context, finished == "¡Ganaste!")
@@ -65,14 +72,15 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
             if (seconds == 0) finished = "Perdiste"
         }
     }
+    val activeWord = word
     Column(Modifier.fillMaxSize().padding(horizontal = 5.dp)) {
         when {
             error != null -> Text(error!!)
             words == null -> CircularProgressIndicator()
-            word == null -> Text("Esta clase no tiene palabras para Enigma.")
+            activeWord == null -> Text("Esta clase no tiene palabras para Enigma.")
             else -> {
-                key(word.id, round, refresh) {
-                    AndroidView(factory = { context -> EnigmaBoard(context, word.word) { finished = "¡Ganaste!" } },
+                key(activeWord.id, round, refresh) {
+                    AndroidView(factory = { context -> EnigmaBoard(context, activeWord.word) { finished = "¡Ganaste!" } },
                         modifier = Modifier.fillMaxWidth().weight(1f))
                 }
                 Row(Modifier.fillMaxWidth().padding(10.dp),
@@ -98,14 +106,14 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color) {
                         fontSize = 28.sp, color = if (seconds <= 10) Color(0xFFB71C1C) else Color(0xFF505050))
                 }
                 if (showHint) AlertDialog(onDismissRequest = { showHint = false },
-                    text = { Text(word.clue.ifBlank { "No hay pista disponible" }) },
+                    text = { Text(activeWord.clue.ifBlank { "No hay pista disponible" }) },
                     confirmButton = { TextButton(onClick = { showHint = false }) { Text("Aceptar") } })
                 finished?.takeUnless { resultDismissed }?.let { result ->
                     AlertDialog(onDismissRequest = { }, title = { Text(result, color = accent) },
                         text = {
                             Column {
                                 Text(if (result == "¡Ganaste!") "Has ganado felicidades tu respuesta es correcta."
-                                    else "Has perdido la respuesta correcta era: ${word.word}")
+                                    else "Has perdido la respuesta correcta era: ${activeWord.word}")
                                 GameCharacterFeedback(result == "¡Ganaste!")
                             }
                         },
