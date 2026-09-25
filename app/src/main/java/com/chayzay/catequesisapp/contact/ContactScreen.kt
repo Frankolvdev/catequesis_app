@@ -99,8 +99,8 @@ fun ContactScreen(
                     withContext(Dispatchers.IO) {
                         sendContact(apiBaseUrl, name.trim(), email, content.trim(), subjects[subject])
                     }
-                    content = ""
                     message = "Mensaje enviado."
+                    onBack()
                 } catch (error: Exception) {
                     message = ApiMessages.fromException(error, "No se pudo enviar el mensaje")
                 } finally {

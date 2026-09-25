@@ -135,9 +135,14 @@ fun LessonVoiceControls(
                 playing = false; engine.stop(); onFocus(null); message = "Lectura detenida"
             } else speakAt(position.coerceIn(passages.indices))
         }) { Text(if (playing) "Detener" else "Escuchar") }
-        Button(enabled = ready && playing && position > 0, onClick = { speakAt(position - 1) }) { Text("‹") }
-        Button(enabled = ready && playing && position < passages.lastIndex,
-            onClick = { speakAt(position + 1) }) { Text("›") }
+        Button(enabled = ready && passages.isNotEmpty(), onClick = {
+            if (!playing) message = "Inicia la lectura para usar anterior/siguiente"
+            else if (position > 0) speakAt(position - 1)
+        }) { Text("‹") }
+        Button(enabled = ready && passages.isNotEmpty(), onClick = {
+            if (!playing) message = "Inicia la lectura para usar anterior/siguiente"
+            else if (position < passages.lastIndex) speakAt(position + 1)
+        }) { Text("›") }
     }
     if (message.isNotBlank()) Text(message)
 }

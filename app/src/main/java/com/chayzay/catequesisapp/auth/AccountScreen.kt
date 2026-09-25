@@ -133,7 +133,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     message = "No podemos darte un certificado porque aún no tienes aprobado ningún curso. Para aprobarlos, debes completar todos los test sacando 10/10. Puedes intentarlo las veces que quieras. Al aprobarlos la Universidad de Los Hemisferios te emitirá un diploma digital o físico."
                 } else approvedPage = true
             }) { Text("Mis certificados") }
-            Button(onClick = { confirmReset = true }) { Text("Reiniciar progreso local") }
+            Button(onClick = { confirmReset = true }) { Text("Reiniciar cursos") }
             Button(onClick = { confirmDelete = true }) { Text("Borrar cuenta") }
             Button(enabled = !syncing, onClick = {
                 syncing = true
@@ -238,13 +238,13 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
         }) { Text("Cerrar sesión") } },
         dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } })
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false },
-        title = { Text("Reiniciar progreso") },
-        text = { Text("Se borrará el progreso guardado en este teléfono. Si tienes una cuenta, los cursos aprobados en el servidor volverán al sincronizar.") },
+        title = { Text("Reiniciar cursos") },
+        text = { Text("Se resetearán todas las lecciones y cursos que hayas aprobado. (Solo en este dispositivo)\n ¿Deseas continuar?") },
         confirmButton = { TextButton(onClick = {
             try {
                 progressStore.clearLocalProgress()
                 onSynced()
-                message = "Progreso local reiniciado"
+                message = "Los cursos fueron reiniciados."
             } catch (cause: Exception) {
                 message = ApiMessages.fromException(cause, "No se pudo reiniciar el progreso")
             }
