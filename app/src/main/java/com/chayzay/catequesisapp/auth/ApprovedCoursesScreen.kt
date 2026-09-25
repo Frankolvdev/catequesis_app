@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -112,7 +113,8 @@ fun ApprovedCoursesScreen(
                         Text(course.name, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text("Curso aprobado en todas sus lecciones", color = Color(0xFF424242), fontSize = 12.sp)
                         Button(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-                            enabled = !certificatePending,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
+                            shape = androidx.compose.foundation.shape.RectangleShape, enabled = !certificatePending,
                             onClick = {
                         if (certificates) {
                             // CertificateCourseAdapter legacy volvía a enviar/verificar

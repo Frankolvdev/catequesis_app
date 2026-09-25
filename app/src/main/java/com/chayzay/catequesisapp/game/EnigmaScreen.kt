@@ -116,18 +116,12 @@ fun EnigmaScreen(classId: Int, repository: CourseRepository, accent: Color, onEx
                     text = { Text(activeWord.clue.ifBlank { "No hay pista disponible" }) },
                     confirmButton = { TextButton(onClick = { showHint = false }) { Text("Aceptar") } })
                 finished?.takeUnless { resultDismissed }?.let { result ->
-                    AlertDialog(onDismissRequest = { }, title = { Text(result, color = accent) },
-                        text = {
-                            Column {
-                                Text(if (result == "¡Ganaste!") "Has ganado felicidades tu respuesta es correcta."
-                                    else "Has perdido la respuesta correcta era: ${activeWord.word}")
-                                GameCharacterFeedback(result == "¡Ganaste!")
-                            }
-                        },
-                        confirmButton = { TextButton(onClick = {
-                            com.chayzay.catequesisapp.settings.GameFeedback.stop()
-                            resultDismissed = true
-                        }) { Text("Aceptar") } })
+                    val won = result == "¡Ganaste!"
+                    GameResultDialog(
+                        success = won,
+                        message = if (won) "Has ganado felicidades tu respuesta es correcta."
+                            else "Has perdido la respuesta correcta era: ${activeWord.word}"
+                    ) { resultDismissed = true }
                 }
             }
         }

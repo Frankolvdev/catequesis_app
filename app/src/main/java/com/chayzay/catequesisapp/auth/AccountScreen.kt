@@ -37,6 +37,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -211,18 +212,20 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                 placeholder = { Text("Correo electrónico", fontSize = 13.sp) },
                 trailingIcon = { Image(painterResource(R.drawable.user), null, Modifier.size(24.dp)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
+                singleLine = true, shape = RoundedCornerShape(5.dp), colors = legacyAuthFieldColors(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
             OutlinedTextField(value = password, onValueChange = { password = it },
                 placeholder = { Text("Contraseña", fontSize = 13.sp) }, singleLine = true,
                 trailingIcon = { Image(painterResource(R.drawable.pass), null, Modifier.size(24.dp)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                shape = RoundedCornerShape(5.dp), colors = legacyAuthFieldColors(),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
             if (registering) {
                 OutlinedTextField(value = firstName, onValueChange = { firstName = it },
-                    placeholder = { Text("Nombre", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
+                    placeholder = { Text("Nombre", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, shape = RoundedCornerShape(5.dp), colors = legacyAuthFieldColors(), modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
                 OutlinedTextField(value = lastName, onValueChange = { lastName = it },
-                    placeholder = { Text("Apellido", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
+                    placeholder = { Text("Apellido", fontSize = 13.sp) }, trailingIcon = { Image(painterResource(R.drawable.name_icon), null, Modifier.size(24.dp)) }, shape = RoundedCornerShape(5.dp), colors = legacyAuthFieldColors(), modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp))
                 LegacyGenderSpinner(gender, onGender = { gender = it }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
             }
             if (loading) CircularProgressIndicator()
@@ -263,7 +266,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         message = ApiMessages.fromException(cause, "No fue posible conectar con el servidor")
                     } finally { loading = false }
                 }
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
                 Text(if (registering) "Registrar" else "Iniciar sesión o Registrar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
@@ -370,6 +373,14 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
 }
 
+
+@Composable
+private fun legacyAuthFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+    focusedBorderColor = Color(0xFFBBBBBB), unfocusedBorderColor = Color(0xFFBBBBBB),
+    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black,
+    focusedPlaceholderColor = Color(0xFFB7B7B7), unfocusedPlaceholderColor = Color(0xFFB7B7B7)
+)
 
 @Composable
 private fun LegacyGenderSpinner(value: String, onGender: (String) -> Unit, modifier: Modifier = Modifier) {

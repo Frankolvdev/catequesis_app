@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -90,10 +91,12 @@ fun ContactScreen(
             verticalArrangement = Arrangement.spacedBy(5.dp)) {
             OutlinedTextField(value = email, onValueChange = { email = it.trim() },
                 placeholder = { Text("Correo electrónico", fontSize = 13.sp) }, singleLine = true,
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(5.dp),
+                colors = legacyFieldColors())
             OutlinedTextField(value = name, onValueChange = { name = it },
                 placeholder = { Text("Nombre", fontSize = 13.sp) }, singleLine = true,
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(5.dp),
+                colors = legacyFieldColors())
             if (subjectLocked) {
                 Text(subjects[subject], fontSize = 13.sp, modifier = Modifier.fillMaxWidth().padding(10.dp))
             } else {
@@ -109,11 +112,13 @@ fun ContactScreen(
                 }
             }
             OutlinedTextField(value = content, onValueChange = { content = it },
-                placeholder = { Text("Mensaje", fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth().height(150.dp))
+                placeholder = { Text("Mensaje", fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth().height(150.dp),
+                shape = RoundedCornerShape(5.dp), colors = legacyFieldColors())
             if (loading) CircularProgressIndicator()
             message?.let { Text(it, fontSize = 13.sp) }
             Button(enabled = !loading, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 50.dp),
-                onClick = {
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
+                shape = androidx.compose.foundation.shape.RectangleShape, onClick = {
                     message = when {
                         email.isBlank() || name.isBlank() || content.isBlank() -> "Este campo es requerido"
                         !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Correo electrónico no es válido"
@@ -131,6 +136,14 @@ fun ContactScreen(
         }
     }
 }
+
+@Composable
+private fun legacyFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+    focusedBorderColor = Color(0xFFBBBBBB), unfocusedBorderColor = Color(0xFFBBBBBB),
+    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black,
+    focusedPlaceholderColor = Color(0xFFB7B7B7), unfocusedPlaceholderColor = Color(0xFFB7B7B7)
+)
 
 private fun sendContact(baseUrl: String, name: String, email: String, content: String, subject: String) {
     val url = URL(baseUrl.trimEnd('/') + "/email_contact/register_contact_email")

@@ -110,7 +110,7 @@ fun InitialSetupScreen(onContinue: suspend (ProfileSettings) -> Boolean) {
                         }
                     }
                 }
-            }, enabled = !loading, colors = ButtonDefaults.buttonColors(containerColor = accent),
+            }, enabled = !loading, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4D749B), disabledContainerColor = Color(0xFF4D749B).copy(alpha = 0.5f)),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                 modifier = Modifier.fillMaxWidth().padding(5.dp)) {
                 Text(if (loading) "Descargando contenido…" else "Comenzar", color = Color.White,

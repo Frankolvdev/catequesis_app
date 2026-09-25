@@ -28,6 +28,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -183,8 +185,8 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                     countries.forEach { option -> DropdownMenuItem(text = { Text(option.label) },
                         onClick = { country = option.id; countryMenu = false }) }
                 }
-                OutlinedTextField(city, { city = it }, label = { Text("Ciudad") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(address, { address = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(city, { city = it }, placeholder = { Text("Ciudad", fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(5.dp), colors = legacyProfileFieldColors())
+                OutlinedTextField(address, { address = it }, placeholder = { Text("Dirección", fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(5.dp), colors = legacyProfileFieldColors())
                 Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp)
                     .border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp)).clickable { civilMenu = true }.padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +197,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                     civilStatuses.forEach { option -> DropdownMenuItem(text = { Text(option.label) },
                         onClick = { civil = option.id; civilMenu = false }) }
                 }
-                OutlinedTextField(phone, { phone = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(phone, { phone = it }, placeholder = { Text("Teléfono", fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(5.dp), colors = legacyProfileFieldColors())
                 Text("Nacimiento: ${birthDate.takeIf { it.isNotBlank() }?.let(::isoToLegacyDate) ?: "Seleccionar fecha"}")
                 Button(onClick = {
                     val now = Calendar.getInstance()
@@ -230,14 +232,15 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                         } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron guardar los datos") }
                         finally { busy = false }
                     }
-                }) { Text("Guardar datos") }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape) { Text("Guardar datos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
             }
             else -> if (loadedSocial) {
                 Text("Contactos sociales")
                 listOf("FACEBOOK", "GOOGLE+", "TWITTER", "INSTAGRAM").forEach { provider ->
                     OutlinedTextField(contacts[provider].orEmpty(),
                         { value -> contacts = contacts + (provider to value) },
-                        label = { Text(provider) }, modifier = Modifier.fillMaxWidth())
+                        placeholder = { Text(provider, fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(5.dp), colors = legacyProfileFieldColors())
                 }
                 Button(enabled = !busy, onClick = {
                     scope.launch {
@@ -250,12 +253,20 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                             "No se pudieron guardar todos los contactos; inténtalo de nuevo") }
                         finally { busy = false }
                     }
-                }) { Text("Guardar contactos") }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape) { Text("Guardar contactos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
             }
         }
         }
     }
 }
+
+@Composable
+private fun legacyProfileFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+    focusedBorderColor = Color(0xFFBBBBBB), unfocusedBorderColor = Color(0xFFBBBBBB),
+    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black,
+    focusedPlaceholderColor = Color(0xFFB7B7B7), unfocusedPlaceholderColor = Color(0xFFB7B7B7)
+)
 
 private fun encodePhoto(context: android.content.Context, uri: Uri): String {
     val size = BitmapFactory.Options().apply { inJustDecodeBounds = true }
