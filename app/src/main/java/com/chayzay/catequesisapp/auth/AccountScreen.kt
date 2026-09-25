@@ -194,7 +194,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
             if (loading) CircularProgressIndicator()
             message?.let { Text(it) }
             Button(enabled = !loading, modifier = Modifier.fillMaxWidth(), onClick = {
-                // Flujo legacy: pulsar acceso con ambos campos vacíos abre el registro.
+                // LoginActivity legacy: correo + contraseña vacíos abre directamente el registro.
                 if (!registering && email.isBlank() && password.isBlank()) {
                     registering = true
                     message = null
@@ -202,6 +202,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                 }
                 message = when {
                     !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Escribe un correo válido"
+                    password.isBlank() -> "Escribe tu contraseña"
                     password.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
                     registering && (firstName.isBlank() || lastName.isBlank()) -> "Completa el nombre y el apellido"
                     else -> null
@@ -210,13 +211,14 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                     loading = true
                     try {
                         if (registering) {
-                            // UserRegistration legacy registra y vuelve al login; no inicia sesión automáticamente.
+                            // UserRegistration legacy vuelve al login después de crear la cuenta;
+                            // no inicia sesión automáticamente.
                             withContext(Dispatchers.IO) {
                                 repository.register(email, password, firstName.trim(), lastName.trim(), gender)
                             }
                             registering = false
                             password = ""
-                            message = null
+                            message = "Cuenta creada. Ya puedes iniciar sesión."
                         } else {
                             val user = withContext(Dispatchers.IO) { repository.login(email, password) }
                             store.save(user)
