@@ -122,7 +122,6 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 else Button(enabled = selectedQuestion != null && selectedAnswer != null,
                     onClick = {
-                        GameFeedback.play(context, selectedQuestion == selectedAnswer)
                         if (selectedQuestion == selectedAnswer) solved = solved + selectedQuestion!!
                         else mistakes++
                         selectedQuestion = null

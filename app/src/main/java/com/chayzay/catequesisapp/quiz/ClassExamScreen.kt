@@ -1,6 +1,7 @@
 package com.chayzay.catequesisapp.quiz
 import com.chayzay.catequesisapp.data.ApiMessages
 import com.chayzay.catequesisapp.game.legacyCorrectAnswer
+import com.chayzay.catequesisapp.game.QuizFeedbackPopup
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,9 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.material3.Surface
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.data.ClassProgressStore
 import com.chayzay.catequesisapp.data.CourseRepository
@@ -61,6 +59,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
     var badStage by remember(classId) { mutableStateOf(0) }
     var selected by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var submitted by remember(classId) { mutableStateOf(false) }
+    var feedbackClosing by remember(classId) { mutableStateOf(false) }
     var finished by remember(classId) { mutableStateOf(false) }
     var lastCorrect by remember(classId) { mutableStateOf(false) }
     LaunchedEffect(classId, retryLoad) {
@@ -73,6 +72,9 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
         if (submitted) {
             delay(3000)
             if (submitted) {
+                feedbackClosing = true
+                delay(300)
+                if (!submitted) return@LaunchedEffect
                 if (position == 9) {
                     if (correctCount == 10) try {
                         store.markPassed(classId); onPassed()
@@ -81,7 +83,9 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         return@LaunchedEffect
                     }
                     finished = true
-                } else { position++; selected = emptySet(); submitted = false }
+                    submitted = false
+                    feedbackClosing = false
+                } else { position++; selected = emptySet(); submitted = false; feedbackClosing = false }
             }
         }
     }
@@ -144,9 +148,9 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                             color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
                         val image = feedbackImage(profile.gender, lastCorrect,
                             if (lastCorrect) goodStage else badStage)
-                        Popup(alignment = Alignment.BottomEnd, offset = IntOffset(-24, -110)) {
-                            Surface { Image(painterResource(image), contentDescription = null,
-                                modifier = Modifier.size(120.dp)) }
+                        QuizFeedbackPopup(feedbackClosing) {
+                            Image(painterResource(image), contentDescription = null,
+                                modifier = Modifier.size(120.dp))
                         }
                     }
                 }
@@ -162,6 +166,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                                 if (badStage < 5) { badStage++; if (goodStage > 0) goodStage-- }
                             }
                             GameFeedback.play(context, lastCorrect)
+                            feedbackClosing = false
                             submitted = true
                         } else if (position == 9) {
                             if (correctCount == 10) {
@@ -169,10 +174,13 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                                 catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo guardar la clase"); return@Button }
                             }
                             finished = true
+                            submitted = false
+                            feedbackClosing = false
                         } else {
                             position++
                             selected = emptySet()
                             submitted = false
+                            feedbackClosing = false
                         }
                     }) { Text(if (submitted) "Siguiente" else "Calificar") }
             }

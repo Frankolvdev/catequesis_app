@@ -23,12 +23,14 @@ import com.chayzay.catequesisapp.profile.ProfileSettings
 
 /** Personajes originales, según sexo elegido y número de aciertos o fallos. */
 @Composable
-fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier = Modifier.size(120.dp)) {
+fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier = Modifier.size(120.dp),
+                          animate: Boolean = true) {
     val male = ProfileSettings.load(LocalContext.current)?.gender == "MALE"
     val index = count.coerceIn(1, 5) - 1
     val scale = remember(success, index) { Animatable(1f) }
     val opacity = remember(success, index) { Animatable(1f) }
-    LaunchedEffect(success, index) {
+    LaunchedEffect(success, index, animate) {
+        if (!animate) return@LaunchedEffect
         coroutineScope {
             launch { scale.animateTo(1.1f, tween(2500)); scale.animateTo(1f, tween(2500)) }
             launch { opacity.animateTo(0.3f, tween(2500)); opacity.animateTo(1f, tween(2500)) }
@@ -46,10 +48,10 @@ fun GameCharacterFeedback(success: Boolean, count: Int = 5, modifier: Modifier =
     }
     Image(painterResource(pictures[index]),
         contentDescription = if (success) "Respuesta correcta" else "Respuesta incorrecta",
-        modifier = modifier.graphicsLayer {
+        modifier = if (animate) modifier.graphicsLayer {
             transformOrigin = TransformOrigin(0.5f, 0.1f)
             scaleX = scale.value; scaleY = scale.value; alpha = opacity.value
-        })
+        } else modifier)
 }
 
 @Composable

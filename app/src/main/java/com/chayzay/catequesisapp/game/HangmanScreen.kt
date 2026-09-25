@@ -100,11 +100,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color) {
                                             letter in answer -> Color(0xFFD48656)
                                             else -> Color.Transparent
                                         }).clickable(enabled = !guessed && !finished) {
-                                            val next = selected + letter
-                                            val completed = answer.filter { it in 'A'..'Z' }.all { it in next }
-                                            if (completed || next.count { it !in answer } >= 7)
-                                                GameFeedback.play(context, completed)
-                                            selected = next
+                                            selected = selected + letter
                                         },
                                         color = if (guessed && letter !in answer) Color.Transparent else Color.White,
                                         fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)

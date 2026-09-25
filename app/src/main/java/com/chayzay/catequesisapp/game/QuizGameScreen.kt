@@ -22,10 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,6 +46,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var badStage by remember(classId) { mutableIntStateOf(0) }
     var selected by remember(classId) { mutableStateOf<Set<Int>>(emptySet()) }
     var submitted by remember(classId) { mutableStateOf(false) }
+    var feedbackClosing by remember(classId) { mutableStateOf(false) }
     var lastCorrect by remember(classId) { mutableStateOf(false) }
     var showEndDialog by remember(classId) { mutableStateOf(true) }
     LaunchedEffect(classId, retry) {
@@ -60,7 +57,11 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     LaunchedEffect(classId, position, submitted) {
         if (submitted) {
             delay(3000)
-            if (submitted) { position++; selected = emptySet(); submitted = false }
+            if (submitted) {
+                feedbackClosing = true
+                delay(300)
+                if (submitted) { position++; selected = emptySet(); submitted = false; feedbackClosing = false }
+            }
         }
     }
     Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -121,9 +122,9 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 }
                 if (submitted) Text(if (lastCorrect) "¡Correcto!" else "Respuesta incorrecta. Las opciones correctas aparecen en verde.",
                     color = if (lastCorrect) Color(0xFF176C35) else Color(0xFF9D2626))
-                if (submitted) Popup(alignment = Alignment.BottomEnd, offset = IntOffset(-24, -110)) {
-                    Surface { GameCharacterFeedback(lastCorrect,
-                        if (lastCorrect) goodStage else badStage) }
+                if (submitted) QuizFeedbackPopup(feedbackClosing) {
+                    GameCharacterFeedback(lastCorrect,
+                        if (lastCorrect) goodStage else badStage, animate = false)
                 }
                 Button(enabled = submitted || selected.isNotEmpty(), modifier = Modifier.fillMaxWidth(),
                     onClick = {
@@ -137,11 +138,13 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                                 if (goodStage > 0) goodStage--
                             }
                             GameFeedback.play(context, lastCorrect)
+                            feedbackClosing = false
                             submitted = true
                         } else {
                             position++
                             selected = emptySet()
                             submitted = false
+                            feedbackClosing = false
                         }
                     }) { Text(if (submitted) "Siguiente" else "Calificar") }
             }
