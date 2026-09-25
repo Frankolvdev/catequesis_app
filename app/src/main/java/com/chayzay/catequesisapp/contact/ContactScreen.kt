@@ -4,6 +4,7 @@ import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -95,8 +97,10 @@ fun ContactScreen(
             if (subjectLocked) {
                 Text(subjects[subject], fontSize = 13.sp, modifier = Modifier.fillMaxWidth().padding(10.dp))
             } else {
-                TextButton(modifier = Modifier.fillMaxWidth(), onClick = { menuOpen = true }) {
-                    Text(subjects[subject] + " ▾", fontSize = 13.sp)
+                Row(Modifier.fillMaxWidth().border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp))
+                    .clickable { menuOpen = true }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(subjects[subject], fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Image(painterResource(R.drawable.arrow_down), contentDescription = "Abrir", modifier = Modifier.size(18.dp))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     subjects.forEachIndexed { index, value -> DropdownMenuItem(text = { Text(value) }, onClick = {

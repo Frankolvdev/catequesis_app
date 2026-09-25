@@ -8,6 +8,7 @@ import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -171,8 +173,11 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
             }
             1 -> if (loadedPersonal) {
                 Text("Datos personales")
-                TextButton(onClick = { countryMenu = true }) {
-                    Text("País: ${countries.firstOrNull { it.id == country }?.label ?: "Seleccionar"} ▾")
+                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp)
+                    .border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp)).clickable { countryMenu = true }.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(countries.firstOrNull { it.id == country }?.label ?: "Seleccionar país", modifier = Modifier.weight(1f))
+                    Image(painterResource(R.drawable.arrow_down), contentDescription = "Abrir", modifier = Modifier.size(18.dp))
                 }
                 DropdownMenu(expanded = countryMenu, onDismissRequest = { countryMenu = false }) {
                     countries.forEach { option -> DropdownMenuItem(text = { Text(option.label) },
@@ -180,8 +185,11 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                 }
                 OutlinedTextField(city, { city = it }, label = { Text("Ciudad") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(address, { address = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
-                TextButton(onClick = { civilMenu = true }) {
-                    Text("Estado civil: ${civilStatuses.firstOrNull { it.id == civil }?.label ?: "Seleccionar"} ▾")
+                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp)
+                    .border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp)).clickable { civilMenu = true }.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(civilStatuses.firstOrNull { it.id == civil }?.label ?: "Seleccionar estado civil", modifier = Modifier.weight(1f))
+                    Image(painterResource(R.drawable.arrow_down), contentDescription = "Abrir", modifier = Modifier.size(18.dp))
                 }
                 DropdownMenu(expanded = civilMenu, onDismissRequest = { civilMenu = false }) {
                     civilStatuses.forEach { option -> DropdownMenuItem(text = { Text(option.label) },

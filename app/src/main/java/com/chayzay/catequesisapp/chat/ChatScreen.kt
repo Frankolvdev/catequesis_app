@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -255,18 +256,31 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                 val mine = line.sender == user.apiKey
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp),
                     horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-                    Text(line.text, modifier = Modifier.background(if (mine) Color(0xFFE0F1FF) else Color(0xFFF1F1F1))
-                        .padding(10.dp))
+                    AndroidView(factory = { ctx ->
+                        android.widget.TextView(ctx).apply {
+                            setTextColor(android.graphics.Color.BLACK)
+                            maxWidth = (200 * resources.displayMetrics.density).toInt()
+                            val pad = (5 * resources.displayMetrics.density).toInt()
+                            setPadding(pad, pad, pad, pad)
+                        }
+                    }, update = { view ->
+                        view.text = line.text
+                        view.setBackgroundResource(if (mine) R.drawable.bubble_in else R.drawable.bubble_out)
+                    }, modifier = Modifier.padding(bottom = 10.dp))
                 }
             }
         }
-        Row(Modifier.fillMaxWidth()) {
+        Text("${draft.length}/500", fontSize = 9.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth().padding(start = 5.dp, end = 15.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End)
+        Row(Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(value = draft, onValueChange = { draft = it.take(500) },
-                label = { Text("Mensaje (${draft.length}/500)") }, modifier = Modifier.weight(1f), maxLines = 4)
-            Button(enabled = !sending && !loading && draft.isNotBlank() && thread != null,
-                onClick = {
+                placeholder = { Text("Escribe un mensaje", fontSize = 13.sp) }, modifier = Modifier.weight(0.8f), maxLines = 4)
+            Image(painterResource(if (draft.isNotBlank()) R.drawable.ic_action_send_2 else R.drawable.ic_action_send1),
+                contentDescription = "Enviar", modifier = Modifier.weight(0.2f).size(48.dp)
+                    .clickable(enabled = !sending && !loading && draft.isNotBlank() && thread != null) {
                     val message = draft.trim()
-                    val destination = thread ?: return@Button
+                    val destination = thread ?: return@clickable
                     sending = true
                     error = ""
                     scope.launch {
@@ -284,7 +298,7 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                         } catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo enviar el mensaje") }
                         finally { sending = false }
                     }
-                }, modifier = Modifier.padding(start = 6.dp)) { Text("Enviar") }
+                })
         }
     }
 }

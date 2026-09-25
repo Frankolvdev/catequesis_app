@@ -5,7 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,7 +96,8 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
                 Image(painterResource(gallows[if (won) 8 else (mistakes + 1).coerceIn(1, 7)]),
                     contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.padding(top = 15.dp).size(130.dp))
                 if (showHint) Text(active.clue.ifBlank { "Sin pista disponible" })
-                else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
+                else Image(painterResource(R.drawable.ic_action_bombillo), contentDescription = "Pista",
+                    modifier = Modifier.size(40.dp).clickable { showHint = true }.padding(4.dp))
                 if (finished) {
                     Text(if (won) "¡Ganaste!" else if (resultAcknowledged) "La palabra era $answer"
                         else "Perdiste", color = Color(0xFF653E26))
@@ -108,7 +109,7 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
                         resultAcknowledged = true
                     }
                 }
-                BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 30.dp)) {
+                Box(Modifier.fillMaxWidth().padding(top = 30.dp)) {
                     val keyWidth = 30.dp
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {

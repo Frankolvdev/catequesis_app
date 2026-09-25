@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -140,9 +142,10 @@ private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: Str
                 Text("Ciclo $year", color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
             }
-            Box(Modifier.fillMaxWidth()) {
-                Text(year.toString(), color = Color.Black, fontSize = 14.sp,
-                    modifier = Modifier.fillMaxWidth().clickable { menuOpen = true }.padding(10.dp))
+            Box(Modifier.fillMaxWidth().border(1.dp, Color(0xFFACACAC), RoundedCornerShape(5.dp))
+                .clickable { menuOpen = true }.padding(10.dp)) {
+                Text(year.toString(), color = Color.Black, fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterStart))
+                Image(painterResource(R.drawable.arrow_down), contentDescription = "Abrir", modifier = Modifier.size(18.dp).align(Alignment.CenterEnd))
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     years.forEach { y -> DropdownMenuItem(text = { Text(y.toString()) }, onClick = {
                         menuOpen = false; onYearChange(y)
