@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -61,17 +63,27 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                 LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 5.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     items(history.filter { it.recipient == contact.key }) { row ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            Text(row.text, fontSize = 13.sp, color = Color.Black,
-                                modifier = Modifier.widthIn(max = 200.dp)
-                                    .background(Color(0xFFD9F3C7)).padding(8.dp))
+                            AndroidView(factory = { ctx ->
+                                android.widget.TextView(ctx).apply {
+                                    setTextColor(android.graphics.Color.BLACK)
+                                    maxWidth = (200 * resources.displayMetrics.density).toInt()
+                                    val pad = (5 * resources.displayMetrics.density).toInt()
+                                    setPadding(pad, pad, pad, pad)
+                                    setBackgroundResource(R.drawable.bubble_in)
+                                }
+                            }, update = { it.text = row.text }, modifier = Modifier.padding(bottom = 10.dp))
                         }
                     }
                 }
-                Text("${draft.length}/500", fontSize = 9.sp, color = Color.DarkGray,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                Text("${draft.length}/500", fontSize = 9.sp, color = Color.DarkGray, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().padding(start = 5.dp, end = 15.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                 Row(Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
                     AndroidView(
-                        factory = { ctx -> EditText(ctx).apply { hint = "Escribe un mensaje"; textSize = 13f; maxLines = 4 } },
+                        factory = { ctx -> EditText(ctx).apply {
+                            hint = "Escribir mensaje"; textSize = 13f
+                            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PERSON_NAME
+                            filters = arrayOf(android.text.InputFilter.LengthFilter(500))
+                        } },
                         update = { view ->
                             if (view.text.toString() != draft) { view.setText(draft); view.setSelection(view.text.length) }
                             view.setOnFocusChangeListener { _, _ -> }
@@ -85,7 +97,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                             })
                         }, modifier = Modifier.weight(1f))
                     Image(painterResource(if (draft.isBlank()) R.drawable.ic_action_send1 else R.drawable.ic_action_send_2), "Enviar",
-                        modifier = Modifier.size(42.dp).padding(5.dp).clickable(enabled = draft.isNotBlank()) {
+                        modifier = Modifier.weight(0.2f).clickable(enabled = draft.isNotBlank()) {
                             try { store.add(contact, draft); history = store.all(); draft = ""; error = "" }
                             catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudo guardar") }
                         })
@@ -94,20 +106,27 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                Text("Regístrate o inicia sesión para recibir respuestas de los catequistas.", fontSize = 12.sp, color = Color.Black,
+                Text("Conviene que te registres como usuario para que tus preguntas puedan ser contestadas más tarde y guardes las conversaciones con tus amigos.", fontSize = 12.sp, color = Color.Black,
                     modifier = Modifier.fillMaxWidth().padding(10.dp))
                 val last = history.groupBy { it.recipient }.values.mapNotNull { it.lastOrNull() }
                 LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                     items(last) { row ->
-                        Row(Modifier.fillMaxWidth().background(Color.White).clickable {
-                            selected = ChatContact(row.recipient, row.name, row.picture); error = ""
-                        }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(model = row.picture, contentDescription = null, contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(48.dp).clip(CircleShape))
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(row.name, fontSize = 12.sp, color = Color(0xFF7A9989))
-                                Text(row.text, fontSize = 10.sp, color = Color.DarkGray, maxLines = 1)
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp)
+                                .clickable { selected = ChatContact(row.recipient, row.name, row.picture); error = "" },
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(model = row.picture, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(48.dp).clip(CircleShape))
+                                Column(Modifier.weight(1f).padding(start = 5.dp)) {
+                                    Text(row.name, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                        color = Color(0xFF7A9989), modifier = Modifier.padding(bottom = 5.dp))
+                                    Text(if (row.text.length < 40) row.text else row.text.take(40) + " ...",
+                                        fontSize = 10.sp, color = Color.Black, maxLines = 1, modifier = Modifier.padding(start = 5.dp))
+                                    Text(row.time, fontSize = 8.sp, color = Color.Black, textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                        modifier = Modifier.fillMaxWidth().padding(start = 5.dp, top = 5.dp))
+                                }
                             }
                         }
                     }
@@ -122,22 +141,23 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
 
     if (selecting) {
         Dialog(onDismissRequest = { selecting = false }) {
-            Column(Modifier.fillMaxWidth().background(Color.White)) {
-                Text("Selecciona un catequista", color = Color.White, fontSize = 13.sp,
+            Column(Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color.White)) {
+                Text("Selecciona al catequista", color = Color.White, fontSize = 13.sp,
                     modifier = Modifier.fillMaxWidth().background(profile.accent).padding(10.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 when {
                     contacts == null -> Column(Modifier.fillMaxWidth().height(260.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center) { CircularProgressIndicator(); Spacer(Modifier.height(10.dp)); Text("Buscando catequistas", fontSize = 13.sp) }
+                        verticalArrangement = Arrangement.Center) { CircularProgressIndicator(); Spacer(Modifier.height(10.dp)); Text("Buscando usuarios ...", fontSize = 13.sp) }
                     error.isNotBlank() -> Text(error, color = Color.Red, fontSize = 12.sp,
                         modifier = Modifier.fillMaxWidth().clickable { contacts = null; error = ""; retry++ }.padding(16.dp))
                     else -> LazyColumn(Modifier.fillMaxWidth().heightIn(max = 500.dp)) {
                         items(contacts.orEmpty()) { person ->
-                            Row(Modifier.fillMaxWidth().clickable { selected = person; selecting = false; draft = ""; error = "" }.padding(10.dp),
+                            Row(Modifier.fillMaxWidth().padding(5.dp).clickable { selected = person; selecting = false; draft = ""; error = "" },
                                 verticalAlignment = Alignment.CenterVertically) {
                                 AsyncImage(model = person.picture, contentDescription = null, contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(48.dp).clip(CircleShape))
-                                Spacer(Modifier.width(10.dp)); Text(person.name, fontSize = 13.sp, color = Color.DarkGray)
+                                    modifier = Modifier.size(48.dp))
+                                Text(person.name, fontSize = 14.sp, color = Color.Black,
+                                    modifier = Modifier.padding(start = 5.dp, bottom = 15.dp))
                             }
                         }
                     }

@@ -18,6 +18,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.sp
@@ -45,7 +52,7 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 
-private data class Conversation(val contact: ChatContact, val last: String)
+private data class Conversation(val contact: ChatContact, val last: String, val datetime: String = "")
 private data class ChatLine(val key: String, val sender: String, val text: String)
 
 /** Conserva Conversations/{clave1+clave2}/Users y Messages/{datetime} del proyecto anterior. */
@@ -101,9 +108,10 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
                     if (!users.hasChild(user.apiKey)) return@mapNotNull null
                     val other = users.children.firstOrNull { it.key != user.apiKey } ?: return@mapNotNull null
                     val key = other.key ?: return@mapNotNull null
-                    val last = chat.child("Messages").children.lastOrNull()?.child("message")?.getValue(String::class.java).orEmpty()
+                    val lastRow = chat.child("Messages").children.lastOrNull()
+                    val last = lastRow?.child("message")?.getValue(String::class.java).orEmpty()
                     Conversation(ChatContact(key, other.child("name_user").getValue(String::class.java) ?: "Catequista",
-                        other.child("picture").getValue(String::class.java).orEmpty()), last)
+                        other.child("picture").getValue(String::class.java).orEmpty()), last, lastRow?.key.orEmpty())
                 }.sortedBy { it.contact.name }
                 loading = false
                 error = ""
@@ -135,50 +143,82 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
             }, onBack = { selected = null })
         return
     }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(if (choosing) "Catequistas" else "Mensajes")
-            Button(onClick = { choosing = !choosing; error = "" }) { Text(if (choosing) "Volver" else "Nuevo chat") }
-        }
-        if (guestPending > 0) {
-            Text("Hay $guestPending mensaje(s) escritos como invitado pendientes de enviar.")
-            Button(enabled = !guestSending, onClick = {
-                guestSending = true
-                guestError = ""
-                scope.launch {
-                    try {
-                        GuestChatTransfer.sendPending(context, user, repository)
-                        pendingCount = outbox.forUser(user).size
-                    } catch (cause: Exception) {
-                        if (cause is CancellationException) throw cause
-                        guestError = ApiMessages.fromException(cause,
-                            "No se pudieron enviar los mensajes de invitado. Reinténtalo.")
-                    } finally {
-                        guestPending = guestStore.pendingFor(user).size
-                        guestSending = false
+    Box(Modifier.fillMaxSize().background(profile.baseColor)) {
+        Column(Modifier.fillMaxSize()) {
+            if (guestPending > 0) {
+                Text("Hay $guestPending mensaje(s) escritos como invitado pendientes de enviar.", fontSize = 12.sp,
+                    modifier = Modifier.padding(10.dp))
+                Button(enabled = !guestSending, onClick = {
+                    guestSending = true; guestError = ""
+                    scope.launch {
+                        try { GuestChatTransfer.sendPending(context, user, repository); pendingCount = outbox.forUser(user).size }
+                        catch (cause: Exception) { if (cause is CancellationException) throw cause; guestError = ApiMessages.fromException(cause, "No se pudieron enviar los mensajes de invitado. Reinténtalo.") }
+                        finally { guestPending = guestStore.pendingFor(user).size; guestSending = false }
+                    }
+                }) { Text(if (guestSending) "Enviando…" else "Enviar mensajes de invitado") }
+            }
+            if (guestError.isNotBlank()) Text(guestError, color = Color.Red, modifier = Modifier.padding(horizontal = 10.dp))
+            if (pendingCount > 0) {
+                Text("$pendingCount mensaje(s) guardado(s) en el servidor y pendiente(s) en Firebase", fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp))
+                Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
+            }
+            if (pendingError.isNotBlank()) Text(pendingError, color = Color.Red, modifier = Modifier.padding(horizontal = 10.dp))
+            if (loading && !choosing) CircularProgressIndicator(Modifier.padding(12.dp))
+            if (error.isNotBlank() && !choosing) Text(error, color = Color.Red, modifier = Modifier.padding(10.dp))
+            LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                items(conversations, key = { it.contact.key }) { entry ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp)
+                            .clickable { selected = entry.contact },
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(model = entry.contact.picture, contentDescription = null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(48.dp).clip(CircleShape))
+                            Column(Modifier.weight(1f).padding(start = 5.dp)) {
+                                Text(entry.contact.name, color = Color(0xFF7A9989), fontSize = 12.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(bottom = 5.dp))
+                                if (entry.last.isNotBlank()) Text(if (entry.last.length < 40) entry.last else entry.last.take(40) + " ...",
+                                    maxLines = 1, fontSize = 10.sp, color = Color.Black, modifier = Modifier.padding(start = 5.dp))
+                                if (entry.datetime.isNotBlank()) {
+                                    val shownDate = entry.datetime.toLongOrNull()?.let { seconds ->
+                                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss a", java.util.Locale.getDefault())
+                                            .format(java.util.Date(seconds * 1000L))
+                                    } ?: entry.datetime
+                                    Text(shownDate, fontSize = 8.sp, color = Color.Black,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth().padding(start = 5.dp, top = 5.dp))
+                                }
+                            }
+                        }
                     }
                 }
-            }) { Text(if (guestSending) "Enviando…" else "Enviar mensajes de invitado") }
+            }
         }
-        if (guestError.isNotBlank()) Text(guestError, color = Color.Red)
-        if (pendingCount > 0) {
-            Text("$pendingCount mensaje(s) guardado(s) en el servidor y pendiente(s) en Firebase")
-            Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
+        Box(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 14.dp).size(56.dp).clip(CircleShape)
+            .background(profile.accent).clickable { choosing = true; error = "" }, contentAlignment = Alignment.Center) {
+            Image(painterResource(R.drawable.plus__64), "Nuevo mensaje", Modifier.size(32.dp))
         }
-        if (pendingError.isNotBlank()) Text(pendingError, color = Color.Red)
-        if (loading) CircularProgressIndicator(Modifier.padding(12.dp))
-        if (error.isNotBlank()) Text(error, color = Color.Red)
-        val entries = if (choosing) contacts.map { Conversation(it, "") } else conversations
-        if (!loading && entries.isEmpty() && error.isEmpty())
-            Text(if (choosing) "No hay catequistas disponibles" else "Todavía no tienes conversaciones",
-                modifier = Modifier.padding(top = 20.dp))
-        LazyColumn {
-            items(entries, key = { it.contact.key }) { entry ->
-                Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp).clickable { selected = entry.contact }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.boy), contentDescription = null, modifier = Modifier.size(48.dp))
-                    Column(Modifier.weight(1f).padding(start = 5.dp)) {
-                        Text(entry.contact.name, color = Color(0xFF7A9989), fontSize = 12.sp)
-                        if (entry.last.isNotBlank()) Text(entry.last, maxLines = 1, fontSize = 10.sp, modifier = Modifier.padding(start = 5.dp, top = 5.dp))
+    }
+    if (choosing) {
+        Dialog(onDismissRequest = { choosing = false }) {
+            Column(Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color.White)) {
+                if (loading) {
+                    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        CircularProgressIndicator(); Text("Buscando usuarios ...", fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                    }
+                } else {
+                    Text("Selecciona al catequista", color = Color.White, fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth().background(profile.accent).padding(10.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    if (error.isNotBlank()) Text(error, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(10.dp))
+                    LazyColumn(Modifier.fillMaxWidth()) {
+                        items(contacts, key = { it.key }) { person ->
+                            Row(Modifier.fillMaxWidth().padding(5.dp).clickable { selected = person; choosing = false; error = "" },
+                                verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(model = person.picture, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(48.dp))
+                                Text(person.name, fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(start = 5.dp, bottom = 15.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -234,10 +274,6 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().background(Color(0xFF037AD8)).padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onBack) { Text("Volver") }
-            Text(contact.name, color = Color.White, modifier = Modifier.padding(10.dp))
-        }
         if (loading) CircularProgressIndicator()
         if (error.isNotBlank()) Text(error, color = Color.Red)
         val waiting = outbox.forUser(user).count { it.recipient.key == contact.key }
@@ -276,7 +312,7 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
             AndroidView(
                 factory = { ctx ->
                     android.widget.EditText(ctx).apply {
-                        hint = "Escribe un mensaje"
+                        hint = "Escribir mensaje"
                         setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
                         inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PERSON_NAME
                         filters = arrayOf(android.text.InputFilter.LengthFilter(500))

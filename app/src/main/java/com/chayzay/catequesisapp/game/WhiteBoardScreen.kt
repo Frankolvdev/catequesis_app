@@ -60,7 +60,7 @@ fun WhiteBoardScreen() {
         Button(onClick = { lines = emptyList(); drawing = emptyList() },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0x99000000)),
-            shape = androidx.compose.foundation.shape.RectangleShape) {
+            shape = androidx.compose.ui.graphics.RectangleShape) {
             Text("Borrar pizarra", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         }
     }

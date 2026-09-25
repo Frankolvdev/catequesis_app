@@ -118,7 +118,7 @@ fun ContactScreen(
             message?.let { Text(it, fontSize = 13.sp) }
             Button(enabled = !loading, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
-                shape = androidx.compose.foundation.shape.RectangleShape, onClick = {
+                shape = androidx.compose.ui.graphics.RectangleShape, onClick = {
                     message = when {
                         email.isBlank() || name.isBlank() || content.isBlank() -> "Este campo es requerido"
                         !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Correo electrónico no es válido"

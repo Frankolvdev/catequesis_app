@@ -266,7 +266,7 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         message = ApiMessages.fromException(cause, "No fue posible conectar con el servidor")
                     } finally { loading = false }
                 }
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape,
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.ui.graphics.RectangleShape,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
                 Text(if (registering) "Registrar" else "Iniciar sesión o Registrar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }

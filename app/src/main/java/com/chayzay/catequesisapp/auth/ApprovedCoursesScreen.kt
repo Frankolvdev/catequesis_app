@@ -115,7 +115,7 @@ fun ApprovedCoursesScreen(
                         Text("Curso aprobado en todas sus lecciones", color = Color(0xFF424242), fontSize = 12.sp)
                         Button(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)),
-                            shape = androidx.compose.foundation.shape.RectangleShape, enabled = !certificatePending,
+                            shape = androidx.compose.ui.graphics.RectangleShape, enabled = !certificatePending,
                             onClick = {
                         if (certificates) {
                             // CertificateCourseAdapter legacy volvía a enviar/verificar

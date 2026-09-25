@@ -232,7 +232,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                         } catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron guardar los datos") }
                         finally { busy = false }
                     }
-                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape) { Text("Guardar datos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.ui.graphics.RectangleShape) { Text("Guardar datos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
             }
             else -> if (loadedSocial) {
                 Text("Contactos sociales")
@@ -253,7 +253,7 @@ fun ProfileDetailsScreen(user: UserSession, store: UserSessionStore, apiBaseUrl:
                             "No se pudieron guardar todos los contactos; inténtalo de nuevo") }
                         finally { busy = false }
                     }
-                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.foundation.shape.RectangleShape) { Text("Guardar contactos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF446353)), shape = androidx.compose.ui.graphics.RectangleShape) { Text("Guardar contactos", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
             }
         }
         }
