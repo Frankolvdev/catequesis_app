@@ -66,6 +66,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.platform.LocalContext
@@ -318,6 +320,7 @@ private fun CatalogScreen(
     val syncScope = rememberCoroutineScope()
     var page by pageState
     var accountMenuOpen by remember { mutableStateOf(false) }
+    var gloriaTitle by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
     var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
@@ -826,7 +829,10 @@ private fun CatalogScreen(
                             Row(modifier = Modifier.fillMaxWidth().background(itemColor)
                                 .clickable {
                                     when (val current = page) {
-                                        CatalogPage.Courses -> courses.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Classes(it) }
+                                        CatalogPage.Courses -> courses.firstOrNull { it.id == row.id }?.let { course ->
+                                            if (course.id == 6) gloriaTitle = course.name
+                                            else page = CatalogPage.Classes(course)
+                                        }
                                         is CatalogPage.Themes -> themes.firstOrNull { it.id == row.id }?.let { page = CatalogPage.Lessons(current.course, current.courseClass, it) }
                                         is CatalogPage.Lessons -> lessons.firstOrNull { it.id == row.id }?.let { page = CatalogPage.LessonDetail(current.course, current.courseClass, current.theme, it) }
                                         else -> Unit
@@ -845,5 +851,19 @@ private fun CatalogScreen(
                 }
             }
         }
+    }
+    gloriaTitle?.let { title ->
+        AlertDialog(
+            onDismissRequest = { gloriaTitle = null },
+            title = { Text(title, color = accent) },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(painterResource(R.drawable.destello), contentDescription = null,
+                        modifier = Modifier.size(96.dp))
+                    Text("ATENCIÓN: A este curso sólo se puede acceder después de muerto. Lo dictará el mismo Dios a los que hayan aprobado los cursos anteriores. Inténtelo más tarde, una vez que hayas cumplido tu misión en la vida.")
+                }
+            },
+            confirmButton = { TextButton(onClick = { gloriaTitle = null }) { Text("Cerrar") } }
+        )
     }
 }
