@@ -37,9 +37,9 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun CatequesisTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false,
+    // La app legacy no cambiaba paleta con modo oscuro ni Material You.
+    dynamicColor: Boolean = false,
     fontOption: Int = 2,
     content: @Composable () -> Unit
 ) {

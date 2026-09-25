@@ -99,14 +99,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.chayzay.catequesisapp.data.Course
 import com.chayzay.catequesisapp.data.CourseClass
@@ -280,25 +283,25 @@ class MainActivity : ComponentActivity() {
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "news" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.document), contentDescription = null,
-                                    modifier = Modifier.size(25.dp))
+                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
                                 Text("Noticias", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "faith" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.vela), contentDescription = null,
-                                    modifier = Modifier.size(25.dp))
+                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
                                 Text("Fe", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "prayer" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.prayer), contentDescription = null,
-                                    modifier = Modifier.size(25.dp))
+                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
                                 Text("Oraciones", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
                             Column(Modifier.weight(1f).clickable { openLegacyOnlineSection(this@MainActivity) { section = "chat" } }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Image(painterResource(R.mipmap.chat), contentDescription = null,
-                                    modifier = Modifier.size(25.dp))
+                                    colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.size(25.dp))
                                 Text("Chat", color = Color.White, fontSize = 11.sp, maxLines = 1)
                             }
                         }
@@ -333,13 +336,13 @@ private fun BrandScreen() {
         Image(
             painter = painterResource(R.drawable.logo),
             contentDescription = "Catequesis App",
-            modifier = Modifier.align(Alignment.Center).height(196.dp)
+            modifier = Modifier.align(Alignment.Center).size(175.dp)
         )
         Image(
             painter = painterResource(R.drawable.logouh),
             contentDescription = null,
             modifier = Modifier.align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp).height(48.dp)
+                .padding(bottom = 7.dp).width(160.dp).height(80.dp)
         )
     }
 }
@@ -680,8 +683,6 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Actividades", modifier = Modifier.clickable { page = CatalogPage.Activities(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
-                    Text("Juegos", modifier = Modifier.clickable { page = CatalogPage.GameHub(currentCourse, currentClass) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                     Text("Examen", modifier = Modifier.clickable { page = CatalogPage.Exam(currentCourse, currentClass) }
                         .padding(horizontal = 16.dp, vertical = 12.dp), color = Color.White)
                 }
@@ -714,8 +715,9 @@ private fun CatalogScreen(
             page is CatalogPage.Board || page is CatalogPage.Hangman || page is CatalogPage.TrueFalse ||
             page is CatalogPage.Match || page is CatalogPage.Enigma || page is CatalogPage.Crossword ||
             page is CatalogPage.ImageGame
-        if (page !is CatalogPage.Lessons && !gamePage) Text(title, modifier = Modifier.fillMaxWidth().padding(16.dp),
-            style = MaterialTheme.typography.titleLarge, color = Color(0xFF505050))
+        if (page is CatalogPage.Classes) Text(title, modifier = Modifier.fillMaxWidth()
+            .padding(start = 10.dp, end = 10.dp, top = 10.dp),
+            style = MaterialTheme.typography.titleMedium, color = Color(0xFF505050))
         if (page is CatalogPage.GameHub) {
             val hub = page as CatalogPage.GameHub
             GameHubScreen(hub.course, hub.courseClass.id, repository, imageRepository, accent) { key ->
@@ -806,35 +808,35 @@ private fun CatalogScreen(
                         indexError = ApiMessages.fromException(cause, "No se pudo cargar el índice de lecciones")
                     }
                 }
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Resumen", style = MaterialTheme.typography.titleMedium)
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    Text("Resumen", modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp),
+                        color = Color.Black, fontSize = 13.sp)
                     themes.forEach { theme ->
                         Text("${theme.number}. ${theme.name}",
                             modifier = Modifier.fillMaxWidth().clickable {
                                 page = CatalogPage.Lessons(summary.course, summary.courseClass, theme)
-                            }.padding(top = 10.dp, bottom = 4.dp),
-                            style = MaterialTheme.typography.titleSmall)
+                            }.padding(start = 15.dp, end = 15.dp, top = 10.dp),
+                            color = Color(0xFF505050), fontSize = 13.sp)
                         lessonIndex?.get(theme.id)?.forEach { lesson ->
                             Text("${theme.number}.${lesson.number}. ${lesson.name}",
                                 modifier = Modifier.fillMaxWidth().clickable {
                                     page = CatalogPage.LessonDetail(summary.course, summary.courseClass, theme, lesson)
-                                }.padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                                color = Color(0xFF505050))
+                                }.padding(start = 30.dp, end = 15.dp, top = 5.dp),
+                                color = Color(0xFF505050), fontSize = 13.sp,
+                                textDecoration = TextDecoration.Underline)
                         }
                     }
                     if (lessonIndex == null && indexError == null) CircularProgressIndicator()
                     indexError?.let { Text(it) }
                 }
             } else if (page is CatalogPage.Goals) {
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Las metas para la semana son:", color = Color.Black,
-                        style = MaterialTheme.typography.titleMedium)
-                    if (goals.isEmpty()) Text("No hay metas para esta clase.")
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    Text("Las metas para la semana son:", color = Color.Black, fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 10.dp))
+                    if (goals.isEmpty()) Text("No hay metas para esta clase.", modifier = Modifier.padding(4.dp))
                     goals.forEach { goal ->
-                        Text("${goal.number}. ${goal.content}", color = Color(0xFF505050),
-                            style = MaterialTheme.typography.bodyLarge)
+                        Text("${goal.number}. ${goal.content}", color = Color(0xFF505050), fontSize = 13.sp,
+                            modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp))
                     }
                 }
             } else if (page is CatalogPage.Activities) {
@@ -917,7 +919,7 @@ private fun CatalogScreen(
             } else if (page is CatalogPage.Classes) {
                 var certificatePending by remember(page) { mutableStateOf(false) }
                 var certificateError by remember(page) { mutableStateOf<String?>(null) }
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     if (courseApproved) {
                         // ClassCourseActivity legacy muestra una única leyenda accionable distinta
                         // según exista o no una sesión iniciada.
@@ -949,11 +951,11 @@ private fun CatalogScreen(
                     }
                     // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
                     // filas de 30 unidades para un ancho de 200. Se escala junto con el mapa.
-                    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp).padding(10.dp),
                         contentAlignment = Alignment.Center) {
-                        val mapWidth = maxWidth
+                        val mapWidth = 200.dp
                         val rowCount = (classes.size + 4) / 5
-                        val mapHeight = mapWidth * (rowCount.coerceAtLeast(1) * 30f / 200f)
+                        val mapHeight = 30.dp * rowCount.coerceAtLeast(1)
                         Box(modifier = Modifier.width(mapWidth).height(mapHeight)) {
                             courseImage?.let { bitmap ->
                                 Image(bitmap = bitmap.asImageBitmap(), contentDescription = null,
@@ -991,12 +993,13 @@ private fun CatalogScreen(
                         }
                     }
                     // El índice original sigue accesible debajo del mapa.
-                    Text("Índice", modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
-                        style = MaterialTheme.typography.titleMedium)
+                    Text("ÍNDICE", modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp)
+                        .background(Color(0x77FFFFFF)).padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        fontSize = 14.sp, color = Color(0xFF505050))
                     result.rows.forEach { entry ->
                         val flags = remember(entry.id, progressRefresh) { progressStore.flags(entry.id) }
-                        Text(entry.label, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-                            .background(Color(0xFFF0F0F0)).combinedClickable(onClick = {
+                        Text(entry.label, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 2.dp)
+                            .background(Color(0x77FFFFFF)).combinedClickable(onClick = {
                                 val selected = classes.firstOrNull { it.id == entry.id }
                                 val current = page as? CatalogPage.Classes
                                 if (selected != null && current != null) {
@@ -1007,7 +1010,7 @@ private fun CatalogScreen(
                             }, onLongClick = {
                                 progressStore.setVisited(entry.id, false)
                                 progressRefresh++
-                            }).padding(12.dp), color = if (flags.visited) Color.Black else Color(0xFF777777),
+                            }).padding(10.dp), color = if (flags.visited) Color.Black else Color(0xFF505050),
                             fontWeight = if (flags.visited) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
@@ -1019,8 +1022,9 @@ private fun CatalogScreen(
                             R.drawable.cloud, R.drawable.cloud, R.drawable.familia).getOrElse(position) { R.drawable.corpus }
                         val isCourse = page == CatalogPage.Courses
                         val itemColor = if (isCourse) accent else Color(0xFFF0F0F0)
-                        Card(modifier = Modifier.fillMaxWidth().padding(horizontal = if (isCourse) 20.dp else 12.dp, vertical = 2.dp),
-                            shape = RoundedCornerShape(4.dp)) {
+                        Card(modifier = Modifier.fillMaxWidth().padding(start = if (isCourse) 20.dp else 12.dp,
+                            end = if (isCourse) 20.dp else 12.dp, top = 2.dp, bottom = 3.dp),
+                            shape = RoundedCornerShape(2.dp)) {
                             Row(modifier = Modifier.fillMaxWidth().background(itemColor)
                                 .clickable {
                                     when (val current = page) {
@@ -1032,13 +1036,13 @@ private fun CatalogScreen(
                                         is CatalogPage.Lessons -> lessons.firstOrNull { it.id == row.id }?.let { page = CatalogPage.LessonDetail(current.course, current.courseClass, current.theme, it) }
                                         else -> Unit
                                     }
-                                }.padding(12.dp).height(if (isCourse) 48.dp else 40.dp),
+                                }.padding(if (isCourse) 10.dp else 12.dp).heightIn(min = if (isCourse) 40.dp else 40.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Text(row.label, modifier = Modifier.weight(1f), maxLines = 2,
                                     overflow = TextOverflow.Ellipsis, color = if (isCourse) Color.White else Color(0xFF505050),
-                                    style = MaterialTheme.typography.titleMedium)
+                                    fontSize = if (isCourse) 13.sp else 16.sp)
                                 if (isCourse) Image(painterResource(icon), contentDescription = null,
-                                    modifier = Modifier.size(36.dp))
+                                    modifier = Modifier.size(32.dp))
                                 else Text("›", color = Color(0xFF505050), style = MaterialTheme.typography.headlineMedium)
                             }
                         }
@@ -1050,25 +1054,28 @@ private fun CatalogScreen(
     gloriaTitle?.let { title ->
         val reveal = remember(title) { Animatable(0f) }
         LaunchedEffect(title) { reveal.animateTo(1f, tween(durationMillis = 3000)) }
-        AlertDialog(
-            onDismissRequest = { gloriaTitle = null },
-            title = { if (reveal.value >= 1f) Text(title, color = accent) },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Dialog(onDismissRequest = { gloriaTitle = null }) {
+            Surface(color = Color.White, tonalElevation = 0.dp, shape = RoundedCornerShape(2.dp),
+                modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (reveal.value < 1f) {
                         Image(painterResource(R.drawable.destello), contentDescription = null,
-                            modifier = Modifier.size(96.dp).graphicsLayer {
+                            modifier = Modifier.fillMaxWidth().padding(25.dp).graphicsLayer {
                                 rotationZ = 360f * reveal.value
                                 scaleX = 1f + 49f * reveal.value
                                 scaleY = 1f + 49f * reveal.value
                                 alpha = 1f - reveal.value
                             })
                     } else {
-                        Text("ATENCIÓN: A este curso sólo se puede acceder después de muerto. Lo dictará el mismo Dios a los que hayan aprobado los cursos anteriores. Inténtelo más tarde, una vez que hayas cumplido tu misión en la vida.")
+                        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().background(accent).padding(10.dp))
+                        Text("ATENCIÓN: A este curso sólo se puede acceder después de muerto. Lo dictará el mismo Dios a los que hayan aprobado los cursos anteriores. Inténtelo más tarde, una vez que hayas cumplido tu misión en la vida.",
+                            color = Color(0xFF505050), fontSize = 13.sp,
+                            modifier = Modifier.fillMaxWidth().padding(start = 30.dp, end = 30.dp, top = 30.dp, bottom = 20.dp))
                     }
                 }
-            },
-            confirmButton = { TextButton(onClick = { gloriaTitle = null }) { Text("Cerrar") } }
-        )
+            }
+        }
     }
 }
