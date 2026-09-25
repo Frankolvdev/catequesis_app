@@ -38,6 +38,7 @@ import kotlinx.coroutines.delay
 fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     val context = LocalContext.current
     StopGameAudioOnDispose()
+    var allQuestions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var questions by remember(classId) { mutableStateOf<List<ExamQuestion>?>(null) }
     var error by remember(classId) { mutableStateOf<String?>(null) }
     var retry by remember(classId) { mutableIntStateOf(0) }
@@ -52,7 +53,11 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
     var showEndDialog by remember(classId) { mutableStateOf(true) }
     LaunchedEffect(classId, retry) {
         error = null
-        try { questions = withContext(Dispatchers.IO) { repository.getExam(classId) }.shuffled().take(10) }
+        try {
+            val loaded = withContext(Dispatchers.IO) { repository.getExam(classId) }
+            allQuestions = loaded
+            questions = loaded.shuffled().take(10)
+        }
         catch (cause: Exception) { error = ApiMessages.fromException(cause, "No se pudieron cargar las preguntas") }
     }
     LaunchedEffect(classId, position, submitted) {
@@ -80,7 +85,7 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                     confirmButton = { androidx.compose.material3.TextButton(onClick = {
                         position = 0; correct = 0; goodStage = 0; badStage = 0
                         selected = emptySet(); submitted = false; showEndDialog = true
-                        questions = questions!!.shuffled()
+                        questions = allQuestions.orEmpty().shuffled().take(10)
                     }) { Text("Jugar otra vez") } },
                     dismissButton = { androidx.compose.material3.TextButton(onClick = { showEndDialog = false }) {
                         Text("Cerrar")
@@ -89,18 +94,24 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color) {
                 Button(onClick = {
                     position = 0; correct = 0; goodStage = 0; badStage = 0; showEndDialog = true
                     selected = emptySet(); submitted = false
-                    questions = questions!!.shuffled()
+                    questions = allQuestions.orEmpty().shuffled().take(10)
                 }) { Text("Jugar de nuevo") }
             }
             else -> {
                 val question = questions!![position]
-                val correctOptions = question.answers.filter { it.correct }.map { it.id }.toSet()
+                // La app antigua construía como máximo cuatro opciones: primero correctas,
+                // después incorrectas, y al final mezclaba esas cuatro.
+                val displayedAnswers = remember(question.id, position) {
+                    (question.answers.filter { it.correct } + question.answers.filterNot { it.correct })
+                        .take(4).shuffled()
+                }
+                val correctOptions = displayedAnswers.filter { it.correct }.map { it.id }.toSet()
                 Text("${position + 1} / ${questions!!.size}  ·  Aciertos: $correct", color = accent)
                 Text(question.text)
                 Text(if (question.type == "SIMPLE") "Elige una respuesta" else "Elige todas las respuestas correctas")
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    question.answers.forEach { answer ->
+                    displayedAnswers.forEach { answer ->
                         val background = when {
                             submitted && answer.correct -> Color(0xFFCDECCF)
                             submitted && answer.id in selected -> Color(0xFFF1C7C7)
