@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import android.app.ProgressDialog
+import android.widget.Toast
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.CircleShape
@@ -164,7 +166,7 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
                 Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
             }
             if (pendingError.isNotBlank()) Text(pendingError, color = Color.Red, modifier = Modifier.padding(horizontal = 10.dp))
-            if (loading && !choosing) CircularProgressIndicator(Modifier.padding(12.dp))
+            LegacyChatProgressDialog(show = loading && !choosing, message = "Cargando datos")
             if (error.isNotBlank() && !choosing) Text(error, color = Color.Red, modifier = Modifier.padding(10.dp))
             LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                 items(conversations, key = { it.contact.key }) { entry ->
@@ -227,6 +229,20 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
 }
 
 @Composable
+private fun LegacyChatProgressDialog(show: Boolean, message: String) {
+    val context = LocalContext.current
+    DisposableEffect(show, message, context) {
+        val dialog = if (show) ProgressDialog(context).apply {
+            setMessage(message)
+            setCancelable(false)
+            setCanceledOnTouchOutside(false)
+            show()
+        } else null
+        onDispose { dialog?.dismiss() }
+    }
+}
+
+@Composable
 private fun ConversationScreen(user: UserSession, contact: ChatContact, root: DatabaseReference,
                                repository: ChatRepository, outbox: PendingRealtimeStore,
                                onOutboxChanged: (Throwable?) -> Unit, onBack: () -> Unit) {
@@ -237,14 +253,27 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
     var draft by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     DisposableEffect(root, user.apiKey, contact.key) {
         val first = root.child(user.apiKey + contact.key)
         val reverse = root.child(contact.key + user.apiKey)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // La conversación inversa prevalece igual que en la aplicación original.
-                thread = if (snapshot.hasChild(reverse.key!!)) reverse else first
+                // Igual que ChatFragment legacy: usa la conversación inversa si ya existe;
+                // si no existe ninguna, crea inmediatamente Users para ambos participantes.
+                thread = when {
+                    snapshot.hasChild(reverse.key!!) -> reverse
+                    snapshot.hasChild(first.key!!) -> first
+                    else -> first.also { created ->
+                        created.child("Users").child(user.apiKey).setValue(
+                            mapOf("name_user" to user.displayName, "picture" to user.picture)
+                        )
+                        created.child("Users").child(contact.key).setValue(
+                            mapOf("name_user" to contact.name, "picture" to contact.picture)
+                        )
+                    }
+                }
                 loading = false
             }
             override fun onCancelled(databaseError: DatabaseError) {
@@ -274,18 +303,9 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
     }
 
     Column(Modifier.fillMaxSize()) {
-        if (loading) CircularProgressIndicator()
+        LegacyChatProgressDialog(show = loading, message = "Cargando datos")
+        LegacyChatProgressDialog(show = sending, message = "Enviando")
         if (error.isNotBlank()) Text(error, color = Color.Red)
-        val waiting = outbox.forUser(user).count { it.recipient.key == contact.key }
-        if (waiting > 0) {
-            Text("Hay $waiting mensaje(s) guardado(s) en el servidor y pendiente(s) de publicar en Firebase.")
-            Button(onClick = {
-                outbox.flush(root, user) { problem ->
-                    onOutboxChanged(problem)
-                    error = if (problem == null) "" else "No se pudo actualizar el chat en tiempo real."
-                }
-            }) { Text("Reintentar publicación") }
-        }
         LazyColumn(Modifier.weight(1f).fillMaxWidth().background(Color.White).padding(horizontal = 8.dp), reverseLayout = true) {
             items(lines.asReversed(), key = { it.key }) { line ->
                 val mine = line.sender == user.apiKey
@@ -344,15 +364,14 @@ private fun ConversationScreen(user: UserSession, contact: ChatContact, root: Da
                     scope.launch {
                         try {
                             val datetime = repository.send(user, contact.key, message)
-                            // Después de que PHP acepta el mensaje, se guarda una copia para reintentos sin duplicar el POST.
-                            outbox.enqueue(user, contact, requireNotNull(destination.key), datetime, message)
-                            if (draft == message) draft = ""
+                            // ChatFragment/Message legacy: tras aceptar PHP, escribe directamente
+                            // en Conversations/{token}/Messages/{datetime} y limpia el editor.
+                            destination.child("Messages").child(datetime).setValue(
+                                mapOf("user_send" to user.apiKey, "message" to message, "read" to false)
+                            )
+                            draft = ""
                             onOutboxChanged(null)
-                            outbox.flush(root, user) { problem ->
-                                onOutboxChanged(problem)
-                                error = if (problem == null) "" else
-                                    "Guardado en el servidor; pendiente de actualizar en el chat."
-                            }
+                            Toast.makeText(context, "Mensaje enviado", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo enviar el mensaje") }
                         finally { sending = false }
                     }
