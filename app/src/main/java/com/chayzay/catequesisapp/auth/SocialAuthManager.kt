@@ -54,6 +54,7 @@ object SocialAuthManager {
 
     fun facebook(activity: Activity, onSuccess: (SocialProfile) -> Unit, onFailure: (String) -> Unit) {
         check(BuildConfig.FACEBOOK_APP_ID.isNotBlank()) { "Falta configurar FACEBOOK_APP_ID" }
+        check(BuildConfig.FACEBOOK_CLIENT_TOKEN.isNotBlank()) { "Falta configurar FACEBOOK_CLIENT_TOKEN de Meta" }
         facebookSuccess = onSuccess
         facebookFailure = onFailure
         if (!facebookInstalled) {
