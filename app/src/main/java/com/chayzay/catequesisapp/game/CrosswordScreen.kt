@@ -73,7 +73,6 @@ fun CrosswordScreen(classId: Int, repository: CourseRepository, accent: Color) {
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Crucigrama", fontWeight = FontWeight.Bold, color = accent)
         when {
             error != null -> Text(error!!)
             words == null -> CircularProgressIndicator()

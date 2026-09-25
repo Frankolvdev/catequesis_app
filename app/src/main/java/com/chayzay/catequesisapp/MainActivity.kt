@@ -884,10 +884,24 @@ private fun CatalogScreen(
                         R.string.textExpGameFive to R.string.textExpGameFiveSummary, R.string.textExpGameSix to R.string.textExpGameSixSummary,
                         R.string.textExpGameSeven to R.string.textExpGameSevenSummary, R.string.textExpGameEight to R.string.textExpGameEightSummary,
                         R.string.textExpGameNine to R.string.textExpGameNineSummary)
-                    AlertDialog(onDismissRequest = { showInstructions = false }, title = { Text(stringResource(R.string.textExplicacionJuego)) },
-                        text = { Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
-                            instructions.forEach { (t, d) -> Text(stringResource(t), fontWeight = FontWeight.Bold, fontSize = 13.sp); Text(stringResource(d), fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp)) }
-                        } }, confirmButton = { TextButton(onClick = { showInstructions = false }) { Text("Aceptar") } })
+                    androidx.compose.ui.window.Dialog(onDismissRequest = { showInstructions = false }) {
+                        androidx.compose.material3.Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
+                            Column(Modifier.fillMaxSize()) {
+                                Row(Modifier.fillMaxWidth().background(accent).padding(horizontal = 4.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("‹", color = Color.White, fontSize = 30.sp, modifier = Modifier.clickable { showInstructions = false }.padding(horizontal = 8.dp))
+                                    Text(stringResource(R.string.textExplicacionJuego), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 3.dp)) {
+                                    instructions.forEach { (t, d) ->
+                                        Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp).background(Color.White).padding(10.dp)) {
+                                            Text(stringResource(t), color = Color(0xFF7A9989), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(stringResource(d), color = Color(0xFF505050), fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             } else if (result.rows.isEmpty()) {
                 Text("No hay contenido disponible en esta sección.", modifier = Modifier.padding(20.dp))

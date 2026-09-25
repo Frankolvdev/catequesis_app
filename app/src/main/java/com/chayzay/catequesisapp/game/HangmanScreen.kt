@@ -76,8 +76,8 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
         }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally) {
         when {
             error != null -> Text(error!!)
             words == null -> CircularProgressIndicator()
@@ -92,9 +92,9 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
                 }
                 Text(answer.map { letter ->
                     if (letter !in 'A'..'Z' || letter in selected || (finished && resultAcknowledged)) letter.toString() else "_"
-                }.joinToString(" "), fontSize = 19.sp, color = Color(0xFF505050))
+                }.joinToString(" "), modifier = Modifier.padding(top = 14.dp), fontSize = 17.sp, color = Color(0xFF505050))
                 Image(painterResource(gallows[if (won) 8 else (mistakes + 1).coerceIn(1, 7)]),
-                    contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.size(130.dp))
+                    contentDescription = "Ahorcado: $mistakes fallos", modifier = Modifier.padding(top = 15.dp).size(130.dp))
                 if (showHint) Text(active.clue.ifBlank { "Sin pista disponible" })
                 else Text("¿Pista?", modifier = Modifier.clickable { showHint = true }.padding(8.dp), color = accent)
                 if (finished) {
@@ -108,15 +108,15 @@ fun HangmanScreen(classId: Int, repository: CourseRepository, accent: Color, onE
                         resultAcknowledged = true
                     }
                 }
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val keyWidth = (maxWidth / 10).coerceAtMost(32.dp)
+                BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 30.dp)) {
+                    val keyWidth = 30.dp
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                         listOf("QWERTYUIOP", "ASDFGHJKLÑ", "ZXCVBNM").forEach { line ->
                             Row(horizontalArrangement = Arrangement.Center) {
                                 line.forEach { letter ->
                                     val guessed = letter in selected
-                                    Text(letter.toString(), modifier = Modifier.padding(1.dp).size(keyWidth)
+                                    Text(letter.toString(), modifier = Modifier.padding(2.dp).size(keyWidth)
                                         .background(when {
                                             !guessed -> Color(0xFF653E26)
                                             letter in answer -> Color(0xFFD48656)

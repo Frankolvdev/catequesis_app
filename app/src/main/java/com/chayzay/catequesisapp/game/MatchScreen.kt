@@ -89,37 +89,37 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
         }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Relaciona las respuestas", color = accent, fontWeight = FontWeight.Bold)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally) {
         when {
             error != null -> Text(error!!)
             source == null -> CircularProgressIndicator()
             source!!.size < 4 -> Text("Esta clase no tiene cuatro parejas de preguntas para este juego.")
             pairs.size == 4 -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(if (seconds == 0) "Has perdido :(" else "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         modifier = Modifier.legacyCountdownWarning(seconds),
                         color = if (seconds in 1..10 || seconds == 0) Color(0xFFB71C1C) else Color.DarkGray)
-                    Text("·  Aciertos ${solved.size}/4  ·  Fallos $mistakes")
+                    Text("Aciertos ${solved.size}/4", color = Color(0xFF2E7B0B), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Fallos $mistakes", color = Color(0xFFD23131), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Preguntas", fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth()) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Preguntas", modifier = Modifier.fillMaxWidth().background(accent).padding(5.dp), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         pairs.filter { it.id !in solved }.forEach { question ->
                             Text(question.text, modifier = Modifier.fillMaxWidth()
                                 .background(if (selectedQuestion == question.id) accent else Color.White)
                                 .clickable(enabled = seconds > 0) { selectedQuestion = question.id }
-                                .padding(10.dp), color = if (selectedQuestion == question.id) Color.White else Color.DarkGray)
+                                .padding(5.dp), color = if (selectedQuestion == question.id) Color.White else Color.DarkGray, fontSize = 13.sp)
                         }
                     }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Respuestas", fontWeight = FontWeight.Bold)
+                    Column(Modifier.weight(1f)) {
+                        Text("Respuestas", modifier = Modifier.fillMaxWidth().background(accent).padding(5.dp), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         answerOrder.filter { it.id !in solved }.forEach { question ->
                             Text(question.answers.first { it.correct }.text, modifier = Modifier.fillMaxWidth()
                                 .background(if (selectedAnswer == question.id) accent else Color.White)
                                 .clickable(enabled = seconds > 0) { selectedAnswer = question.id }
-                                .padding(10.dp), color = if (selectedAnswer == question.id) Color.White else Color.DarkGray)
+                                .padding(5.dp), color = if (selectedAnswer == question.id) Color.White else Color.DarkGray, fontSize = 13.sp)
                         }
                     }
                 }
@@ -143,7 +143,7 @@ fun MatchScreen(classId: Int, repository: CourseRepository, accent: Color, onExi
                             selectedAnswer = null
                         }
                     }
-                }) { Text(if (seconds == 0 || solved.size == 4) "Reiniciar" else "Comprobar") }
+                }, modifier = Modifier.align(Alignment.End).padding(5.dp)) { Text(if (seconds == 0 || solved.size == 4) "Reiniciar" else "Comprobar", fontSize = 13.sp) }
             }
         }
     }

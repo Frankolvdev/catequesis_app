@@ -22,15 +22,15 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.ButtonDefaults
 
 @Composable
 fun WhiteBoardScreen() {
     var lines by remember { mutableStateOf<List<List<Offset>>>(emptyList()) }
     var drawing by remember { mutableStateOf<List<Offset>>(emptyList()) }
-    Column(Modifier.fillMaxSize().background(Color.White)) {
-        Button(onClick = { lines = emptyList(); drawing = emptyList() },
-            modifier = Modifier.fillMaxWidth().padding(8.dp)) { Text("Borrar pizarra") }
-        Canvas(Modifier.fillMaxWidth().weight(1f).pointerInput(Unit) {
+    Column(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxWidth().weight(1f).background(Color(0xFFFFF2E2)).pointerInput(Unit) {
             detectDragGestures(onDragStart = { drawing = listOf(it) },
                 onDragEnd = { lines = lines + listOf(drawing); drawing = emptyList() },
                 onDrag = { change, _ -> drawing = drawing + change.position; change.consume() })
@@ -56,6 +56,12 @@ fun WhiteBoardScreen() {
                         join = StrokeJoin.Round))
                 }
             }
+        }
+        Button(onClick = { lines = emptyList(); drawing = emptyList() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xAA000000)),
+            shape = androidx.compose.foundation.shape.RectangleShape) {
+            Text("Borrar pizarra", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         }
     }
 }
