@@ -67,6 +67,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -978,7 +979,7 @@ private fun CatalogScreen(
                                                     style = MaterialTheme.typography.bodyMedium)
                                                 if (flags.completed) Image(painterResource(R.drawable.approve_class),
                                                     contentDescription = "Clase aprobada",
-                                                    modifier = Modifier.align(Alignment.BottomCenter).size(18.dp))
+                                                    modifier = Modifier.align(Alignment.Center).offset(y = (-10).dp).size(24.dp))
                                             }
                                         }
                                     }

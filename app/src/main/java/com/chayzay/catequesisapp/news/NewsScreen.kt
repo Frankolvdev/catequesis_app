@@ -43,6 +43,8 @@ import java.io.File
 import java.io.StringReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
@@ -59,9 +61,11 @@ fun NewsScreen(profile: ProfileSettings) {
     val settings = remember(context) { AppPreferences(context) }
     var newsEnabled by remember { mutableStateOf(settings.news) }
     if (!newsEnabled) {
-        Column(Modifier.fillMaxSize().background(profile.baseColor).padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Las noticias están desactivadas en Ajustes.")
-            Button(onClick = { settings.news = true; newsEnabled = true }) { Text("Activar noticias") }
+        Column(Modifier.fillMaxSize().background(profile.baseColor), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Las noticias están desactivadas en Ajustes.", fontSize = 13.sp)
+            Button(modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 12.dp), onClick = { settings.news = true; newsEnabled = true }) {
+                Text("Activar noticias", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
         }
         return
     }
@@ -102,14 +106,21 @@ fun NewsScreen(profile: ProfileSettings) {
             Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(28.dp))
             Text("Noticias", color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 12.dp))
         }
-        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(if (mode == NewsMode.RSS) "ACI Prensa · Mundo" else "@$PAPA_X", style = MaterialTheme.typography.titleMedium, color = Color.DarkGray)
-            Button(onClick = { refresh++ }) { Text("Actualizar") }
-        }
-        Button(modifier = Modifier.padding(horizontal = 12.dp), onClick = {
+        // El fragment legacy no tenía botones Material aquí: era una fila de 5dp con
+        // texto de 13sp y un icono de 32dp (Twitter/feed) para alternar la fuente.
+        Row(Modifier.fillMaxWidth().padding(5.dp).clickable {
             mode = if (mode == NewsMode.RSS) NewsMode.X else NewsMode.RSS
-        }) {
-            Text(if (mode == NewsMode.RSS) "Últimos tweets del Papa" else "Volver a las Noticias")
+        }, verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (mode == NewsMode.RSS) "Últimos tweets del Papa" else "Volver a las Noticias",
+                color = Color.Black, fontSize = 13.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.weight(1f).padding(end = 5.dp)
+            )
+            Image(
+                painterResource(if (mode == NewsMode.RSS) R.drawable.twitter_icon else R.drawable.feed),
+                contentDescription = null, modifier = Modifier.size(32.dp)
+            )
         }
 
         if (mode == NewsMode.RSS) {
@@ -124,8 +135,8 @@ fun NewsScreen(profile: ProfileSettings) {
                             Column(Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
                                 Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(16.dp).align(Alignment.End))
                                 Text(article.title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                if (article.description.isNotBlank()) Text(article.description, color = Color(0xFF424242), fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
-                                if (article.date.isNotBlank()) Text(article.date, color = Color(0xFF7A9989), fontSize = 10.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                                if (article.description.isNotBlank()) Text(legacyRssDescription(article.description), color = Color(0xFF424242), fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+                                if (article.date.isNotBlank()) Text(legacyRssDate(article.date), color = Color(0xFF7A9989), fontSize = 10.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                             }
                         }
                     }
@@ -201,4 +212,27 @@ private fun parseNews(xml: String): List<Article> {
         event = parser.next()
     }
     return result.distinctBy { it.link }
+}
+
+private fun legacyRssDescription(value: String): String {
+    val plain = value.trim()
+    val cut = if (plain.length > 80) plain.substring(0, 80) else plain
+    return "$cut ..."
+}
+
+private fun legacyRssDate(value: String): String {
+    if (value.isBlank()) return value
+    val inputs = listOf(
+        "EEE, dd MMM yyyy HH:mm:ss Z",
+        "EEE, dd MMM yyyy HH:mm Z",
+        "yyyy-MM-dd'T'HH:mm:ssXXX"
+    )
+    for (pattern in inputs) {
+        try {
+            val input = SimpleDateFormat(pattern, Locale.ENGLISH).apply { isLenient = true }
+            val date = input.parse(value) ?: continue
+            return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
+        } catch (_: Exception) { }
+    }
+    return value
 }
