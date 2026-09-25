@@ -231,6 +231,10 @@ class MainActivity : ComponentActivity() {
                                             sessionStore.clear()
                                             session = null
                                             syncVersion++
+                                            section = "courses"
+                                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                                try { SocialAuthManager.signOut(this@MainActivity) } catch (_: Exception) { }
+                                            }
                                         }, { openContact(6) },
                                         { section = "help_us" }, { section = "help" },
                                         { section = "information" }, { section = "settings" },
@@ -394,7 +398,7 @@ private fun CatalogScreen(
     val syncScope = rememberCoroutineScope()
     var page by pageState
     var accountMenuOpen by remember { mutableStateOf(false) }
-    var confirmMenuLogout by remember { mutableStateOf(false) }
+    var confirmLogout by remember { mutableStateOf(false) }
     var gloriaTitle by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableStateOf(0) }
     var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
@@ -532,17 +536,7 @@ private fun CatalogScreen(
                     .padding(horizontal = 16.dp), color = Color.White,
                     style = MaterialTheme.typography.headlineMedium)
             }
-            if (confirmMenuLogout) AlertDialog(
-            onDismissRequest = { confirmMenuLogout = false },
-            title = { Text("¿Deseas cerrar la sesión?") },
-            confirmButton = { TextButton(onClick = {
-                confirmMenuLogout = false
-                onLogout()
-                syncScope.launch { (context as? android.app.Activity)?.let { SocialAuthManager.signOut(it) } }
-            }) { Text("Cerrar sesión") } },
-            dismissButton = { TextButton(onClick = { confirmMenuLogout = false }) { Text("Cancelar") } }
-        )
-        if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
+            if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
                 page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
                 val selectedClass = when (val current = page) {
                     is CatalogPage.Themes -> current.courseClass
@@ -605,23 +599,43 @@ private fun CatalogScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp))
                 DropdownMenu(expanded = accountMenuOpen,
                     onDismissRequest = { accountMenuOpen = false }) {
-                    DropdownMenuItem(text = { Text(if (user == null) "Iniciar sesión" else "Perfil / Cuenta") },
-                        onClick = { accountMenuOpen = false; onOpenAccount() })
-                    if (user != null) DropdownMenuItem(text = { Text("Cerrar sesión") },
-                        onClick = { accountMenuOpen = false; confirmMenuLogout = true })
+                    if (user == null) {
+                        DropdownMenuItem(text = { Text("Iniciar sesión") },
+                            onClick = { accountMenuOpen = false; onOpenAccount() })
+                    } else {
+                        DropdownMenuItem(text = { Text("Cerrar sesión") },
+                            onClick = { accountMenuOpen = false; confirmLogout = true })
+                    }
+                    DropdownMenuItem(text = { Text("Perfil") }, onClick = {
+                        accountMenuOpen = false
+                        if (user == null) {
+                            Toast.makeText(context, "Solo es posible acceder si se registra :)", Toast.LENGTH_SHORT).show()
+                        } else if (!hasLegacyInternet(context)) {
+                            Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+                        } else onOpenAccount()
+                    })
                     DropdownMenuItem(text = { Text("Contactar") },
                         onClick = { accountMenuOpen = false; onOpenContact() })
-                    DropdownMenuItem(text = { Text("Ayúdanos") },
-                        onClick = { accountMenuOpen = false; onOpenHelpUs() })
                     DropdownMenuItem(text = { Text("Información") },
                         onClick = { accountMenuOpen = false; onOpenInformation() })
-                    DropdownMenuItem(text = { Text("Ayuda") },
-                        onClick = { accountMenuOpen = false; onOpenHelp() })
                     DropdownMenuItem(text = { Text("Ajustes") },
                         onClick = { accountMenuOpen = false; onOpenSettings() })
+                    DropdownMenuItem(text = { Text("Ayuda") },
+                        onClick = { accountMenuOpen = false; onOpenHelp() })
+                    DropdownMenuItem(text = { Text("Ayúdanos") },
+                        onClick = { accountMenuOpen = false; onOpenHelpUs() })
                 }
             }
         }
+        if (confirmLogout) AlertDialog(
+            onDismissRequest = { confirmLogout = false },
+            text = { Text("¿Deseas cerrar la sesión?") },
+            confirmButton = { TextButton(onClick = {
+                confirmLogout = false
+                onLogout()
+            }) { Text("Aceptar") } },
+            dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } }
+        )
         if (page is CatalogPage.Themes || page is CatalogPage.Lessons || page is CatalogPage.LessonDetail ||
             page is CatalogPage.Goals || page is CatalogPage.Activities || page is CatalogPage.Exam) {
             val currentClass = when (val current = page) {
