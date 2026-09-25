@@ -30,6 +30,8 @@ import com.chayzay.catequesisapp.auth.certificateUri
 import com.chayzay.catequesisapp.chat.ChatRepository
 import com.chayzay.catequesisapp.chat.ChatScreen
 import com.chayzay.catequesisapp.chat.GuestChatScreen
+import com.chayzay.catequesisapp.chat.GuestChatStore
+import com.chayzay.catequesisapp.chat.GuestChatTransfer
 import com.chayzay.catequesisapp.contact.ContactScreen
 import com.chayzay.catequesisapp.help.HelpUsScreen
 import com.chayzay.catequesisapp.help.LegacyInfoScreen
@@ -114,6 +116,7 @@ import com.chayzay.catequesisapp.data.ClassActivity
 import com.chayzay.catequesisapp.data.OnlineActivity
 import com.chayzay.catequesisapp.ui.theme.CatequesisTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
@@ -141,6 +144,21 @@ class MainActivity : ComponentActivity() {
                         syncRepository.sync(current, progressStore)
                         syncVersion++
                     } catch (_: Exception) { /* Reintentar en Cuenta sin perder datos locales. */ }
+                }
+                LaunchedEffect(session?.apiKey) {
+                    val current = session ?: return@LaunchedEffect
+                    if (GuestChatStore(this@MainActivity).pendingFor(current).isNotEmpty()) {
+                        try {
+                            val count = GuestChatTransfer.sendPending(this@MainActivity, current, chatRepository)
+                            if (count > 0) Toast.makeText(this@MainActivity,
+                                "$count mensaje(s) de invitado enviados", Toast.LENGTH_LONG).show()
+                        } catch (cause: Exception) {
+                            if (cause is CancellationException) throw cause
+                            Toast.makeText(this@MainActivity,
+                                "Hay mensajes de invitado pendientes. Abre Chat para reintentarlo.",
+                                Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
                 var showBrand by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {

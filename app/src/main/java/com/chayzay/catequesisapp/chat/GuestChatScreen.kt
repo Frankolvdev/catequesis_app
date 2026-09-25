@@ -57,7 +57,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                 val contact = selected!!
                 TextButton(onClick = { selected = null }) { Text("‹ Conversaciones") }
                 Text(contact.name)
-                Text("Estos mensajes se guardan en tu teléfono; no se envían al catequista.")
+                Text("Como invitado se guardan en tu teléfono. Al iniciar sesión se enviarán al catequista.")
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(history.filter { it.recipient == contact.key }) { row ->
                         Text("${row.text}\n${row.time}")

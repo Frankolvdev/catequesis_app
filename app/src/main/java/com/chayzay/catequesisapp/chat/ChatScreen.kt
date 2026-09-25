@@ -21,6 +21,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -36,6 +37,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 private data class Conversation(val contact: ChatContact, val last: String)
 private data class ChatLine(val key: String, val sender: String, val text: String)
@@ -46,6 +48,11 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
     val root = remember { FirebaseDatabase.getInstance().getReference("Conversations") }
     val context = LocalContext.current
     val outbox = remember(context) { PendingRealtimeStore(context) }
+    val guestStore = remember(context) { GuestChatStore(context) }
+    val scope = rememberCoroutineScope()
+    var guestPending by remember(user.apiKey) { mutableIntStateOf(guestStore.pendingFor(user).size) }
+    var guestSending by remember(user.apiKey) { mutableStateOf(false) }
+    var guestError by remember(user.apiKey) { mutableStateOf("") }
     var pendingCount by remember(user.apiKey) { mutableStateOf(outbox.forUser(user).size) }
     var pendingError by remember(user.apiKey) { mutableStateOf("") }
     fun retryPending() {
@@ -55,7 +62,20 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
             if (problem != null) pendingError = problem.localizedMessage ?: "Firebase no confirmó el mensaje"
         }
     }
-    LaunchedEffect(user.apiKey) { retryPending() }
+    LaunchedEffect(user.apiKey) {
+        retryPending()
+        if (guestStore.pendingFor(user).isNotEmpty()) {
+            guestSending = true
+            try { GuestChatTransfer.sendPending(context, user, repository) }
+            catch (cause: Exception) {
+                if (cause is CancellationException) throw cause
+                guestError = ApiMessages.fromException(cause,
+                    "No se pudieron enviar los mensajes de invitado. Reinténtalo.")
+            } finally { guestSending = false }
+        }
+        guestPending = guestStore.pendingFor(user).size
+        pendingCount = outbox.forUser(user).size
+    }
     var conversations by remember(user.apiKey) { mutableStateOf<List<Conversation>>(emptyList()) }
     var selected by remember(user.apiKey) { mutableStateOf<ChatContact?>(null) }
     var contacts by remember(user.apiKey) { mutableStateOf<List<ChatContact>>(emptyList()) }
@@ -114,6 +134,27 @@ fun ChatScreen(user: UserSession, profile: ProfileSettings, repository: ChatRepo
             Text(if (choosing) "Catequistas" else "Mensajes")
             Button(onClick = { choosing = !choosing; error = "" }) { Text(if (choosing) "Volver" else "Nuevo chat") }
         }
+        if (guestPending > 0) {
+            Text("Hay $guestPending mensaje(s) escritos como invitado pendientes de enviar.")
+            Button(enabled = !guestSending, onClick = {
+                guestSending = true
+                guestError = ""
+                scope.launch {
+                    try {
+                        GuestChatTransfer.sendPending(context, user, repository)
+                        pendingCount = outbox.forUser(user).size
+                    } catch (cause: Exception) {
+                        if (cause is CancellationException) throw cause
+                        guestError = ApiMessages.fromException(cause,
+                            "No se pudieron enviar los mensajes de invitado. Reinténtalo.")
+                    } finally {
+                        guestPending = guestStore.pendingFor(user).size
+                        guestSending = false
+                    }
+                }
+            }) { Text(if (guestSending) "Enviando…" else "Enviar mensajes de invitado") }
+        }
+        if (guestError.isNotBlank()) Text(guestError, color = Color.Red)
         if (pendingCount > 0) {
             Text("$pendingCount mensaje(s) guardado(s) en el servidor y pendiente(s) en Firebase")
             Button(onClick = { retryPending() }) { Text("Reintentar publicación") }
