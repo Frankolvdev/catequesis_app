@@ -8,6 +8,12 @@ import android.text.style.BackgroundColorSpan
 import android.view.MotionEvent
 import android.widget.TextView
 import androidx.compose.foundation.background
+import com.chayzay.catequesisapp.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,7 +57,7 @@ fun LessonDetailReading(lesson: Lesson, onOpenChat: () -> Unit) {
     var requested by remember(lesson.id) { mutableStateOf<ReadingFocus?>(null) }
     var requestNumber by remember(lesson.id) { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
-        TextButton(onClick = onOpenChat) { Text("Chat") }
+        TextButton(onClick = onOpenChat) { Image(painterResource(R.drawable.ic_action_chat), "Chat", Modifier.size(32.dp)) }
         LessonVoiceControls(lessonVoicePassages(listOf(lesson)), { focus = it }, requested, requestNumber)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(18.dp)) {
             HtmlBlock(lesson.html, focus?.paragraph) {
@@ -96,7 +102,7 @@ fun ThemeReadingScreen(theme: ClassTheme, lessons: List<Lesson>, extras: Map<Int
     }
     fun readFrom(start: ReadingFocus) { requested = start; requestNumber++ }
     Column(Modifier.fillMaxSize()) {
-    TextButton(onClick = onOpenChat) { Text("Chat") }
+    TextButton(onClick = onOpenChat) { Image(painterResource(R.drawable.ic_action_chat), "Chat", Modifier.size(32.dp)) }
     LessonVoiceControls(passages, { focus = it }, requested, requestNumber)
     LazyColumn(state = state, modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -149,10 +155,13 @@ fun ThemeReadingScreen(theme: ClassTheme, lessons: List<Lesson>, extras: Map<Int
 @Composable
 private fun ExpandableExtra(title: String, content: List<String>, lessonId: Int,
     expanded: Boolean, onExpanded: (Boolean) -> Unit, focus: ReadingFocus?, onRead: (ReadingFocus) -> Unit) {
-    Text("$title  ${if (expanded) "−" else "+"}",
-        color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.fillMaxWidth().clickable { onExpanded(!expanded) }
-            .padding(start = 10.dp, top = 12.dp, bottom = 4.dp))
+    Row(modifier = Modifier.fillMaxWidth().clickable { onExpanded(!expanded) }
+        .padding(start = 10.dp, top = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f))
+        Image(painterResource(if (expanded) R.drawable.close else R.drawable.expand),
+            if (expanded) "Contraer" else "Expandir", Modifier.size(width = 48.dp, height = 30.dp))
+    }
     if (expanded && content.isNotEmpty()) Column(Modifier.fillMaxWidth()
         .background(Color(0x66FFFFFF)).padding(10.dp)) {
         content.forEachIndexed { block, html ->

@@ -92,7 +92,7 @@ fun ApprovedCoursesScreen(
     }
     Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        TextButton(onClick = onBack) { Text("‹ Perfil") }
+        TextButton(onClick = onBack) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Volver", Modifier.size(24.dp)) }
         Text(if (certificates) "Certificados" else "Tus cursos aprobados")
         error?.let { Text(it) }
         when {

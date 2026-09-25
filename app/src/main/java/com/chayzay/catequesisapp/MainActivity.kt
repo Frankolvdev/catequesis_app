@@ -893,7 +893,7 @@ private fun CatalogScreen(
                         androidx.compose.material3.Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
                             Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().background(accent).padding(horizontal = 4.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("‹", color = Color.White, fontSize = 30.sp, modifier = Modifier.clickable { showInstructions = false }.padding(horizontal = 8.dp))
+                                    Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Volver", modifier = Modifier.size(24.dp).clickable { showInstructions = false }, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White))
                                     Text(stringResource(R.string.textExplicacionJuego), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 3.dp)) {
@@ -1037,7 +1037,7 @@ private fun CatalogScreen(
                                     fontSize = if (isCourse) 13.sp else 16.sp)
                                 if (isCourse) Image(painterResource(icon), contentDescription = null,
                                     modifier = Modifier.size(32.dp))
-                                else Text("›", color = Color(0xFF505050), style = MaterialTheme.typography.headlineMedium)
+
                             }
                         }
                     }

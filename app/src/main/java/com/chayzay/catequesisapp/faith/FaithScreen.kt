@@ -137,8 +137,6 @@ private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: Str
         // fragment_recycle_view_vela.xml: bloque superior con margen 5dp, ciclo alineado a la derecha y spinner debajo.
         Column(Modifier.fillMaxWidth().padding(5.dp)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("‹", color = Color(0xFF7A9989), fontSize = 24.sp, modifier = Modifier.size(20.dp)
-                    .clickable(enabled = year > 2002) { onYearChange(year - 1) })
                 Text("Ciclo $year", color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
             }

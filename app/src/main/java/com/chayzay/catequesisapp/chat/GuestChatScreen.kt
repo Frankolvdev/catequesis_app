@@ -2,6 +2,10 @@ package com.chayzay.catequesisapp.chat
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import com.chayzay.catequesisapp.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,7 +59,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
         when {
             selected != null -> {
                 val contact = selected!!
-                TextButton(onClick = { selected = null }) { Text("‹ Conversaciones") }
+                TextButton(onClick = { selected = null }) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Conversaciones", Modifier.size(24.dp)) }
                 Text(contact.name)
                 Text("Como invitado se guardan en tu teléfono. Al iniciar sesión se enviarán al catequista.")
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -76,7 +80,7 @@ fun GuestChatScreen(profile: ProfileSettings, repository: ChatRepository, onOpen
                 }) { Text("Guardar mensaje") }
             }
             selecting -> {
-                TextButton(onClick = { selecting = false }) { Text("‹ Conversaciones") }
+                TextButton(onClick = { selecting = false }) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Conversaciones", Modifier.size(24.dp)) }
                 Text("Elegir catequista")
                 if (contacts == null) CircularProgressIndicator()
                 if (error.isNotBlank()) TextButton(onClick = {

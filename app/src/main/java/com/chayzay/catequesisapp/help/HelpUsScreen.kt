@@ -55,7 +55,7 @@ fun HelpUsScreen(user: UserSession?, store: ClassProgressStore, courses: CourseR
     var askToSubmit by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().background(Color.White)) {
-        TextButton(onClick = onBack) { Text("‹ Volver") }
+        TextButton(onClick = onBack) { Image(painterResource(R.drawable.ic_baseline_arrow_back_ios_24), "Volver", Modifier.size(24.dp)) }
         val entries = listOf(
             Triple(R.drawable.helpme_prayer, "Con oraciones", "Ayúdanos rezando por los frutos de Catequesis App."),
             Triple(R.drawable.helpme_teacher, "Catequista on-line", "Colabora como catequista cuando hayas completado los cursos."),
