@@ -12,11 +12,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,9 +91,11 @@ fun ImageActivitiesScreen(classId: Int, type: String, repository: CourseReposito
     when {
         error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(error!!) }
         images == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        current == null -> AlertDialog(onDismissRequest = {}, title = { Text("¿Quieres volver a jugar?") },
-            confirmButton = { TextButton(onClick = { index = 0 }) { Text("Aceptar") } },
-            dismissButton = { TextButton(onClick = onExit) { Text("Cancelar") } })
+        current == null -> LegacyReplayDialog(
+            message = "¿Quieres jugar de nuevo?",
+            onReplay = { index = 0 },
+            onExit = onExit
+        )
         else -> when (type) {
             "IMAGES" -> LegacySoloImage(current, bitmap, imageLoaded, index, images!!.lastIndex,
                 onPrevious = { index-- }, onNext = { index++ }, onRetry = { imageAttempt++ })

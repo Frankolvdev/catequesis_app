@@ -86,18 +86,15 @@ fun QuizGameScreen(classId: Int, repository: CourseRepository, accent: Color, on
             questions == null -> CircularProgressIndicator()
             questions!!.size < 10 -> Text("No hay diez preguntas completas para esta clase.")
             position >= questions!!.size -> {
-                if (showEndDialog) androidx.compose.material3.AlertDialog(onDismissRequest = { },
-                    title = { Text("Preguntados") },
-                    text = { Text("Juego terminado: $correct/${questions!!.size}. ¿Jugar otra vez?") },
-                    confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                if (showEndDialog) LegacyReplayDialog(
+                    message = "Quiz terminado.\nPuntuación de: $correct/${questions!!.size}\n¿Quieres jugar de nuevo?",
+                    onReplay = {
                         position = 0; correct = 0; goodStage = 0; badStage = 0
                         selected = emptySet(); submitted = false; showEndDialog = true
                         questions = allQuestions.orEmpty().shuffled().take(10)
-                    }) { Text("Jugar otra vez") } },
-                    dismissButton = { androidx.compose.material3.TextButton(onClick = {
-                        showEndDialog = false
-                        onExit()
-                    }) { Text("No") } })
+                    },
+                    onExit = { showEndDialog = false; onExit() }
+                )
             }
             else -> {
                 val question = questions!![position]

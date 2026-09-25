@@ -131,21 +131,25 @@ fun GameHubScreen(course: Course, classId: Int, repository: CourseRepository, im
             } })
     }
     openGroup?.let { group ->
-        AlertDialog(onDismissRequest = { openGroup = null },
-            title = { Text("Seleccione un juego", fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    visibleGroups[group].second.forEach { (label, key) ->
-                        // ActivitiesClassFragment antiguo iniciaba el juego al tocar la opción;
-                        // no había una segunda confirmación "Comenzar".
-                        Text(label, modifier = Modifier.fillMaxWidth().clickable {
-                            openGroup = null
-                            onSelect(key)
-                        }.padding(horizontal = 15.dp, vertical = 12.dp), color = Color.Black, fontSize = 13.sp)
+        androidx.compose.ui.window.Dialog(onDismissRequest = { openGroup = null }) {
+            // GameOfflineActivity/ActivitiesClassFragment inflaban dialog_settings_multiselected.xml.
+            // Evitamos AlertDialog Material 3 para conservar la caja rectangular y sus márgenes legacy.
+            androidx.compose.material3.Surface(color = Color.White, shape = androidx.compose.ui.graphics.RectangleShape) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text("Seleccione un juego", fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        color = Color.Black, modifier = Modifier.padding(8.dp))
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                        visibleGroups[group].second.forEach { (label, key) ->
+                            Text(label, modifier = Modifier.fillMaxWidth().clickable {
+                                openGroup = null
+                                onSelect(key)
+                            }.padding(vertical = 10.dp), color = Color.Black, fontSize = 13.sp)
+                        }
                     }
+                    Text("Cancelar", color = Color(0xFF2C7CB1), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth().clickable { openGroup = null }.padding(10.dp))
                 }
-            },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { openGroup = null }) { Text("Cancelar", color = Color(0xFF2C7CB1), fontSize = 13.sp, fontWeight = FontWeight.Bold) } })
+            }
+        }
     }
 }

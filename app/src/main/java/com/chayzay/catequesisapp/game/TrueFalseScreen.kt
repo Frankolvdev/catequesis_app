@@ -84,16 +84,14 @@ fun TrueFalseScreen(
             source == null -> CircularProgressIndicator()
             source!!.isEmpty() -> Text("Esta clase no tiene preguntas disponibles para el juego.", modifier = Modifier.padding(20.dp))
             index >= rounds.size -> {
-                if (showEndDialog) androidx.compose.material3.AlertDialog(onDismissRequest = { },
-                    title = { Text("Verdadero o Falso") },
-                    text = { Text("Juego terminado: $correct/10. ¿Quieres jugar otra vez?") },
-                    confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                if (showEndDialog) LegacyReplayDialog(
+                    message = "Puntuación de: $correct/10\n¿Quieres jugar de nuevo?",
+                    onReplay = {
                         rounds = List(10) { val question = source!!.random(); question to question.answers.random() }
                         index = 0; correct = 0; wrong = 0; showEndDialog = true
-                    }) { Text("Jugar otra vez") } },
-                    dismissButton = { androidx.compose.material3.TextButton(onClick = onExit) {
-                        Text("No")
-                    } })
+                    },
+                    onExit = onExit
+                )
             }
             else -> {
                 val (question, answer) = rounds[index]

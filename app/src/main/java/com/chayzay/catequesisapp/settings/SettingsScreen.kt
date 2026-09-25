@@ -128,20 +128,28 @@ fun SettingsScreen(repository: CourseRepository, images: CourseImageRepository,
         }
     }
 
-    if (fontDialog) AlertDialog(
-        onDismissRequest = { fontDialog = false },
-        title = { Text("Tamaño de la letra", fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-        text = { Column { listOf("Pequeño", "Mediano", "Grande", "Extra grande").forEachIndexed { i, name ->
-            Row(Modifier.fillMaxWidth().clickable {
-                font = i + 1; prefs.font = font; onFontChanged(font); fontDialog = false
-            }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = font == i + 1, onClick = null)
-                Text(name, color = Color(0xFF333333))
+    if (fontDialog) androidx.compose.ui.window.Dialog(onDismissRequest = { fontDialog = false }) {
+        // dialog_settings_multiselected.xml: contenido blanco, márgenes de 8dp, título 13sp
+        // y Cancelar como una fila de ancho completo, sin la geometría de AlertDialog Material 3.
+        Surface(color = Color.White, shape = androidx.compose.ui.graphics.RectangleShape) {
+            Column(Modifier.fillMaxWidth()) {
+                Text("Tamaño de la letra", fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    color = Color.Black, modifier = Modifier.padding(8.dp))
+                Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                    listOf("Pequeño", "Mediano", "Grande", "Extra grande").forEachIndexed { i, name ->
+                        Row(Modifier.fillMaxWidth().clickable {
+                            font = i + 1; prefs.font = font; onFontChanged(font); fontDialog = false
+                        }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = font == i + 1, onClick = null)
+                            Text(name, color = Color(0xFF333333), fontSize = 13.sp)
+                        }
+                    }
+                }
+                Text("Cancelar", color = Color(0xFF2C7CB1), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().clickable { fontDialog = false }.padding(10.dp))
             }
-        } } },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = { fontDialog = false }) { Text("Cancelar", color = Color(0xFF2C7CB1), fontSize = 13.sp, fontWeight = FontWeight.Bold) } }
-    )
+        }
+    }
 }
 
 private fun fontName(font: Int) = listOf("Pequeño", "Mediano", "Grande", "Extra grande").getOrElse(font - 1) { "Mediano" }
