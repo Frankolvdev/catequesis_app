@@ -19,7 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -139,14 +138,22 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         }
                         Row(Modifier.fillMaxWidth().legacyCorrectAnswer(submitted, answer.correct).background(color)
                             .clickable(enabled = !submitted) {
-                                selected = if (answer.id in selected) selected - answer.id else selected + answer.id
-                            }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = answer.id in selected,
-                                onCheckedChange = if (submitted) null else { checked ->
-                                    selected = if (checked) selected + answer.id else selected - answer.id
-                                })
-                            Text(answer.text, color = Color.DarkGray,
-                                modifier = Modifier.padding(start = 8.dp))
+                                // TestClassFragment legacy calificaba inmediatamente al tocar una respuesta.
+                                // No existían checkboxes ni un paso separado de «Calificar/Siguiente».
+                                selected = selected + answer.id
+                                lastCorrect = displayedAnswers.filter { it.correct }.all { it.id in selected }
+                                if (lastCorrect) {
+                                    correctCount++
+                                    if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
+                                } else {
+                                    wrongCount++
+                                    if (badStage < 5) { badStage++; if (goodStage > 0) goodStage-- }
+                                }
+                                GameFeedback.play(context, lastCorrect)
+                                feedbackClosing = false
+                                submitted = true
+                            }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(answer.text, color = Color.DarkGray)
                         }
                     }
                     if (submitted) {
@@ -160,35 +167,6 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                         }
                     }
                 }
-                Button(enabled = submitted || selected.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(), onClick = {
-                        if (!submitted) {
-                            lastCorrect = displayedAnswers.filter { it.correct }.all { it.id in selected }
-                            if (lastCorrect) {
-                                correctCount++
-                                if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
-                            } else {
-                                wrongCount++
-                                if (badStage < 5) { badStage++; if (goodStage > 0) goodStage-- }
-                            }
-                            GameFeedback.play(context, lastCorrect)
-                            feedbackClosing = false
-                            submitted = true
-                        } else if (position == 9) {
-                            if (correctCount == 10) {
-                                try { store.markPassed(classId); onPassed() }
-                                catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo guardar la clase"); return@Button }
-                            }
-                            finished = true
-                            submitted = false
-                            feedbackClosing = false
-                        } else {
-                            position++
-                            selected = emptySet()
-                            submitted = false
-                            feedbackClosing = false
-                        }
-                    }) { Text(if (submitted) "Siguiente" else "Calificar") }
             }
         }
     }
