@@ -23,10 +23,10 @@ android {
         buildConfigField("String", "X_BEARER_TOKEN", "\"${project.findProperty("X_BEARER_TOKEN") ?: ""}\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
         buildConfigField("String", "FACEBOOK_APP_ID", "\"${project.findProperty("FACEBOOK_APP_ID") ?: "1463167569060482"}\"")
-        buildConfigField("String", "FACEBOOK_CLIENT_TOKEN", "\"${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: ""}\"")
+        buildConfigField("String", "FACEBOOK_CLIENT_TOKEN", "\"${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: "daa32d7fd32b8db9d8334a804588e4f4"}\"")
         resValue("string", "facebook_app_id", "${project.findProperty("FACEBOOK_APP_ID") ?: "1463167569060482"}")
         resValue("string", "fb_login_protocol_scheme", "fb${project.findProperty("FACEBOOK_APP_ID") ?: "1463167569060482"}")
-        resValue("string", "facebook_client_token", "${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: "0"}")
+        resValue("string", "facebook_client_token", "${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: "daa32d7fd32b8db9d8334a804588e4f4"}")
     }
     buildTypes {
         release {
