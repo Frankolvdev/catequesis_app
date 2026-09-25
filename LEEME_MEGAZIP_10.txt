@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 10. Extraer en raíz app_2026 encima del 09.
-
-Progreso del rompecabezas de clases, según ClassCourseActivity.java y TestClassFragment.java del proyecto original: al abrir una clase se marca visitada (texto negro en mapa e índice); pulsación larga desmarca la visita. Una pieza se descubre y enseña approve_class.png SOLO si class_finished estaba true en el archivo original class_course_user.json. El archivo antiguo se importa si sigue disponible para la app en su ruta antigua bajo Android/data/<paquete>/db/json (según la versión de Android). El progreso nuevo se guarda en almacenamiento privado. El examen 10/10 para aprobar una clase todavía no está implementado en la app nueva; abrir clase no aprobará la pieza.
-
-Barra interior: dos líneas curso + Clase N: nombre, como activity_content_catequesis.xml; pestañas deslizables numeradas 0 y número del tema, como PagerAdapter.java. La pestaña 0 lleva al índice de temas. Las pestañas Metas, Actividades y Examen del proyecto antiguo aún no están implementadas: requieren sus datos y lógica reales.
-
-Probar: clases visitadas y desmarcadas por pulsación larga; revisar barra y pestañas, navegar entre temas, cerrar/abrir app y comprobar persistencia; en instalaciones que conserven el archivo antiguo, verificar piezas aprobadas existentes.
-
-Sincronizar y compilar antes de subir. Luego: git status; git add .; git commit -m "Recupera progreso de clases y barra de contenido"; git push origin main.

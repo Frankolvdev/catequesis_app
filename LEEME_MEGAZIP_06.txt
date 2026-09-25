@@ -1,7 +1,0 @@
-Catequesis Android — MegaZIP 06. Extraer en app_2026, sobre MegaZIP 05.
-
-Agrega navegación inferior Cursos/Oraciones, cuatro opciones de oración con imágenes originales, formulario que abre el cliente de correo exactamente como el proyecto antiguo, tres enlaces de textos para orar originales y Devocionario completo con siete archivos HTML originales incluidos para funcionar sin conexión.
-
-La barra inferior aún no muestra Fe, Noticias y Chat: esas secciones esperan implementación funcional; no se agregan botones sin acción. Los enlaces externos provienen del proyecto antiguo y su disponibilidad depende del sitio tercero. Firebase y las siete páginas de oración no se alteran en la base de datos.
-
-Sincronizar Android Studio, ejecutar debug, revisar Cursos, Oraciones, Devocionario y formulario de correo. Después git status --short y subir si funciona. No subir app/google-services.json.

@@ -1,5 +1,0 @@
-MegaZIP 19 — Crucigrama por clase
-
-Descomprime en la raíz del proyecto app_2026 y reemplaza archivos. En Cursos > Clase > Crucigrama se muestran palabras marcadas in_crucig=YES y pistas del endpoint games_activity_offline/all; cuadrícula de quince columnas, selección de palabra, captura, comprobación, aciertos y reinicio. Igual que el generador antiguo, las palabras se disponen horizontalmente; en este port las pistas se seleccionan tocando la fila o su texto. No se incluye la biblioteca Android antigua del crucigrama.
-
-Prueba en Android Studio compilación, teclado, palabra correcta e incorrecta, scroll horizontal en teléfono pequeño y curso sin palabras. Esta modalidad no cambia el progreso ni aprueba el examen.

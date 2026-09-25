@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 09. Extraer en raíz app_2026 encima de 08.
-
-Comparación con la app original: activity_main.xml tenía avatar y texto Invitado centrado en la barra; activity_class_course.xml tenía barra Clases separada y no incluía la navegación inferior; ClassCourseActivity.java colocaba números en cuadrícula de 5 columnas con 30 unidades de alto por fila y dibujaba la imagen de curso como fondo de esa cuadrícula.
-
-Cambios: barra raíz con avatar original Invitado; barra Clases y navegación inferior oculta dentro del curso; cuadrícula 5 columnas escalada en proporción para aprovechar el ancho disponible; imagen detrás del mapa; índice debajo. Iconos originales document/vela/prayer en sus cinco densidades. Los contenidos Temas/Lecciones siguen siendo la adaptación funcional actual, no equivalen aún a todas las pestañas/actividades de la app vieja.
-
-Pruebas: Cursos > Clase (imagen, 5 columnas, barra Clases, sin navegación inferior) > número e índice > Temas > Lecciones > regreso; Noticias, Fe, Oraciones. Si un gráfico o imagen falta, compartir captura de la versión vieja y la nueva.
-
-Después de compilar y probar: git status; git add .; git commit -m "Ajusta mapa de clases y barras al diseno original"; git push origin main.

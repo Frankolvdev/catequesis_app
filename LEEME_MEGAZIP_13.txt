@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 13. Extraer en la raíz de app_2026, encima de MegaZIP 12.
-
-Replica la estructura de lectura de ThemeClassFragment.java: al pulsar la pestaña numerada del tema se muestran Ideas a desarrollar, índice con enlaces a cada lección, Desarrollo y todas las lecciones seguidas. Cada una conserva los encabezados desplegables Ampliación, Anécdotas y Catecismo. Esos anexos vienen de extension_lesson/all, anecdote_lesson/all y catechism_lesson/all; las respuestas completas se almacenan en la caché interna existente. Los textos usan HtmlCompat para conservar formato y enlaces.
-
-Importante: la app original incluía narración por voz y manejo especial de imágenes en HTML; aún no están replicados. Si un endpoint de anexos falla, el cuerpo principal del tema sigue visible con un mensaje de error; no reemplazar contenido con datos de ejemplo.
-
-Prueba: Cursos > clase > pestaña 1 (o cualquiera) > Ideas a desarrollar > pulsar una lección del índice > expandir Ampliación/Anécdotas/Catecismo, volver a tema y examen. Si falta contenido, pasar nombre de clase, tema y respuesta del endpoint en Logcat.
-
-Tras sincronizar y compilar: git status; git add .; git commit -m "Integra lectura continua y anexos de lecciones"; git push origin main.

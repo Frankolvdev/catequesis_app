@@ -1,7 +1,0 @@
-MegaZIP 21 — Menú original de juegos y Ahorcado visual
-
-Extrae en la raíz de app_2026 y reemplaza los archivos existentes. Desde Cursos > Clase > Juegos abre el menú que tenía la app antigua: cinco tarjetas con los iconos reales (palabras, imágenes, preguntas, pizarra y selfie). Los primeros tres grupos muestran el selector de modalidad y el botón Comenzar. Pizarra permite dibujar y borrar; Selfie abre la cámara del dispositivo. El Quiz ahora es un juego independiente del examen de aprobación.
-
-Ahorcado ahora usa los dibujos originales del patíbulo (0–7 fallos y victoria), el teclado QWERTY de tres filas, colores y tamaños de referencia del XML original y una pista opcional. Mantiene palabras reales del servidor. Los juegos vuelven al menú al retroceder. La barra de números de temas aparece solamente en el contenido de la clase, no sobre las pantallas de juegos.
-
-Prueba en Android Studio compilación, navegación del menú, Ahorcado (pista, acierto, siete fallos, reinicio), Quiz, Pizarra, Selfie y el regreso desde cada juego. La interfaz de los demás juegos aún necesita cotejo y ajustes visuales; este ZIP no afirma una réplica completa de todas las pantallas.

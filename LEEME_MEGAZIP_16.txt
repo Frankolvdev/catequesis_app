@@ -1,5 +1,0 @@
-MegaZIP 16 — Verdadero o falso
-
-Extrae este ZIP en la raíz de app_2026, reemplazando archivos. En Cursos > Clase > Verdadero o falso se usan preguntas y respuestas de la clase procedentes de los endpoints originales question/all y response/all. Cada partida ofrece diez rondas de veinte segundos, cuenta aciertos y permite volver a jugar. Las preguntas y respuestas ya descargadas usan la caché interna existente para funcionar sin red.
-
-Prueba la compilación en Android Studio, diez respuestas, expiración del tiempo y reinicio de partida. No es el examen de aprobación de clase: los juegos no cambian la aprobación. Quedan otras modalidades de juegos por integrar.

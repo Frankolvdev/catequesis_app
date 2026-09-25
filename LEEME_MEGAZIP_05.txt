@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 05 de la nueva serie de 7
-
-Extraer en app_2026, sobre el MegaZIP 04. Incluye la corrección de ProfileSettings.kt línea 49 (gender deja de ser nullable tras ?: return null).
-
-Añade imagen ORIGINAL del curso desde path_image_solve de /course/all al mapa de clases. Son imágenes actuales alojadas en catequesis.org (no recursos inventados); si el servidor responde con imagen faltante, el índice de clases sigue funcionando. Almacenamiento local interno para las cuatro respuestas de catálogo y las imágenes descargadas; se puede volver a entrar a cursos/clases/temas/lecciones sin conexión después de visitarlos en línea al menos una vez. El HTML de las lecciones puede tener recursos externos que aún requieren red.
-
-No reemplaza imágenes de pantalla por recursos temporales. No toca Firebase, firma, SSL ni configuración de Play.
-
-Sincronizar en Android Studio, ejecutar debug, recorrer cursos -> clases (ver imagen del servidor) -> temas -> lecciones. Activar modo avión y comprobar contenido que ya se había abierto. Subir a git después de compilar y verificar. Si esta instalación reemplaza una app antigua con datos personales, no limpiar almacenamiento para probar.

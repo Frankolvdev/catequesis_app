@@ -1,9 +1,0 @@
-MegaZIP 28 — Navegación según la app Android antigua
-
-Este parche sustituye el MegaZIP 27. Descomprimir en la raíz de app_2026 y reemplazar MainActivity.kt; además agrega los iconos originales de Chat en cinco densidades. No contiene una carpeta app_2026 ni archivos Firebase.
-
-Verificado contra catequesisapp/app/src/main/res/menu/navigation.xml, menu_main.xml y MainActivity.java del proyecto anterior: la barra inferior original tenía Noticias, Fe, Oraciones y Chat; Cursos se mostraba al iniciar y al regresar, e Iniciar sesión estaba en el menú de tres puntos de la parte superior. Ahora la barra usa esas cuatro secciones y el menú en Cursos abre Iniciar sesión (sin sesión) o Perfil / Cuenta (con sesión). Al tocar Chat sin sesión se abre el acceso antes del chat para preservar la cuenta necesaria para usar la API actual.
-
-Prueba: inicia la app y vuelve a la portada de Cursos. Abajo deben aparecer Noticias, Fe, Oraciones y Chat, sin segunda fila. Arriba a la derecha toca ⋮ > Iniciar sesión, crea una cuenta de alumno de prueba o usa una existente. Vuelve a Cursos: debe aparecer el nombre del usuario. Abajo Chat > Nuevo chat permite elegir un catequista.
-
-Límite: esto corrige ubicación de navegación y acceso. Aún faltan las comparaciones visuales de cada pantalla con la app original. Verificados contenidos/rutas ZIP y código antiguo; no hay Android SDK local para compilar.

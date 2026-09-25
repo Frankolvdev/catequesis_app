@@ -1,9 +1,0 @@
-MegaZIP 30 — Direcciones HTTPS de la app
-
-Descomprimir en la raíz de app_2026 y reemplazar los archivos. Incluye las URLs HTTPS de la API tanto en debug como en producción. Mantiene la navegación original del MegaZIP 28 y las mejoras de chat/progreso de los paquetes anteriores.
-
-Cambios: Oraciones abre las páginas HTTPS vigentes de Meditación diaria (hablarcondios.org/meditacion-diaria/) y Escritos de san Josemaría (escriva.org/es/). Noticias y actividades en línea abren con esquema HTTPS aun si el RSS o el backend almacena http://. Los hipervínculos recibidos en HTML de lecciones/anexos se convierten a HTTPS conservando dominio/ruta. Android deja de permitir tráfico HTTP propio de la app en debug y release. La carga de imágenes de cursos exige HTTPS. Ningún enlace del servidor se elimina de la lista por usar HTTP; se intenta abrir en HTTPS.
-
-Prueba en Android Studio: Build > Rebuild Project y Run. Comprueba registro/inicio de sesión, cursos con imágenes, lecciones que tienen enlaces, Noticias, Oraciones > Enlaces y Actividades en línea. Una web de terceros sin certificado HTTPS puede no abrir; anota exactamente cuál para buscar un destino equivalente. El navegador externo es otra aplicación y sus redirecciones quedan fuera del control de esta app.
-
-Verificación: inspección de fuentes y ZIP; URL de ambos archivos api_base_url usa HTTPS, ambos manifests deshabilitan tráfico HTTP. Las dos páginas sustituidas se consultaron en sus sitios actuales. Este entorno no dispone de Android SDK para compilar ni de acceso a los dispositivos del usuario.

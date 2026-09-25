@@ -1,5 +1,0 @@
-MegaZIP 22 — Enigma y Verdadero/Falso según layouts originales
-
-Descomprime este ZIP en la raíz de app_2026, reemplazando los archivos. Enigma recupera los iconos del proyecto viejo para reiniciar palabra, pasar a otra palabra y ver pista; casillas y fichas con fondos del XML antiguo; arrastra las letras a sus casillas y devuélvelas al conjunto o intercámbialas. Tiene el minuto original y muestra resultado al terminar. Verdadero o Falso sitúa Mal/Tiempo/Bien arriba, pregunta y respuesta dentro del recuadro gris central, y los botones Falso rojo/Verdadero verde abajo. Conserva las diez rondas y veinte segundos por respuesta.
-
-Verifica en Android Studio compilación y prueba física de arrastrar y soltar (incluido intercambio y letras repetidas), pista, reinicio de palabra, fin del temporizador y ambas respuestas de Verdadero o Falso. El código no se ha ejecutado en emulador aquí. Esta actualización concierne esas dos pantallas; las demás requieren cotejo visual con el original.

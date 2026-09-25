@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 11. Extraer en raíz de app_2026, sobre MegaZIP 10.
-
-Implementa pestañas Metas y Actividades por clase con datos de los endpoints originales meta_class/all, real_activities/all y activity_online/all. Metas muestra número y contenido; Actividades reales muestra texto; Actividades en línea filtra idioma español y abre la URL original en el navegador. Usa el mismo sistema de caché interno que los cursos; no cambia Firebase ni la cuenta de usuario.
-
-El proyecto original también tiene Actividades offline/juegos y la pestaña Examen 10/10, que todavía faltan; completar el rompecabezas sigue dependiendo del examen pendiente. No interpretar esta entrega como réplica completa. No se pudo verificar el endpoint remoto desde este entorno ni ejecutar la compilación Android.
-
-Probar: abrir una clase, pestaña Metas, Actividades, expandir/separar secciones, abrir una actividad en línea válida, volver a 0 y pestaña tema. Si aparece error API, compartir texto y respuesta de endpoint.
-
-Después de compilar y comprobar: git status; git add .; git commit -m "Conecta metas y actividades de clases a la API"; git push origin main.

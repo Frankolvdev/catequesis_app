@@ -1,9 +1,0 @@
-Catequesis Android — MegaZIP 08. Extraer en la raíz de app_2026, sobre MegaZIP 07.
-
-Corrección del selector inicial: el cuadro para elegir año ahora tiene fondo blanco explícito, texto negro y altura limitada. El fondo de la pantalla se oscurece mientras está abierto porque es un diálogo del sistema.
-
-Noticias: fuente RSS Mundo de ACI Prensa (la app vieja leía ACI Prensa por FeedBurner), pantalla con la imagen original feed.png, lectura y actualización, apertura de artículos externos y caché de lectura. La integración con el antiguo Twitter quedó pendiente de evaluación por las dependencias y credenciales viejas.
-
-Probar en Android Studio: abrir selector de año y leer las opciones; Noticias → Actualizar → abrir artículo; cambiar a Cursos, Fe y Oraciones. Confirmar API del calendario y noticias en el teléfono.
-
-Tras compilar y probar: git status; git add .; git commit -m "Aclara selector de anio y agrega noticias RSS"; git push origin main. google-services.json debe permanecer ignorado.

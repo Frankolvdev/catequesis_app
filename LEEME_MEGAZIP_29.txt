@@ -1,7 +1,0 @@
-MegaZIP 29 — HTTPS en la compilación debug
-
-Extrae directamente en la raíz de app_2026 y reemplaza app/src/debug/res/values/api_debug.xml. El archivo anterior apuntaba a http://www.catequesis.org/API/v1/ mientras la versión principal usaba https://www.catequesis.org/API/v1/. Android Studio ejecuta por defecto la variante debug, por lo que el registro y el inicio de sesión se detenían con "El acceso necesita HTTPS" antes de contactar al servidor.
-
-Este paquete únicamente iguala la URL debug a HTTPS. No modifica el backend, certificados, credenciales, datos ni el comportamiento visual. Para probar: en Android Studio ejecuta Build > Rebuild Project y luego Run; abre Cursos > ⋮ > Iniciar sesión, crea una cuenta de prueba o entra con una cuenta existente. Si aparece otro error, copia el texto exacto: será la respuesta de la conexión o del servidor y se podrá diagnosticar por separado.
-
-Verificado: ambos valores de api_base_url usan ahora HTTPS y estructura del ZIP. No se ejecutó la app: el entorno no tiene Android SDK ni credenciales de prueba.
