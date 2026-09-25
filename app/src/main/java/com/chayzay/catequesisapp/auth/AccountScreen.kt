@@ -232,6 +232,9 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
     if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false },
         title = { Text("¿Deseas cerrar la sesión?") },
         confirmButton = { TextButton(onClick = {
+            // La app legacy elimina también el progreso local al cerrar sesión
+            // (clases, tests y cursos aprobados), para no mezclar usuarios.
+            try { progressStore.clearLocalProgress() } catch (_: Exception) { }
             store.clear()
             onSessionChanged(null)
             confirmLogout = false

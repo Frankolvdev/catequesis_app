@@ -163,7 +163,7 @@ fun ClassExamScreen(classId: Int, repository: CourseRepository, store: ClassProg
                 Button(enabled = submitted || selected.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(), onClick = {
                         if (!submitted) {
-                            lastCorrect = selected == displayedAnswers.filter { it.correct }.map { it.id }.toSet()
+                            lastCorrect = displayedAnswers.filter { it.correct }.all { it.id in selected }
                             if (lastCorrect) {
                                 correctCount++
                                 if (goodStage < 5) { goodStage++; if (badStage > 0) badStage-- }
