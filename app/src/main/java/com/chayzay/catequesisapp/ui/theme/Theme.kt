@@ -1,62 +1,47 @@
 package com.chayzay.catequesisapp.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+// Paleta exacta declarada por la aplicación legacy en res/values/colors.xml.
+// Se usa de forma fija: la app original no aplicaba Material You ni modo oscuro.
+private val LegacyColorScheme = lightColorScheme(
+    primary = Color(0xFF7A9989),
     onPrimary = Color.White,
+    secondary = Color(0xFF76C4D7),
     onSecondary = Color.White,
+    tertiary = Color(0xFF4D749B),
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    background = Color.White,
+    onBackground = Color(0xFF505050),
+    surface = Color.White,
+    onSurface = Color(0xFF505050),
+    surfaceVariant = Color(0xFFF2F2F2),
+    onSurfaceVariant = Color(0xFF505050),
+    outline = Color(0xFF868686),
+    error = Color(0xFFB61818)
 )
 
 @Composable
 fun CatequesisTheme(
     darkTheme: Boolean = false,
-    // La app legacy no cambiaba paleta con modo oscuro ni Material You.
     dynamicColor: Boolean = false,
     fontOption: Int = 2,
     content: @Composable () -> Unit
 ) {
+    // Se conservan los parámetros para no romper llamadas existentes, pero la paleta
+    // permanece fija como en la app original.
+    @Suppress("UNUSED_VARIABLE") val legacyFixedPalette = darkTheme || dynamicColor
     val systemDensity = LocalDensity.current
     val multiplier = when (fontOption) { 1 -> 0.85f; 3 -> 1.2f; 4 -> 1.4f; else -> 1f }
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
 
     CompositionLocalProvider(LocalDensity provides Density(systemDensity.density,
         systemDensity.fontScale * multiplier)) {
-        MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+        MaterialTheme(colorScheme = LegacyColorScheme, typography = Typography, content = content)
     }
 }

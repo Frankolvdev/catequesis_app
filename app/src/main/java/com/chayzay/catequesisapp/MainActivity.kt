@@ -66,7 +66,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -940,7 +939,7 @@ private fun CatalogScreen(
                     }
                     // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
                     // filas de 30 unidades para un ancho de 200. Se escala junto con el mapa.
-                    BoxWithConstraints(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp).padding(10.dp),
+                    Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp).padding(10.dp),
                         contentAlignment = Alignment.Center) {
                         val mapWidth = 200.dp
                         val rowCount = (classes.size + 4) / 5
