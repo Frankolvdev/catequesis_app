@@ -849,28 +849,32 @@ private fun CatalogScreen(
                 var certificateError by remember(page) { mutableStateOf<String?>(null) }
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
                     if (courseApproved) {
-                        Text("¡Felicidades! Curso aprobado.",
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
-                        Button(enabled = !certificatePending, onClick = {
-                            if (user == null) onOpenAccount() else {
-                                val selectedCourse = (page as? CatalogPage.Classes)?.course ?: return@Button
-                                syncScope.launch {
-                                    certificatePending = true
-                                    certificateError = null
-                                    try {
-                                        syncRepository.sync(user, progressStore)
-                                        onSynced()
-                                        context.startActivity(Intent(Intent.ACTION_VIEW,
-                                            certificateUri(context.getString(R.string.api_base_url), user.id, selectedCourse.id)))
-                                    } catch (error: Exception) {
-                                        certificateError = ApiMessages.fromException(error,
-                                            "No se pudo verificar el curso o abrir el certificado")
-                                    } finally { certificatePending = false }
+                        // ClassCourseActivity legacy muestra una única leyenda accionable distinta
+                        // según exista o no una sesión iniciada.
+                        val approvedMessage = if (user == null)
+                            "Felicidades has completado el curso\nSi deseas obtener un certificado digital debes iniciar sesión."
+                        else
+                            "Tocar para visualizar certificado digital.\n (Requiere internet)"
+                        Text(approvedMessage,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clickable(enabled = !certificatePending) {
+                                if (user == null) onOpenAccount() else {
+                                    val selectedCourse = (page as? CatalogPage.Classes)?.course ?: return@clickable
+                                    syncScope.launch {
+                                        certificatePending = true
+                                        certificateError = null
+                                        try {
+                                            syncRepository.sync(user, progressStore)
+                                            onSynced()
+                                            context.startActivity(Intent(Intent.ACTION_VIEW,
+                                                certificateUri(context.getString(R.string.api_base_url), user.id, selectedCourse.id)))
+                                        } catch (error: Exception) {
+                                            certificateError = ApiMessages.fromException(error,
+                                                "No se pudo verificar el curso o abrir el certificado")
+                                        } finally { certificatePending = false }
+                                    }
                                 }
-                            }
-                        }) { Text(if (user == null) "Iniciar sesión para el certificado"
-                            else if (certificatePending) "Verificando curso…" else "Ver certificado digital") }
+                            },
+                            color = Color(0xFF505050), style = MaterialTheme.typography.titleMedium)
                         certificateError?.let { Text(it, color = Color(0xFF8B2626)) }
                     }
                     // En la app anterior el fondo ocupaba todo el GridLayout: cinco columnas,
