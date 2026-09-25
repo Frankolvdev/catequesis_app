@@ -56,7 +56,7 @@ fun HelpUsScreen(user: UserSession?, store: ClassProgressStore, courses: CourseR
                         sync.sync(user, store)
                         val all = withContext(Dispatchers.IO) { courses.getCourses().map { it.id } }
                         if (all.isEmpty() || all.any { !store.isCourseApproved(it) }) {
-                            message = "Debes aprobar todos los cursos para solicitar ser catequista."
+                            message = "No tienes aún aprobado ningún curso. ¡Inténtalo de nuevo cuando lo apruebes!"
                         } else askToSubmit = true
                     } catch (error: Exception) {
                         message = ApiMessages.fromException(error, "No se pudieron comprobar los cursos")

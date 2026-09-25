@@ -76,7 +76,7 @@ fun LegacyInfoScreen(help: Boolean, repository: CourseRepository, onUpdated: () 
         }, confirmButton = { TextButton(onClick = { selected = null }) { Text("Cerrar") } }) }
     if (confirmUpdate) AlertDialog(onDismissRequest = { confirmUpdate = false },
         title = { Text("Actualizar contenido") },
-        text = { Text("Se volverán a consultar los cursos y las lecciones. Se conserva el progreso de tu cuenta.") },
+        text = { Text("¿Desea descargar nuevamente la información?") },
         confirmButton = { TextButton(onClick = {
             confirmUpdate = false
             scope.launch {

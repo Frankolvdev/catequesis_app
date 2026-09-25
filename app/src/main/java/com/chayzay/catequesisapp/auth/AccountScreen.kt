@@ -242,9 +242,10 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
         text = { Text("Se resetearán todas las lecciones y cursos que hayas aprobado. (Solo en este dispositivo)\n ¿Deseas continuar?") },
         confirmButton = { TextButton(onClick = {
             try {
+                val hadProgress = progressStore.hasLocalProgressFiles()
                 progressStore.clearLocalProgress()
                 onSynced()
-                message = "Los cursos fueron reiniciados."
+                message = if (hadProgress) "Los cursos fueron reiniciados." else "Los cursos ya fueron reiniciados"
             } catch (cause: Exception) {
                 message = ApiMessages.fromException(cause, "No se pudo reiniciar el progreso")
             }

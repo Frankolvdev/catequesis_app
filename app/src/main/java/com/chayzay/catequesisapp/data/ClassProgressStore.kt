@@ -12,6 +12,9 @@ class ClassProgressStore(private val context: Context, private val accountId: In
     private val courseApprovedFile = File(context.filesDir, "course_approved$suffix.json")
     private val testsFile = File(context.filesDir, "test_class$suffix.json")
 
+    /** La app antigua distinguía entre borrar algún archivo y no tener ya nada que reiniciar. */
+    fun hasLocalProgressFiles(): Boolean = listOf(internal, courseApprovedFile, testsFile).any { it.exists() }
+
     /** Equivale a borrar los tres JSON de progreso en la app antigua. */
     fun clearLocalProgress() {
         listOf(internal, courseApprovedFile, testsFile).forEach { file ->
