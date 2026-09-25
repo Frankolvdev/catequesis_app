@@ -22,7 +22,8 @@ data class LessonExtras(val extension: List<String>, val anecdotes: List<String>
 data class HangmanWord(val id: Int, val word: String, val clue: String)
 data class ImageActivity(val id: Int, val classId: Int, val text: String, val imageUrl: String, val type: String)
 
-class CourseRepository(private val baseUrl: String, private val cacheDir: File) {
+class CourseRepository(private val baseUrl: String, private val cacheDir: File,
+                       private val previousCacheDir: File? = null) {
     /** Guarda JSON y recursos gráficos del curso para abrirlo sin conexión. */
     fun downloadCourseOffline(course: Course, images: CourseImageRepository): Int {
         refreshContent()
@@ -68,6 +69,14 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
     fun loadImageActivity(item: ImageActivity): Bitmap? {
         val cache = File(cacheDir, "image_activity_${item.id}.img")
         if (cache.isFile) BitmapFactory.decodeFile(cache.absolutePath)?.let { return it }
+        previousCacheDir?.let { previous ->
+            File(previous, cache.name).takeIf { it.isFile }?.let { old ->
+                BitmapFactory.decodeFile(old.absolutePath)?.let { image ->
+                    try { old.copyTo(cache, overwrite = false) } catch (_: Exception) { }
+                    return image
+                }
+            }
+        }
         val connection = (URL(item.imageUrl).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10000
             readTimeout = 10000
@@ -253,7 +262,12 @@ class CourseRepository(private val baseUrl: String, private val cacheDir: File) 
             }
         } catch (error: Exception) {
             // Al perder conexión, conserva la experiencia de lectura de contenido descargado.
-            if (allowOfflineCache && cache.exists()) cache.readText(Charsets.UTF_8) else throw error
+            val saved = if (cache.isFile) cache else previousCacheDir?.let { File(it, cache.name) }
+            if (allowOfflineCache && saved?.isFile == true) {
+                val content = saved.readText(Charsets.UTF_8)
+                if (saved != cache) try { cache.writeText(content, Charsets.UTF_8) } catch (_: Exception) { }
+                content
+            } else throw error
         }
         val response = JSONObject(body)
         if (response.optString("status") != "1") {

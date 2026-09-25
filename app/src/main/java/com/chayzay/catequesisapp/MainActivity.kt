@@ -124,8 +124,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        val repository = CourseRepository(getString(R.string.api_base_url), cacheDir)
-        val imageRepository = CourseImageRepository(cacheDir)
+        val repository = CourseRepository(getString(R.string.api_base_url), filesDir, cacheDir)
+        val imageRepository = CourseImageRepository(filesDir, cacheDir)
         val sessionStore = UserSessionStore(this)
         val authRepository = AuthRepository(getString(R.string.api_base_url))
         val chatRepository = ChatRepository(getString(R.string.api_base_url))
