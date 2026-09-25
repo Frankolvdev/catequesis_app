@@ -707,7 +707,40 @@ private fun CatalogScreen(
                 Text("No se pudo cargar: ${result.message}")
                 Button(onClick = { reload++ }) { Text("Reintentar") }
             }
-            is CatalogState.Ready -> if (page is CatalogPage.Goals) {
+            is CatalogState.Ready -> if (page is CatalogPage.Themes) {
+                val summary = page as CatalogPage.Themes
+                var lessonIndex by remember(summary, themes) { mutableStateOf<Map<Int, List<Lesson>>?>(null) }
+                var indexError by remember(summary, themes) { mutableStateOf<String?>(null) }
+                LaunchedEffect(summary, themes) {
+                    try {
+                        lessonIndex = withContext(Dispatchers.IO) {
+                            themes.associate { theme -> theme.id to repository.getLessons(theme.id) }
+                        }
+                    } catch (cause: Exception) {
+                        indexError = ApiMessages.fromException(cause, "No se pudo cargar el índice de lecciones")
+                    }
+                }
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Resumen", style = MaterialTheme.typography.titleMedium)
+                    themes.forEach { theme ->
+                        Text("${theme.number}. ${theme.name}",
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                page = CatalogPage.Lessons(summary.course, summary.courseClass, theme)
+                            }.padding(top = 10.dp, bottom = 4.dp),
+                            style = MaterialTheme.typography.titleSmall)
+                        lessonIndex?.get(theme.id)?.forEach { lesson ->
+                            Text("${theme.number}.${lesson.number}. ${lesson.name}",
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    page = CatalogPage.LessonDetail(summary.course, summary.courseClass, theme, lesson)
+                                }.padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+                                color = Color(0xFF505050))
+                        }
+                    }
+                    if (lessonIndex == null && indexError == null) CircularProgressIndicator()
+                    indexError?.let { Text(it) }
+                }
+            } else if (page is CatalogPage.Goals) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Las metas para la semana son:", color = Color.Black,
