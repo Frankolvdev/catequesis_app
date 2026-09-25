@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
@@ -119,17 +121,18 @@ fun PrayerScreen(profile: ProfileSettings, onContact: (Int) -> Unit) {
 
 @Composable
 private fun PrayerList(items: List<PrayerItem>, onSelect: (Int) -> Unit) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize().background(Color.White).padding(12.dp)) {
+    // row_recycle_view_fragment.xml: 10dp laterales, 3dp arriba, 2dp abajo, padding 10dp.
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Color.White)) {
         itemsIndexed(items) { index, item ->
-            Card(shape = RoundedCornerShape(4.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().clickable { onSelect(index) }
-                    .background(Color.White).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    .background(Color.White).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Image(painterResource(item.icon), contentDescription = null, modifier = Modifier.size(48.dp))
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(item.title, fontWeight = FontWeight.Bold, color = Color(0xFF505050))
-                        if (item.subtitle.isNotBlank()) Text(item.subtitle, color = Color.DarkGray,
-                            style = MaterialTheme.typography.bodySmall)
+                    Column(modifier = Modifier.padding(start = 5.dp)) {
+                        Text(item.title, fontWeight = FontWeight.Bold, color = Color(0xFF7A9989), fontSize = 14.sp)
+                        if (item.subtitle.isNotBlank()) Text(item.subtitle, color = Color(0xFF424242),
+                            fontSize = 12.sp, modifier = Modifier.padding(start = 5.dp, top = 5.dp))
                     }
                 }
             }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,7 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.chayzay.catequesisapp.R
 import com.chayzay.catequesisapp.profile.ProfileSettings
 import com.chayzay.catequesisapp.data.ApiMessages
@@ -76,29 +80,28 @@ fun FaithScreen(profile: ProfileSettings, apiBaseUrl: String, onContact: () -> U
                 FaithItem("Quiero recibir formación", "Contactar al equipo", R.drawable.retiro),
                 FaithItem("Bendición del Papa", "Información sobre la bendición apostólica", R.drawable.pergamino)
             )
-            LazyColumn(Modifier.fillMaxSize().padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(Modifier.fillMaxSize().background(Color.White)) {
                 items(options.size) { index ->
                     val item = options[index]
-                    Card(Modifier.fillMaxWidth().clickable {
-                        if (index == 0) page = "calendar"
-                        else if (index == 3) onContact()
-                        else {
-                            val intent = when (index) {
-                                1 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.itsharedservices.hdsmyc.app"))
-                                2 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=ws.ebs.stjosemaria"))
-                                else -> Intent(Intent.ACTION_VIEW, Uri.parse("https://www.vaticano.com/como-solicitar-la-bendicion-apostolica-del-papa/"))
+                    Card(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp)) {
+                        Row(Modifier.fillMaxWidth().background(Color.White).clickable {
+                            if (index == 0) page = "calendar"
+                            else if (index == 3) onContact()
+                            else {
+                                val intent = when (index) {
+                                    1 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.itsharedservices.hdsmyc.app"))
+                                    2 -> Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=ws.ebs.stjosemaria"))
+                                    else -> Intent(Intent.ACTION_VIEW, Uri.parse("https://www.vaticano.com/como-solicitar-la-bendicion-apostolica-del-papa/"))
+                                }
+                                try { context.startActivity(intent) }
+                                catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show() }
                             }
-                            try { context.startActivity(intent) }
-                            catch (_: Exception) { Toast.makeText(context, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show() }
-                        }
-                    }) {
-                        Row(Modifier.fillMaxWidth().background(Color.White).padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
+                        }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Image(painterResource(item.icon), null, modifier = Modifier.size(48.dp))
-                            Column(Modifier.padding(start = 12.dp)) {
-                                Text(item.title, color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
-                                Text(item.summary, color = Color.DarkGray, style = MaterialTheme.typography.bodySmall)
+                            Column(Modifier.padding(start = 5.dp)) {
+                                Text(item.title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(item.summary, color = Color(0xFF424242), fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 5.dp, top = 5.dp))
                             }
                         }
                     }
@@ -113,41 +116,41 @@ private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: Str
     var celebrations by remember(year) { mutableStateOf<List<Celebration>?>(null) }
     var error by remember(year) { mutableStateOf<String?>(null) }
     var retry by remember(year) { mutableIntStateOf(0) }
-    var yearEntry by remember(year) { mutableStateOf(year.toString()) }
+    var menuOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val years = (2002..2399).toList()
     LaunchedEffect(year, apiBaseUrl, retry) {
-        error = null
-        celebrations = null
-        try {
-            celebrations = withContext(Dispatchers.IO) { loadCalendar(apiBaseUrl, year) }
-        } catch (e: Exception) {
-            error = ApiMessages.fromException(e, "No se pudo cargar el calendario")
-        }
+        error = null; celebrations = null
+        try { celebrations = withContext(Dispatchers.IO) { loadCalendar(apiBaseUrl, year) } }
+        catch (e: Exception) { error = ApiMessages.fromException(e, "No se pudo cargar el calendario") }
     }
     LaunchedEffect(year, celebrations) {
         val entries = celebrations.orEmpty()
         if (entries.isNotEmpty()) {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
             val target = if (year == Calendar.getInstance().get(Calendar.YEAR))
-                entries.indexOfFirst { it.date >= today }.takeIf { it >= 0 } ?: 0
-            else 0
+                entries.indexOfFirst { it.date >= today }.takeIf { it >= 0 } ?: 0 else 0
             listState.scrollToItem(target)
         }
     }
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Button(enabled = year > 2002, onClick = { onYearChange(year - 1) }) { Text("‹") }
-            Text(year.toString(), style = MaterialTheme.typography.titleLarge)
-            Button(enabled = year < 2399, onClick = { onYearChange(year + 1) }) { Text("›") }
-        }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(yearEntry, onValueChange = { yearEntry = it.filter(Char::isDigit).take(4) },
-                label = { Text("Ir al año (2002–2399)") }, singleLine = true,
-                modifier = Modifier.weight(1f))
-            Button(enabled = yearEntry.toIntOrNull()?.let { it in 2002..2399 } == true,
-                onClick = { yearEntry.toIntOrNull()?.let(onYearChange) }) { Text("Ir") }
+    Column(Modifier.fillMaxSize().background(Color.White)) {
+        // fragment_recycle_view_vela.xml: bloque superior con margen 5dp, ciclo alineado a la derecha y spinner debajo.
+        Column(Modifier.fillMaxWidth().padding(5.dp)) {
+            Row(Modifier.fillMaxWidth().padding(bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("‹", color = Color(0xFF7A9989), fontSize = 24.sp, modifier = Modifier.size(20.dp)
+                    .clickable(enabled = year > 2002) { onYearChange(year - 1) })
+                Text("Ciclo $year", color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+            Box(Modifier.fillMaxWidth()) {
+                Text(year.toString(), color = Color.Black, fontSize = 14.sp,
+                    modifier = Modifier.fillMaxWidth().clickable { menuOpen = true }.padding(10.dp))
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    years.forEach { y -> DropdownMenuItem(text = { Text(y.toString()) }, onClick = {
+                        menuOpen = false; onYearChange(y)
+                    }) }
+                }
+            }
         }
         when {
             error != null -> Column(Modifier.padding(16.dp)) {
@@ -156,14 +159,17 @@ private fun CalendarPage(year: Int, onYearChange: (Int) -> Unit, apiBaseUrl: Str
             }
             celebrations == null -> CircularProgressIndicator(Modifier.padding(24.dp))
             celebrations!!.isEmpty() -> Text("No hay celebraciones para $year", Modifier.padding(16.dp))
-            else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), state = listState,
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            else -> LazyColumn(Modifier.fillMaxSize(), state = listState) {
                 items(celebrations!!, key = { it.date.toString() }) { item ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp)) {
-                            Text(formatDate(item.date),
-                                color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
-                            Text(item.description, color = Color.DarkGray)
+                    Card(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp)) {
+                        Column(Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(formatDate(item.date), color = Color(0xFF7A9989), fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                Image(painterResource(R.drawable.calendar), null, Modifier.size(16.dp))
+                            }
+                            Text(item.description, color = Color(0xFF424242), fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 10.dp))
                         }
                     }
                 }
