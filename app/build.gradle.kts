@@ -21,7 +21,7 @@ android {
         // X API v2: define X_BEARER_TOKEN in ~/.gradle/gradle.properties or project gradle.properties.
         // It is intentionally empty until the production X credentials are supplied.
         buildConfigField("String", "X_BEARER_TOKEN", "\"${project.findProperty("X_BEARER_TOKEN") ?: ""}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: "64342706407-o3nic72jjc2a37ojfvfe2c7r0dosl011.apps.googleusercontent.com"}\"")
         buildConfigField("String", "FACEBOOK_APP_ID", "\"${project.findProperty("FACEBOOK_APP_ID") ?: "1463167569060482"}\"")
         buildConfigField("String", "FACEBOOK_CLIENT_TOKEN", "\"${project.findProperty("FACEBOOK_CLIENT_TOKEN") ?: "daa32d7fd32b8db9d8334a804588e4f4"}\"")
         resValue("string", "facebook_app_id", "${project.findProperty("FACEBOOK_APP_ID") ?: "1463167569060482"}")

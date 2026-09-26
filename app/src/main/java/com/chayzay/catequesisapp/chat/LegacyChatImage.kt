@@ -19,7 +19,8 @@ internal fun LegacyChatImage(url: String?, modifier: Modifier = Modifier) {
     LaunchedEffect(url) {
         bitmap = if (url.isNullOrBlank()) null else withContext(Dispatchers.IO) {
             runCatching {
-                val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                val safeUrl = url.trim().replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
+                val connection = (URL(safeUrl).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 8000
                     readTimeout = 8000
                     instanceFollowRedirects = true

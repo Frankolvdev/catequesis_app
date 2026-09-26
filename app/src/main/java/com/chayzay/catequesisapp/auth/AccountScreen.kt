@@ -286,8 +286,8 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         } finally { loading = false }
                     }
                 }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF505050)),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
-                    Image(painterResource(R.drawable.icon_google), null, Modifier.height(42.dp));
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(48.dp)) {
+                    Image(painterResource(R.drawable.icon_google), null, Modifier.size(width = 45.dp, height = 48.dp));
                     Text("Iniciar sesión con Google", fontSize = 13.sp, modifier = Modifier.weight(1f))
                 }
                 Button(enabled = !loading, onClick = {
@@ -309,8 +309,8 @@ fun AccountScreen(session: UserSession?, repository: AuthRepository, store: User
                         }, { error -> loading = false; message = error })
                     } catch (cause: Exception) { loading = false; message = cause.message ?: "No se pudo iniciar sesión con Facebook" }
                 }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475A96), contentColor = Color.White),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(42.dp)) {
-                    Image(painterResource(R.drawable.icon_facebook), null, Modifier.height(42.dp));
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(48.dp)) {
+                    Image(painterResource(R.drawable.icon_facebook), null, Modifier.size(width = 45.dp, height = 48.dp));
                     Text("Iniciar sesión con Facebook", fontSize = 13.sp, modifier = Modifier.weight(1f))
                 }
             }
