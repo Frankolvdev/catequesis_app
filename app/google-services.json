@@ -1,29 +1,29 @@
 {
   "project_info": {
-    "project_number": "806548102926",
-    "firebase_url": "https://catequesis-app.firebaseio.com",
-    "project_id": "catequesis-app",
-    "storage_bucket": "catequesis-app.appspot.com"
+    "project_number": "64342706407",
+    "firebase_url": "https://catequesis-app-1d413-default-rtdb.firebaseio.com",
+    "project_id": "catequesis-app-1d413",
+    "storage_bucket": "catequesis-app-1d413.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:806548102926:android:3181e21916f80f97",
+        "mobilesdk_app_id": "1:64342706407:android:9b99749992d4de53103a42",
         "android_client_info": {
           "package_name": "com.chayzay.catequesisapp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "806548102926-2tgjsdd9bvvmu8qih4uc89q1v8qco75b.apps.googleusercontent.com",
+          "client_id": "64342706407-2g2ef6k1r7ulllf9rlijsc17kl150kus.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.chayzay.catequesisapp",
-            "certificate_hash": "9b44b85f206aa8b9ff3f34bfb45858d92983b764"
+            "certificate_hash": "26e219795ced923e9cac13d543fe3e137052f350"
           }
         },
         {
-          "client_id": "806548102926-ajacs1abvfihhsgdum6g8q4orrpmu8mf.apps.googleusercontent.com",
+          "client_id": "64342706407-p1gb1pilshqp1cnoocc87o7f6rg670ni.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.chayzay.catequesisapp",
@@ -31,36 +31,21 @@
           }
         },
         {
-          "client_id": "806548102926-klfibgtv8f2sahqojt2ukorgijothe8s.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.chayzay.catequesisapp",
-            "certificate_hash": "2117661d3e479fdb2ad81955534697873172f5c0"
-          }
-        },
-        {
-          "client_id": "806548102926-88pp5e0nkim5m7kb81l8v91s87bt4vel.apps.googleusercontent.com",
+          "client_id": "64342706407-o3nic72jjc2a37ojfvfe2c7r0dosl011.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCcpcJmiw8M2rFi7fCVsA3qqj1GMm-2WlE"
+          "current_key": "AIzaSyDRgRgGswtQKrl7oqp5Xm5mGWZuJ633OU8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "806548102926-88pp5e0nkim5m7kb81l8v91s87bt4vel.apps.googleusercontent.com",
+              "client_id": "64342706407-o3nic72jjc2a37ojfvfe2c7r0dosl011.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "806548102926-ftre3qtacg9ojrb91ih28v1l8t7gk423.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.chayzay.catequesisapp"
-              }
             }
           ]
         }
