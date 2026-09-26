@@ -1,12 +1,6 @@
 package com.chayzay.catequesisapp.news
 
 import android.content.Intent
-import android.annotation.SuppressLint
-import android.webkit.CookieManager
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +50,6 @@ import org.xmlpull.v1.XmlPullParserFactory
 
 private const val RSS_URL = "https://www.aciprensa.com/rss/news/mundo"
 private data class Article(val title: String, val description: String, val date: String, val link: String)
-private enum class NewsMode { RSS, X }
 
 @Composable
 fun NewsScreen(profile: ProfileSettings) {
@@ -74,22 +66,17 @@ fun NewsScreen(profile: ProfileSettings) {
         return
     }
 
-    var mode by remember { mutableStateOf(NewsMode.RSS) }
     var refresh by remember { mutableStateOf(0) }
     var articles by remember { mutableStateOf<List<Article>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(mode, refresh) {
+    LaunchedEffect(refresh) {
         error = null
-        if (mode == NewsMode.RSS) {
-            try {
-                articles = withContext(Dispatchers.IO) { loadNews(File(context.cacheDir, "news_mundo.xml")) }
-            } catch (exception: Exception) {
-                error = exception.localizedMessage ?: "No se pudieron cargar las noticias"
-                articles = emptyList()
-            }
-        } else {
-            // El timeline de X se renderiza con el widget web oficial. No requiere API ni Bearer Token.
+        try {
+            articles = withContext(Dispatchers.IO) { loadNews(File(context.cacheDir, "news_mundo.xml")) }
+        } catch (exception: Exception) {
+            error = exception.localizedMessage ?: "No se pudieron cargar las noticias"
+            articles = emptyList()
         }
     }
 
@@ -98,107 +85,44 @@ fun NewsScreen(profile: ProfileSettings) {
             Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(28.dp))
             Text("Noticias", color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 12.dp))
         }
-        // El fragment legacy no tenía botones Material aquí: era una fila de 5dp con
-        // texto de 13sp y un icono de 32dp (Twitter/feed) para alternar la fuente.
+        // Acceso directo al perfil oficial del Papa en X. Android abrirá la app de X
+        // si está instalada y asociada al enlace; en caso contrario, el navegador.
         Row(Modifier.fillMaxWidth().padding(5.dp).clickable {
-            mode = if (mode == NewsMode.RSS) NewsMode.X else NewsMode.RSS
+            HttpsLinks.external("https://x.com/Pontifex_es")?.let { uri ->
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+            }
         }, verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (mode == NewsMode.RSS) "Últimos tweets del Papa" else "Volver a las Noticias",
+                "Último post del Papa",
                 color = Color.Black, fontSize = 13.sp,
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
                 modifier = Modifier.weight(1f).padding(end = 5.dp)
             )
             Image(
-                painterResource(if (mode == NewsMode.RSS) R.drawable.twitter_icon else R.drawable.feed),
-                contentDescription = null, modifier = Modifier.size(32.dp)
+                painterResource(R.drawable.x_icon),
+                contentDescription = "X", modifier = Modifier.size(32.dp)
             )
         }
 
-        if (mode == NewsMode.RSS) {
-            when {
-                articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))
-                else -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                    items(articles!!, key = { it.link }) { article ->
-                        Card(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp).clickable {
-                            HttpsLinks.external(article.link)?.let { uri -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } }
-                        }) {
-                            Column(Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
-                                Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(16.dp).align(Alignment.End))
-                                Text(article.title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                if (article.description.isNotBlank()) Text(legacyRssDescription(article.description), color = Color(0xFF424242), fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
-                                if (article.date.isNotBlank()) Text(legacyRssDate(article.date), color = Color(0xFF7A9989), fontSize = 10.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-                            }
+        when {
+            articles == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            articles!!.isEmpty() -> Text(error ?: "No hay noticias disponibles.", Modifier.padding(18.dp))
+            else -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                items(articles!!, key = { it.link }) { article ->
+                    Card(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 3.dp, bottom = 2.dp).clickable {
+                        HttpsLinks.external(article.link)?.let { uri -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) } }
+                    }) {
+                        Column(Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
+                            Image(painterResource(R.drawable.feed), contentDescription = null, modifier = Modifier.size(16.dp).align(Alignment.End))
+                            Text(article.title, color = Color(0xFF7A9989), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            if (article.description.isNotBlank()) Text(legacyRssDescription(article.description), color = Color(0xFF424242), fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+                            if (article.date.isNotBlank()) Text(legacyRssDate(article.date), color = Color(0xFF7A9989), fontSize = 10.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                         }
                     }
                 }
             }
-        } else {
-            PapaTimeline(Modifier.fillMaxSize())
         }
     }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-private fun PapaTimeline(modifier: Modifier = Modifier) {
-    val html = remember {
-        """
-        <!doctype html>
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-            <style>
-                html, body { margin:0; padding:0; background:#ffffff; }
-                .twitter-timeline { width:100% !important; }
-            </style>
-        </head>
-        <body>
-            <a class="twitter-timeline"
-               data-lang="es"
-               data-theme="light"
-               data-chrome="noheader nofooter noborders transparent"
-               data-dnt="true"
-               href="https://twitter.com/Pontifex_es?ref_src=twsrc%5Etfw">Tweets de @Pontifex_es</a>
-            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-        </body>
-        </html>
-        """.trimIndent()
-    }
-
-    AndroidView(
-        modifier = modifier.background(Color.White),
-        factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.databaseEnabled = true
-                settings.loadsImagesAutomatically = true
-                settings.useWideViewPort = true
-                settings.loadWithOverviewMode = false
-                settings.cacheMode = WebSettings.LOAD_DEFAULT
-                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-
-                // X usa cookies y recursos de varios subdominios para construir el timeline.
-                // Sin cookies de terceros WebView puede dejar únicamente el texto del enlace.
-                val timelineWebView = this
-                CookieManager.getInstance().apply {
-                    setAcceptCookie(true)
-                    setAcceptThirdPartyCookies(timelineWebView, true)
-                }
-
-                webViewClient = WebViewClient()
-                webChromeClient = WebChromeClient()
-                loadDataWithBaseURL("https://twitter.com/", html, "text/html", "UTF-8", null)
-            }
-        },
-        update = { webView ->
-            if (webView.url == null) {
-                webView.loadDataWithBaseURL("https://twitter.com/", html, "text/html", "UTF-8", null)
-            }
-        }
-    )
 }
 
 private fun loadNews(cache: File): List<Article> {
