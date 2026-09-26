@@ -2,7 +2,9 @@ package com.chayzay.catequesisapp.news
 
 import android.content.Intent
 import android.annotation.SuppressLint
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.Image
@@ -171,15 +173,29 @@ private fun PapaTimeline(modifier: Modifier = Modifier) {
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
+                settings.databaseEnabled = true
                 settings.loadsImagesAutomatically = true
+                settings.useWideViewPort = true
+                settings.loadWithOverviewMode = false
+                settings.cacheMode = WebSettings.LOAD_DEFAULT
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+
+                // X usa cookies y recursos de varios subdominios para construir el timeline.
+                // Sin cookies de terceros WebView puede dejar únicamente el texto del enlace.
+                val timelineWebView = this
+                CookieManager.getInstance().apply {
+                    setAcceptCookie(true)
+                    setAcceptThirdPartyCookies(timelineWebView, true)
+                }
+
                 webViewClient = WebViewClient()
                 webChromeClient = WebChromeClient()
-                loadDataWithBaseURL("https://platform.twitter.com/", html, "text/html", "UTF-8", null)
+                loadDataWithBaseURL("https://twitter.com/", html, "text/html", "UTF-8", null)
             }
         },
         update = { webView ->
             if (webView.url == null) {
-                webView.loadDataWithBaseURL("https://platform.twitter.com/", html, "text/html", "UTF-8", null)
+                webView.loadDataWithBaseURL("https://twitter.com/", html, "text/html", "UTF-8", null)
             }
         }
     )
