@@ -1,8 +1,10 @@
 package com.chayzay.catequesisapp.news
 
 import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
+import android.annotation.SuppressLint
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,7 +54,6 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
 private const val RSS_URL = "https://www.aciprensa.com/rss/news/mundo"
-private const val PAPA_X = "Pontifex_es"
 private data class Article(val title: String, val description: String, val date: String, val link: String)
 private enum class NewsMode { RSS, X }
 
@@ -73,7 +75,6 @@ fun NewsScreen(profile: ProfileSettings) {
     var mode by remember { mutableStateOf(NewsMode.RSS) }
     var refresh by remember { mutableStateOf(0) }
     var articles by remember { mutableStateOf<List<Article>?>(null) }
-    var posts by remember { mutableStateOf<List<XPost>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(mode, refresh) {
@@ -86,18 +87,7 @@ fun NewsScreen(profile: ProfileSettings) {
                 articles = emptyList()
             }
         } else {
-            if (!XTimelineRepository.isConfigured()) {
-                posts = emptyList()
-                error = "Falta configurar X_BEARER_TOKEN para activar las publicaciones del Papa."
-            } else {
-                posts = null
-                try {
-                    posts = withContext(Dispatchers.IO) { XTimelineRepository.loadUserTimeline(PAPA_X) }
-                } catch (exception: Exception) {
-                    error = exception.localizedMessage ?: "No se pudieron cargar las publicaciones de X"
-                    posts = emptyList()
-                }
-            }
+            // El timeline de X se renderiza con el widget web oficial. No requiere API ni Bearer Token.
         }
     }
 
@@ -143,28 +133,56 @@ fun NewsScreen(profile: ProfileSettings) {
                 }
             }
         } else {
-            when {
-                posts == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                posts!!.isEmpty() -> Text(error ?: "No hay publicaciones disponibles.", Modifier.padding(18.dp))
-                else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(posts!!, key = { it.id }) { post ->
-                        Card(Modifier.fillMaxWidth().clickable {
-                            val uri = Uri.parse("https://x.com/$PAPA_X/status/${post.id}")
-                            try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                            catch (_: Exception) { Toast.makeText(context, "No se pudo abrir la publicación", Toast.LENGTH_SHORT).show() }
-                        }) {
-                            Column(Modifier.fillMaxWidth().background(Color.White).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("@$PAPA_X", color = Color.DarkGray, style = MaterialTheme.typography.titleMedium)
-                                Text(post.text, color = Color.DarkGray, style = MaterialTheme.typography.bodyMedium)
-                                if (post.createdAt.isNotBlank()) Text(post.createdAt, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                                Text("♡ ${post.likeCount}   ↻ ${post.repostCount}   ↩ ${post.replyCount}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
+            PapaTimeline(Modifier.fillMaxSize())
         }
     }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun PapaTimeline(modifier: Modifier = Modifier) {
+    val html = remember {
+        """
+        <!doctype html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+            <style>
+                html, body { margin:0; padding:0; background:#ffffff; }
+                .twitter-timeline { width:100% !important; }
+            </style>
+        </head>
+        <body>
+            <a class="twitter-timeline"
+               data-lang="es"
+               data-theme="light"
+               data-chrome="noheader nofooter noborders transparent"
+               data-dnt="true"
+               href="https://twitter.com/Pontifex_es?ref_src=twsrc%5Etfw">Tweets de @Pontifex_es</a>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        </body>
+        </html>
+        """.trimIndent()
+    }
+
+    AndroidView(
+        modifier = modifier.background(Color.White),
+        factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.loadsImagesAutomatically = true
+                webViewClient = WebViewClient()
+                webChromeClient = WebChromeClient()
+                loadDataWithBaseURL("https://platform.twitter.com/", html, "text/html", "UTF-8", null)
+            }
+        },
+        update = { webView ->
+            if (webView.url == null) {
+                webView.loadDataWithBaseURL("https://platform.twitter.com/", html, "text/html", "UTF-8", null)
+            }
+        }
+    )
 }
 
 private fun loadNews(cache: File): List<Article> {
